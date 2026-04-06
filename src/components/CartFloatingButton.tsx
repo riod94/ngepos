@@ -9,6 +9,9 @@ import {
 	CircleX,
 	Clock,
 	Calendar,
+	Bike,
+	Truck,
+	ShoppingBag,
 } from "lucide-solid";
 import { useNavigate } from "@solidjs/router";
 import {
@@ -35,7 +38,7 @@ import {
 } from "~/components/ui/dialog";
 import { db, getSetting } from "~/db/db";
 
-type PayStep = "select" | "qris_pending" | "done_ok" | "done_fail";
+type PayStep = "select" | "adjustment" | "qris_pending" | "done_ok" | "done_fail";
 
 // ─── helper: compute total COGS from cart ─────────────────────────────────────
 async function computeCogsTotal(): Promise<number> {
@@ -66,6 +69,12 @@ export function CartFloatingButton() {
 
 	// QRIS image (lazy loaded when dialog opens)
 	const [qrisImage] = createResource(() => getSetting("qris_image"));
+	const [gfEnabled] = createResource(async () => (await getSetting("enable_gofood")) === "true");
+	const [grEnabled] = createResource(async () => (await getSetting("enable_grabfood")) === "true");
+	const [shEnabled] = createResource(async () => (await getSetting("enable_shopeefood")) === "true");
+
+	const [adjustedAmount, setAdjustedAmount] = createSignal(0);
+	const [selectedPlatform, setSelectedPlatform] = createSignal<string>("");
 
 	const hasQris = () => !!qrisImage();
 
@@ -86,7 +95,7 @@ export function CartFloatingButton() {
 	};
 
 	// ── Save transaction to DB ────────────────────────────────────────────────
-	async function submitTransaction(method: "QRIS" | "CASH") {
+	async function submitTransaction(method: string, finalAmount: number) {
 		if (processing()) return null;
 		setProcessing(true);
 		try {
@@ -97,13 +106,15 @@ export function CartFloatingButton() {
 			await db.transactions.add({
 				id: transactionId,
 				receiptNumber: `INV-${Date.now()}`,
-				totalAmount: getCartTotal(),
+				totalAmount: finalAmount,
+				originalAmount: getCartTotal(),
 				cogsTotal,
 				paymentMethod: method,
 				timestamp: ts,
 				status: "PENDING",
 				isBackdated: isBackdated(),
-			});
+				isAdjustment: finalAmount !== getCartTotal(),
+			} as any);
 
 			const items = cart.map((item, idx) => ({
 				id: `ti_${transactionId}_${idx}`,
@@ -134,8 +145,28 @@ export function CartFloatingButton() {
 	}
 
 	async function handleCash() {
-		const id = await submitTransaction("CASH");
+		const id = await submitTransaction("TUNAI", getCartTotal());
 		if (!id) return;
+		finishPayment(id);
+	}
+
+	async function handleQrConfirm(success: boolean) {
+		if (!success) {
+			setPayStep("done_fail");
+			return;
+		}
+		const id = await submitTransaction("QRIS", getCartTotal());
+		if (!id) return;
+		finishPayment(id);
+	}
+
+	async function handlePlatformConfirm() {
+		const id = await submitTransaction(selectedPlatform(), adjustedAmount());
+		if (!id) return;
+		finishPayment(id);
+	}
+
+	function finishPayment(id: string) {
 		// Step 1: show success state
 		setPayStep("done_ok");
 		// Step 2: close dialog + cart after brief success animation
@@ -147,22 +178,10 @@ export function CartFloatingButton() {
 		}, 600);
 	}
 
-	async function handleQrConfirm(success: boolean) {
-		if (!success) {
-			setPayStep("done_fail");
-			return;
-		}
-		const id = await submitTransaction("QRIS");
-		if (!id) return;
-		// Step 1: show success state
-		setPayStep("done_ok");
-		// Step 2: close dialog + cart after brief success animation
-		setTimeout(() => {
-			clearCart();
-			setPayOpen(false);
-			setCartSheetOpen(false);
-			setTimeout(() => navigate(`/app/receipt/${id}`), 100);
-		}, 600);
+	function startPlatformPayment(platform: string) {
+		setSelectedPlatform(platform);
+		setAdjustedAmount(getCartTotal());
+		setPayStep("adjustment");
 	}
 
 	function openPay() {
@@ -177,7 +196,7 @@ export function CartFloatingButton() {
 	return (
 		<Show when={getCartCount() > 0}>
 			{/* Floating Cart Trigger */}
-			<div class="fixed bottom-19 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg px-4">
+			<div class="fixed bottom-[80px] left-1/2 -translate-x-1/2 z-30 w-full max-w-lg px-4 animate-in fade-in slide-in-from-bottom-5 duration-300">
 				<Sheet open={cartSheetOpen()} onOpenChange={setCartSheetOpen}>
 					<SheetTrigger class="w-full h-15 rounded-2xl flex items-center justify-between px-5 py-3 bg-primary text-primary-foreground active:scale-[0.98] transition-all border-none shadow-[0_10px_30px_rgba(67,56,202,0.35)] relative overflow-hidden group">
 						<div class="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 skew-x-12 pointer-events-none" />
@@ -383,38 +402,134 @@ export function CartFloatingButton() {
 							</DialogDescription>
 						</DialogHeader>
 						<div class="flex flex-col gap-3">
+						<div class="grid grid-cols-2 gap-3">
 							{/* Cash */}
 							<button
 								type="button"
 								disabled={processing()}
 								onClick={handleCash}
-								class="h-18 flex items-center gap-4 px-5 rounded-3xl border-2 border-border/80 bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group disabled:opacity-50"
+								class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
 							>
-								<div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-									<Banknote size={24} stroke-width={2.5} />
+								<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+									<Banknote size={22} stroke-width={2.5} />
 								</div>
-								<span class="font-black text-lg">Uang Tunai</span>
-								{processing() && (
-									<div class="ml-auto w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-								)}
+								<span class="font-black text-xs uppercase tracking-widest">Tunai</span>
 							</button>
 
-							{/* QRIS — only rendered if QRIS image uploaded */}
+							{/* QRIS */}
 							<Show when={hasQris()}>
 								<button
 									type="button"
 									disabled={processing()}
 									onClick={() => setPayStep("qris_pending")}
-									class="h-18 flex items-center gap-4 px-5 rounded-3xl border-2 border-border/80 bg-card hover:border-blue-400/50 hover:bg-blue-50/50 transition-all group disabled:opacity-50"
+									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-blue-500/50 hover:bg-blue-50/30 transition-all group disabled:opacity-50 h-28 text-center"
 								>
-									<div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-										<QrCode size={24} stroke-width={2.5} />
+									<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+										<QrCode size={22} stroke-width={2.5} />
 									</div>
-									<span class="font-black text-lg">
-										QRIS / E-Wallet
-									</span>
+									<span class="font-black text-xs uppercase tracking-widest">QRIS</span>
 								</button>
 							</Show>
+
+							{/* GoFood */}
+							<Show when={gfEnabled()}>
+								<button
+									type="button"
+									disabled={processing()}
+									onClick={() => startPlatformPayment("GOFOOD")}
+									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+								>
+									<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+										<Bike size={22} stroke-width={2.5} />
+									</div>
+									<span class="font-black text-xs uppercase tracking-widest">GoFood</span>
+								</button>
+							</Show>
+
+							{/* GrabFood */}
+							<Show when={grEnabled()}>
+								<button
+									type="button"
+									disabled={processing()}
+									onClick={() => startPlatformPayment("GRABFOOD")}
+									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-green-500/50 hover:bg-green-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+								>
+									<div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+										<Truck size={22} stroke-width={2.5} />
+									</div>
+									<span class="font-black text-xs uppercase tracking-widest">GrabFood</span>
+								</button>
+							</Show>
+
+							{/* ShopeeFood */}
+							<Show when={shEnabled()}>
+								<button
+									type="button"
+									disabled={processing()}
+									onClick={() => startPlatformPayment("SHOPEEFOOD")}
+									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-orange-500/50 hover:bg-orange-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+								>
+									<div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+										<ShoppingBag size={22} stroke-width={2.5} />
+									</div>
+									<span class="font-black text-xs uppercase tracking-widest text-[#F97316]">Shopee</span>
+								</button>
+							</Show>
+						</div>
+					</div>
+				</Show>
+
+					{/* Step: Adjustment (Set Actual Received Amount) */}
+					<Show when={payStep() === "adjustment"}>
+						<div class="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={resetPay}
+									class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted"
+								>
+									<ChevronLeft size={20} />
+								</button>
+								<div>
+									<h3 class="font-black text-base text-foreground leading-none">Konfirmasi Setoran</h3>
+									<p class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Order {selectedPlatform()}</p>
+								</div>
+							</div>
+
+							<div class="bg-muted/30 p-4 rounded-2xl border border-border/40">
+								<p class="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">Total Tagihan App</p>
+								<p class="text-2xl font-black text-center tracking-tighter opacity-50 line-through">Rp {getCartTotal().toLocaleString("id-ID")}</p>
+							</div>
+
+							<div class="flex flex-col gap-2">
+								<label for="adj-amount" class="text-xs font-black text-primary uppercase tracking-widest px-1">Total Tunai/Net Diterima</label>
+								<div class="relative">
+									<div class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-lg">Rp</div>
+									<input 
+										id="adj-amount"
+										type="number"
+										autofocus
+										class="w-full h-16 rounded-2xl border-2 border-primary/30 bg-card pl-12 pr-4 font-black text-2xl tracking-tighter focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+										value={adjustedAmount()}
+										onInput={e => setAdjustedAmount(Number.parseInt(e.currentTarget.value) || 0)}
+									/>
+								</div>
+							</div>
+
+							<div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+								<span class="text-xs font-bold text-emerald-800 uppercase tracking-widest">Selisih/Margin</span>
+								<span class={`font-black text-lg ${adjustedAmount() - getCartTotal() >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+									{adjustedAmount() - getCartTotal() >= 0 ? "+" : "-"} Rp {Math.abs(adjustedAmount() - getCartTotal()).toLocaleString("id-ID")}
+								</span>
+							</div>
+
+							<Button 
+								class="w-full h-14 rounded-2xl font-black text-base shadow-lg shadow-primary/20"
+								onClick={handlePlatformConfirm}
+								disabled={processing()}
+							>
+								Simpan Transaksi
+							</Button>
 						</div>
 					</Show>
 

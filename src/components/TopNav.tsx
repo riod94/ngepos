@@ -1,5 +1,5 @@
 import { createSignal, onMount, onCleanup } from "solid-js";
-import { Store } from "lucide-solid";
+import { A } from "@solidjs/router";
 
 export function TopNav() {
   const [isOffline, setIsOffline] = createSignal(false);
@@ -27,16 +27,13 @@ export function TopNav() {
       )}
       <div class="container flex h-14 items-center px-4 max-w-lg mx-auto">
         <div class="flex items-center space-x-2 w-full justify-between">
+          <A href="/app" class="flex items-center gap-2 active:scale-95 transition-all">
+            <img src="/logo_wordmark.png" alt="Ngepos" class="h-8 object-contain" />
+          </A>
           <div class="flex items-center gap-2">
-            <div class="p-1.5 bg-primary text-primary-foreground rounded-lg shadow-sm">
-              <Store size={20} />
-            </div>
-            <span class="font-bold text-lg tracking-tight">Ngepos</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold shadow-sm border">
-              M
-            </div>
+            <A href="/app/profile" class="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-black text-primary shadow-sm border border-primary/20 active:scale-90 transition-all">
+              RP
+            </A>
           </div>
         </div>
       </div>

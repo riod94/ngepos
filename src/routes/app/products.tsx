@@ -1,8 +1,9 @@
 import { createSignal, createResource, Show, For, createMemo } from "solid-js";
-import { Plus, Trash2, ArrowLeft, Zap, PlusCircle, X, Tag, Layers } from "lucide-solid";
+import { Plus, Trash2, ArrowLeft, Zap, CirclePlus, X, Tag, Layers, Upload } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db, type Product, type RawMaterialCost, type VariantGroup, type VariantOption, type VariantTemplate } from "~/db/db";
 import { Button } from "~/components/ui/button";
+import { ProductImage } from "~/components/ProductImage";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 
@@ -11,8 +12,6 @@ function calcMargin(price: number, cogs: number) {
   if (price <= 0) return 0;
   return Math.round(((price - cogs) / price) * 100);
 }
-
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=400&fit=crop";
 
 // ────────────── Main Component ──────────────
 export default function ProductsManager() {
@@ -33,6 +32,7 @@ export default function ProductsManager() {
   const [formPrice, setFormPrice] = createSignal("0");
   const [formCategoryId, setFormCategoryId] = createSignal("");
   const [formStock, setFormStock] = createSignal("0");
+  const [formImage, setFormImage] = createSignal("");
   const [formRaw, setFormRaw] = createSignal<RawMaterialCost[]>([]);
   const [formVariants, setFormVariants] = createSignal<VariantGroup[]>([]);
 
@@ -45,7 +45,7 @@ export default function ProductsManager() {
   const [isDeleting, setIsDeleting] = createSignal(false);
 
   const totalHPP = createMemo(() => formRaw().reduce((s, r) => s + (r.cost * r.quantity), 0));
-  const marginPct = createMemo(() => calcMargin(parseInt(formPrice()) || 0, totalHPP()));
+  const marginPct = createMemo(() => calcMargin(Number.parseInt(formPrice()) || 0, totalHPP()));
 
   // ── Open helpers ──
   function openAdd() {
@@ -55,6 +55,7 @@ export default function ProductsManager() {
     setFormPrice("0");
     setFormCategoryId(categories()?.[0]?.name ?? "Kopi");
     setFormStock("0");
+    setFormImage("");
     setFormRaw([]);
     setFormVariants([]);
     setActiveTab("info");
@@ -68,8 +69,9 @@ export default function ProductsManager() {
     setFormPrice(p.price.toString());
     setFormCategoryId(p.category);
     setFormStock(p.stock.toString());
-    setFormRaw(JSON.parse(JSON.stringify(p.rawMaterials ?? [])));
-    setFormVariants(JSON.parse(JSON.stringify(p.variants ?? [])));
+    setFormImage(p.image || "");
+    setFormRaw(structuredClone(p.rawMaterials ?? []));
+    setFormVariants(structuredClone(p.variants ?? []));
     setActiveTab("info");
     setSheetOpen(true);
   }
@@ -80,7 +82,7 @@ export default function ProductsManager() {
     if (isSaving()) return;
     setIsSaving(true);
     try {
-      const price = parseInt(formPrice()) || 0;
+      const price = Number.parseInt(formPrice()) || 0;
       const cogs = totalHPP() > 0 ? totalHPP() : price * 0.45;
       const product: Product = {
         id: formId(),
@@ -88,8 +90,8 @@ export default function ProductsManager() {
         price,
         cogs,
         category: formCategoryId(),
-        stock: parseInt(formStock()) || 0,
-        image: DEFAULT_IMAGE,
+        stock: Number.parseInt(formStock()) || 0,
+        image: formImage(), 
         rawMaterials: formRaw().length > 0 ? formRaw() : undefined,
         variants: formVariants().length > 0 ? formVariants() : undefined,
       };
@@ -241,15 +243,13 @@ export default function ProductsManager() {
         >
           <For each={products()}>
             {(p) => (
-              <div
-                class="flex items-center gap-3 bg-card px-3.5 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
+                class="flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
                 onClick={() => openEdit(p)}
-                onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p); } }}
               >
                 <div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
-                  <img src={p.image} alt={p.name} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <ProductImage src={p.image} name={p.name} />
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="font-bold text-sm leading-tight truncate">{p.name}</h3>
@@ -271,12 +271,12 @@ export default function ProductsManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-                  onClick={(e) => deleteProduct(p.id, e)}
+                  class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors ml-auto"
+                  onClick={(e) => { e.stopPropagation(); deleteProduct(p.id, e); }}
                 >
                   <Trash2 size={13} />
                 </Button>
-              </div>
+              </button>
             )}
           </For>
         </Show>
@@ -371,6 +371,49 @@ export default function ProductsManager() {
                     </For>
                   </select>
                 </div>
+
+                {/* ── Foto Produk Upload ── */}
+                <div class="flex flex-col gap-2 mt-2">
+                  <label class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+                    Foto Produk
+                  </label>
+                  <div class="flex gap-4 items-center bg-card p-4 rounded-2xl border-2 border-border/60 shadow-sm transition-all hover:border-primary/30">
+                    <div class="w-20 h-20 rounded-xl overflow-hidden bg-muted flex items-center justify-center shrink-0 border border-border/40 shadow-inner">
+                      <ProductImage src={formImage()} name={formName() || "Produk"} />
+                    </div>
+                    <div class="flex flex-col gap-2 flex-1">
+                      <label class="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          class="hidden"
+                          onChange={(e) => {
+                            const file = e.currentTarget.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (prev) => setFormImage(prev.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        <div class="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                          <Upload size={14} stroke-width={3} /> Pilih Foto
+                        </div>
+                      </label>
+                      <Show when={formImage()}>
+                        <button
+                          type="button"
+                          onClick={() => setFormImage("")}
+                          class="h-9 px-4 rounded-xl bg-muted/50 text-muted-foreground font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-500 transition-all"
+                        >
+                          <Trash2 size={12} /> Hapus Foto
+                        </button>
+                      </Show>
+                    </div>
+                  </div>
+                  <p class="text-[10px] font-bold text-muted-foreground/60 px-1 italic">
+                    Gunakan foto persegi (1:1) untuk hasil terbaik.
+                  </p>
+                </div>
               </div>
             </Show>
 
@@ -414,17 +457,19 @@ export default function ProductsManager() {
                         />
                         <div class="grid grid-cols-3 gap-2">
                           <div class="flex flex-col gap-1 col-span-1">
-                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Qty</label>
+                            <label for={`qty-${i()}`} class="text-xs font-black text-muted-foreground uppercase tracking-widest">Qty</label>
                             <input
+                              id={`qty-${i()}`}
                               type="number"
                               class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               value={raw.quantity}
-                              onInput={e => updateRaw(i(), "quantity", parseFloat(e.currentTarget.value))}
+                              onInput={e => updateRaw(i(), "quantity", Number.parseFloat(e.currentTarget.value))}
                             />
                           </div>
                           <div class="flex flex-col gap-1">
-                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Unit</label>
+                            <label for={`unit-${i()}`} class="text-xs font-black text-muted-foreground uppercase tracking-widest">Unit</label>
                             <input
+                              id={`unit-${i()}`}
                               type="text"
                               class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               placeholder="gr, ml"
@@ -433,12 +478,13 @@ export default function ProductsManager() {
                             />
                           </div>
                           <div class="flex flex-col gap-1">
-                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Biaya (Rp)</label>
+                            <label for={`cost-${i()}`} class="text-xs font-black text-muted-foreground uppercase tracking-widest">Biaya (Rp)</label>
                             <input
+                              id={`cost-${i()}`}
                               type="number"
                               class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               value={raw.cost}
-                              onInput={e => updateRaw(i(), "cost", parseInt(e.currentTarget.value) || 0)}
+                              onInput={e => updateRaw(i(), "cost", Number.parseInt(e.currentTarget.value) || 0)}
                             />
                           </div>
                         </div>
@@ -525,8 +571,9 @@ export default function ProductsManager() {
 
                       <div class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1">
-                          <label class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tipe</label>
+                          <label for={`type-${gi()}`} class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tipe</label>
                           <select
+                            id={`type-${gi()}`}
                             class="h-10 rounded-xl border border-border/60 bg-muted/30 px-3 font-medium text-sm focus:outline-none"
                             value={vg.type}
                             onChange={e => updateGroup(gi(), "type", e.currentTarget.value as "SINGLE" | "MULTIPLE")}
@@ -536,8 +583,9 @@ export default function ProductsManager() {
                           </select>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Status</label>
+                          <label for={`req-${gi()}`} class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Status</label>
                           <select
+                            id={`req-${gi()}`}
                             class="h-10 rounded-xl border border-border/60 bg-muted/30 px-3 font-medium text-sm focus:outline-none"
                             value={vg.isRequired ? "1" : "0"}
                             onChange={e => updateGroup(gi(), "isRequired", e.currentTarget.value === "1")}
@@ -598,7 +646,7 @@ export default function ProductsManager() {
                     onClick={addGroup}
                     class="flex-1 h-11 rounded-xl border border-dashed border-border/60 text-muted-foreground text-xs font-bold hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <PlusCircle size={14} /> Buat Grup Baru
+                    <CirclePlus size={14} /> Buat Grup Baru
                   </button>
                 </div>
 

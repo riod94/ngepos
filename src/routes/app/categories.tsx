@@ -6,6 +6,13 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 
+const CAT_ICONS = [
+  "🏪", "📦", "☕", "🍵", "🥤", "🧋", "🍺", "🍷", "🍹", "🥛", 
+  "🍔", "🍟", "🍕", "🌭", "🥪", "🌮", "🌯", "🍳",
+  "🍜", "🍝", "🍱", "🍣", "🍛", "🍲", "🥘", "🍚",
+  "🍰", "🧁", "🍩", "🍪", "🍦", "🍞", "🥐", "🥓"
+];
+
 export default function Categories() {
   const [categories, { refetch }] = createResource(async () =>
     await db.categories.orderBy("orderIndex").toArray()
@@ -15,6 +22,7 @@ export default function Categories() {
   const [isEditing, setIsEditing] = createSignal(false);
   const [formId, setFormId] = createSignal("");
   const [formName, setFormName] = createSignal("");
+  const [formIcon, setFormIcon] = createSignal(CAT_ICONS[1]);
   const [isSaving, setIsSaving] = createSignal(false);
 
   // Confirm delete state
@@ -26,6 +34,7 @@ export default function Categories() {
     setIsEditing(false);
     setFormId(`cat_${Date.now()}`);
     setFormName("");
+    setFormIcon(CAT_ICONS[1]);
     setIsOpen(true);
   };
 
@@ -33,6 +42,7 @@ export default function Categories() {
     setIsEditing(true);
     setFormId(cat.id);
     setFormName(cat.name);
+    setFormIcon(cat.icon ?? "☕");
     setIsOpen(true);
   };
 
@@ -43,9 +53,9 @@ export default function Categories() {
     try {
       const count = await db.categories.count();
       if (isEditing()) {
-        await db.categories.update(formId(), { name: formName() });
+        await db.categories.update(formId(), { name: formName(), icon: formIcon() });
       } else {
-        await db.categories.add({ id: formId(), name: formName(), orderIndex: count });
+        await db.categories.add({ id: formId(), name: formName(), orderIndex: count, icon: formIcon() });
       }
       setIsOpen(false);
       refetch();
@@ -111,20 +121,46 @@ export default function Categories() {
               {isEditing() ? "Edit Kategori" : "Kategori Baru"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} class="flex flex-col gap-4 mt-4">
-            <div class="flex flex-col gap-1.5">
-              <label for="cat-name" class="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <form onSubmit={handleSave} class="flex flex-col gap-6 mt-4">
+            <div class="flex flex-col gap-2">
+              <label for="cat-name" class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
                 Nama Kategori
               </label>
               <input
                 id="cat-name"
                 required
                 type="text"
-                class="h-12 w-full rounded-xl border border-border/80 bg-muted/30 px-3.5 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+                class="h-14 w-full rounded-2xl border-2 border-border/80 bg-muted/20 px-5 font-black text-base focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                 value={formName()}
                 onInput={(e) => setFormName((e.target as HTMLInputElement).value)}
-                placeholder="Contoh: Minuman Panas"
+                placeholder="Misal: Minuman Dingin"
               />
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1 flex items-center justify-between">
+                Pilih Icon
+                <span class="text-primary font-black text-[14px] bg-primary/10 w-8 h-8 rounded-lg flex items-center justify-center">
+                  {formIcon()}
+                </span>
+              </label>
+              <div class="grid grid-cols-8 gap-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+                <For each={CAT_ICONS}>
+                  {(icon) => (
+                    <button
+                      type="button"
+                      onClick={() => setFormIcon(icon)}
+                      class={`aspect-square rounded-xl flex items-center justify-center text-xl transition-all border-2 ${
+                        formIcon() === icon 
+                        ? "bg-primary border-primary shadow-md shadow-primary/20 scale-110 z-10" 
+                        : "bg-muted/30 border-transparent hover:bg-muted/50"
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  )}
+                </For>
+              </div>
             </div>
             <Button
               type="submit"
@@ -186,8 +222,8 @@ export default function Categories() {
                 onClick={() => openEdit(cat)}
                 onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(cat); } }}
               >
-                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Tag size={16} stroke-width={2} />
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl overflow-hidden">
+                  {cat.icon ?? "📦"}
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="font-bold text-sm tracking-tight truncate">{cat.name}</h3>

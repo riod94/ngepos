@@ -5,6 +5,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { addToCart } from "~/stores/cart";
 import { CartFloatingButton } from "~/components/CartFloatingButton";
+import { ProductImage } from "~/components/ProductImage";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 
 const ProductSkeleton = () => (
@@ -123,21 +124,22 @@ export default function Home() {
       <div class="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
         <Button
             variant={activeCategory() === "Semua" ? "default" : "outline"}
-            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-sm uppercase tracking-wider transition-all ${
+            class={`whitespace-nowrap rounded-2xl px-6 h-12 font-black text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
               activeCategory() === "Semua" ? 'shadow-md shadow-primary/20' : 'bg-card hover:bg-muted/50 border-border/50 text-muted-foreground'
             }`}
             onClick={() => setActiveCategory("Semua")}
           >
-            Semua
+            <span class="text-lg">🏪</span> Semua
         </Button>
         {categories()?.filter(c => c.name.toLowerCase() !== "semua").map(category => (
           <Button
             variant={activeCategory() === category.name ? "default" : "outline"}
-            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-sm uppercase tracking-wider transition-all ${
+            class={`whitespace-nowrap rounded-2xl px-5 h-12 font-black text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
               activeCategory() === category.name ? 'shadow-md shadow-primary/20' : 'bg-card hover:bg-muted/50 border-border/50 text-muted-foreground'
             }`}
             onClick={() => setActiveCategory(category.name)}
           >
+            <span class="text-lg">{category.icon ?? "📦"}</span>
             {category.name}
           </Button>
         ))}
@@ -155,12 +157,7 @@ export default function Home() {
               onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleProductClick(product); } }}
             >
               <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                  loading="lazy"
-                />
+                <ProductImage src={product.image} name={product.name} />
                 <Show when={product.stock < 10}>
                   <div class="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm">
                     Sisa {product.stock}

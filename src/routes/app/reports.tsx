@@ -1,4 +1,4 @@
-import { createSignal, createResource, Show, For } from "solid-js";
+import { createSignal, createResource, Show } from "solid-js";
 import {
 	TrendingUp,
 	TrendingDown,
@@ -13,8 +13,9 @@ import {
 import { A } from "@solidjs/router";
 import { db } from "~/db/db";
 import { Button } from "~/components/ui/button";
+import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
 
-type Period = "HARI_INI" | "BULAN_INI" | "SEMUA";
+type Period = DateFilterType;
 
 interface ReportData {
 	omset: number; // Total pendapatan dari penjualan
@@ -28,59 +29,69 @@ interface ReportData {
 	expenseCount: number;
 }
 
-function periodStart(period: Period): number {
-	if (period === "HARI_INI") {
-		const d = new Date();
-		d.setHours(0, 0, 0, 0);
-		return d.getTime();
-	}
-	if (period === "BULAN_INI") {
-		const d = new Date();
-		d.setDate(1);
-		d.setHours(0, 0, 0, 0);
-		return d.getTime();
-	}
-	return 0;
-}
-
 export default function Reports() {
-	const [period, setPeriod] = createSignal<Period>("BULAN_INI");
+	const [period, setPeriod] = createSignal<DateFilterType>("HARI_INI");
+	const [customRange, setCustomRange] = createSignal<DateRange | undefined>(
+		undefined,
+	);
 
-	const [report] = createResource(period, async (p): Promise<ReportData> => {
-		const start = periodStart(p);
+	const [report] = createResource(
+		() => ({ p: period(), r: customRange() }),
+		async ({ p, r }): Promise<ReportData> => {
+			let start = 0;
+			let end = Date.now();
 
-		const [txList, expList] = await Promise.all([
-			db.transactions.where("timestamp").aboveOrEqual(start).toArray(),
-			db.expenses.where("timestamp").aboveOrEqual(start).toArray(),
-		]);
+			if (p === "HARI_INI") {
+				const d = new Date();
+				d.setHours(0, 0, 0, 0);
+				start = d.getTime();
+			} else if (p === "BULAN_INI") {
+				const d = new Date();
+				d.setDate(1);
+				d.setHours(0, 0, 0, 0);
+				start = d.getTime();
+			} else if (p === "CUSTOM" && r) {
+				start = r.from;
+				end = r.to;
+			}
 
-		const omset = txList.reduce((s, t) => s + t.totalAmount, 0);
-		const cogsTotal = txList.reduce((s, t) => s + (t.cogsTotal ?? 0), 0);
-		const grossProfit = omset - cogsTotal;
-		const expenses = expList.reduce((s, e) => s + e.amount, 0);
-		const netProfit = grossProfit - expenses;
-		// Modal kembali: HPP yang harus dialokasikan kembali untuk restok bahan
-		const modalReturn = cogsTotal;
-		const trueProfit = netProfit - modalReturn; // profit setelah alokasi modal
+			const [txList, expList] = await Promise.all([
+				db.transactions
+					.where("timestamp")
+					.between(start, end, true, true)
+					.toArray(),
+				db.expenses
+					.where("timestamp")
+					.between(start, end, true, true)
+					.toArray(),
+			]);
 
-		return {
-			omset,
-			cogsTotal,
-			grossProfit,
-			expenses,
-			netProfit,
-			modalReturn,
-			trueProfit,
-			txCount: txList.length,
-			expenseCount: expList.length,
-		};
-	});
+			const omset = txList.reduce((s, t) => s + t.totalAmount, 0);
+			const cogsTotal = txList.reduce((s, t) => s + (t.cogsTotal ?? 0), 0);
+			const grossProfit = omset - cogsTotal;
+			const expenses = expList.reduce((s, e) => s + e.amount, 0);
+			const netProfit = grossProfit - expenses;
+			const modalReturn = cogsTotal;
+			const trueProfit = netProfit - modalReturn;
 
-	const PERIODS: { key: Period; label: string }[] = [
-		{ key: "HARI_INI", label: "Hari Ini" },
-		{ key: "BULAN_INI", label: "Bulan Ini" },
-		{ key: "SEMUA", label: "Semua" },
-	];
+			return {
+				omset,
+				cogsTotal,
+				grossProfit,
+				expenses,
+				netProfit,
+				modalReturn,
+				trueProfit,
+				txCount: txList.length,
+				expenseCount: expList.length,
+			};
+		},
+	);
+
+	const handleFilterChange = (f: DateFilterType, r?: DateRange) => {
+		setPeriod(f);
+		setCustomRange(r);
+	};
 
 	const fmt = (n: number) => `Rp ${Math.abs(n).toLocaleString("id-ID")}`;
 	const isPositive = (n: number) => n >= 0;
@@ -89,16 +100,15 @@ export default function Reports() {
 		<div class="flex flex-col min-h-screen bg-muted/10 pb-24">
 			{/* Header */}
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-				<div class="flex items-center justify-between mb-4">
+				<div class="flex items-center justify-between mb-5">
 					<div>
 						<h1 class="font-black text-xl tracking-tight leading-none">
 							Laporan Keuangan
 						</h1>
 						<span class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1.5 block leading-none">
-							P&L Overview
+							P&L · {period().replace("_", " ")}
 						</span>
 					</div>
-					{/* Shortcut to expenses */}
 					<A
 						href="/app/expenses"
 						class="h-10 px-4 rounded-full bg-red-100 text-red-600 flex items-center gap-1.5 font-black text-xs uppercase tracking-widest hover:bg-red-200 transition-all active:scale-95 shadow-sm"
@@ -107,24 +117,11 @@ export default function Reports() {
 					</A>
 				</div>
 
-				{/* Period filter */}
-				<div class="flex gap-2">
-					<For each={PERIODS}>
-						{(p) => (
-							<button
-								type="button"
-								onClick={() => setPeriod(p.key)}
-								class={`flex-1 h-10 rounded-full text-sm font-black uppercase tracking-widest transition-all ${
-									period() === p.key
-										? "bg-primary text-primary-foreground shadow-md"
-										: "bg-muted/60 text-muted-foreground hover:bg-muted"
-								}`}
-							>
-								{p.label}
-							</button>
-						)}
-					</For>
-				</div>
+				<DateFilter
+					activeFilter={period()}
+					onFilterChange={handleFilterChange}
+					customRange={customRange()}
+				/>
 			</div>
 
 			<Show

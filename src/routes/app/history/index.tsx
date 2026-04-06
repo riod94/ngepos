@@ -1,26 +1,50 @@
 import { createSignal, createResource, Show } from "solid-js";
-import { History, Clock, RefreshCw, TriangleAlert } from "lucide-solid";
+import { History, Clock, TriangleAlert } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db } from "~/db/db";
-import { Button } from "~/components/ui/button";
+import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
 
 export default function HistoryPage() {
-	const [filter, setFilter] = createSignal<"HARI_INI" | "SEMUA">("HARI_INI");
-
-	const [transactions, { refetch }] = createResource(filter, async (f) => {
-		const query = db.transactions.orderBy("timestamp").reverse();
-		if (f === "HARI_INI") {
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			return await query
-				.filter((tx) => tx.timestamp >= today.getTime())
-				.toArray();
+	const [filter, setFilter] = createSignal<DateFilterType>("HARI_INI");
+	const [customRange, setCustomRange] = createSignal<DateRange | undefined>(
+		undefined,
+	);
+	
+	const [transactions] = createResource(
+		() => ({ f: filter(), r: customRange() }),
+		async ({ f, r }) => {
+			const query = db.transactions.orderBy("timestamp").reverse();
+			if (f === "HARI_INI") {
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				return await query
+					.filter((tx) => tx.timestamp >= today.getTime())
+					.toArray();
+			}
+			if (f === "BULAN_INI") {
+				const start = new Date();
+				start.setDate(1);
+				start.setHours(0, 0, 0, 0);
+				return await query
+					.filter((tx) => tx.timestamp >= start.getTime())
+					.toArray();
+			}
+			if (f === "CUSTOM" && r) {
+				return await query
+					.filter((tx) => tx.timestamp >= r.from && tx.timestamp <= r.to)
+					.toArray();
+			}
+			return await query.toArray();
 		}
-		return await query.toArray();
-	});
+	);
 
 	const totalSales = () =>
 		transactions()?.reduce((acc, tx) => acc + tx.totalAmount, 0) ?? 0;
+
+	const handleFilterChange = (f: DateFilterType, r?: DateRange) => {
+		setFilter(f);
+		setCustomRange(r);
+	};
 
 	return (
 		<div class="flex flex-col min-h-screen bg-background pb-24">
@@ -29,32 +53,15 @@ export default function HistoryPage() {
 					Riwayat
 				</h1>
 				<p class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1.5 leading-none">
-					Transaksi {filter() === "HARI_INI" ? "hari ini" : "semua waktu"}
+					Penjualan · {filter().replace("_", " ")}
 				</p>
 
-				<div class="flex items-center gap-2 mt-4">
-					<Button
-						onClick={() => setFilter("HARI_INI")}
-						variant={filter() === "HARI_INI" ? "default" : "outline"}
-						class={`flex-1 h-10 rounded-full font-black uppercase tracking-wider ${filter() === "HARI_INI" ? "shadow-md shadow-primary/20" : "bg-card border-border/60 text-muted-foreground"}`}
-					>
-						Hari Ini
-					</Button>
-					<Button
-						onClick={() => setFilter("SEMUA")}
-						variant={filter() === "SEMUA" ? "default" : "outline"}
-						class={`flex-1 h-10 rounded-full font-black uppercase tracking-wider ${filter() === "SEMUA" ? "shadow-md shadow-primary/20" : "bg-card border-border/60 text-muted-foreground"}`}
-					>
-						Semua
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						class="h-11 w-11 shrink-0 rounded-full bg-card border-border/60"
-						onClick={() => refetch()}
-					>
-						<RefreshCw size={18} class="text-muted-foreground" />
-					</Button>
+				<div class="mt-5">
+					<DateFilter
+						activeFilter={filter()}
+						onFilterChange={handleFilterChange}
+						customRange={customRange()}
+					/>
 				</div>
 			</div>
 

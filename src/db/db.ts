@@ -48,18 +48,21 @@ export interface Category {
   id: string;
   name: string;
   orderIndex: number;
+  icon?: string; // Emoji or Lucide icon name
 }
 
 export interface Transaction {
   id: string;
   receiptNumber: string;
-  totalAmount: number;
+  totalAmount: number;    // Final amount received (net)
+  originalAmount: number; // Subtotal/Cart Total before adjustments
   cogsTotal: number;       // HPP total for this transaction (computed at checkout)
   paymentMethod: string;
   timestamp: number;
   status: 'PENDING' | 'SYNCED';
   isBackdated: boolean;
   backdatedNote?: string;
+  isAdjustment?: boolean;
 }
 
 export interface TransactionItem {
@@ -139,12 +142,12 @@ export class PosDatabase extends Dexie {
     }).upgrade(tx => {
       // Backfill cogsTotal = 0 for existing transactions
       return tx.table('transactions').toCollection().modify(t => {
-        if (t.cogsTotal == null) t.cogsTotal = 0;
+        t.cogsTotal ??= 0;
       });
     });
 
-    // Version 4: add variantTemplates table
-    this.version(4).stores({
+    // Version 5: add originalAmount to transactions
+    this.version(5).stores({
       products: 'id, name, category, stock',
       categories: 'id, orderIndex',
       transactions: 'id, receiptNumber, timestamp, status',
@@ -152,6 +155,11 @@ export class PosDatabase extends Dexie {
       expenses: 'id, category, timestamp',
       settings: 'key',
       variantTemplates: 'id, name',
+    }).upgrade(tx => {
+      // Backfill originalAmount = totalAmount for existing transactions
+      return tx.table('transactions').toCollection().modify(t => {
+        t.originalAmount ??= t.totalAmount;
+      });
     });
   }
 }

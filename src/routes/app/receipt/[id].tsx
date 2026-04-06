@@ -1,7 +1,7 @@
 import { useParams, A } from "@solidjs/router";
 import { createResource, Show, For } from "solid-js";
-import { Coffee, ArrowLeft, Printer } from "lucide-solid";
-import { db } from "~/db/db";
+import { ArrowLeft, Printer, Store } from "lucide-solid";
+import { db, getSetting } from "~/db/db";
 import { Button } from "~/components/ui/button";
 
 export default function Receipt() {
@@ -13,6 +13,11 @@ export default function Receipt() {
     const items = await db.transactionItems.where("transactionId").equals(id).toArray();
     return { ...tx, items };
   });
+
+  const [outletName] = createResource(async () => (await getSetting("outlet_name")) ?? "Ngepos Coffee");
+  const [outletAddress] = createResource(async () => (await getSetting("outlet_address")) ?? "Jl. Kopi No. 123");
+  const [outletLogo] = createResource(async () => await getSetting("outlet_logo"));
+  const [cashierName] = createResource(async () => (await getSetting("user_name")) ?? "Admin");
 
   return (
     <div class="flex flex-col min-h-screen bg-muted/20 pb-24">
@@ -43,12 +48,16 @@ export default function Receipt() {
             <div class="h-2 w-full bg-gradient-to-r from-transparent via-border/40 to-transparent border-t border-dashed border-border/40" />
 
             <div class="p-6 flex flex-col items-center font-mono">
-              <div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-3 print:hidden">
-                <Coffee size={28} stroke-width={2.5} />
+              <div class="w-16 h-16 bg-muted/30 rounded-2xl flex items-center justify-center text-primary mb-3 overflow-hidden border border-border/40 shrink-0 print:hidden">
+                <Show when={outletLogo()} fallback={<Store size={32} stroke-width={2} class="text-muted-foreground/60" />}>
+                  <img src={outletLogo()!} alt="Logo" class="w-full h-full object-cover" />
+                </Show>
               </div>
-              <h2 class="font-black text-xl tracking-tight text-foreground uppercase font-sans">Kopi Santai</h2>
-              <p class="text-sm text-muted-foreground font-semibold mt-1 text-center font-sans">
-                Jl. Cikini Raya No. 42, Jakarta Pusat
+              <h2 class="font-black text-xl tracking-tight text-foreground uppercase font-sans text-center">
+                {outletName()}
+              </h2>
+              <p class="text-[11px] text-muted-foreground font-bold mt-1.5 text-center font-sans max-w-[200px] leading-relaxed">
+                {outletAddress()}
               </p>
 
               <div class="w-full border-b border-dashed border-border/60 my-5" />
@@ -59,7 +68,7 @@ export default function Receipt() {
               </div>
               <div class="w-full flex justify-between text-sm font-bold text-foreground/80 mb-5 font-sans">
                 <span>#{transaction()!.receiptNumber}</span>
-                <span>Kasir: Admin</span>
+                <span class="text-right">Kasir: {cashierName()}</span>
               </div>
 
               <div class="w-full flex flex-col gap-3">
@@ -82,8 +91,25 @@ export default function Receipt() {
 
               <div class="w-full border-b border-dashed border-border/60 my-5" />
 
-              <div class="w-full flex justify-between text-lg font-black font-sans">
-                <span>Total</span>
+              <Show when={transaction()?.originalAmount && transaction()!.originalAmount !== transaction()!.totalAmount}>
+                <div class="w-full flex flex-col gap-1 mb-5 leading-tight">
+                  <div class="w-full flex justify-between text-xs font-bold text-muted-foreground font-sans italic">
+                    <span>Subtotal Produk</span>
+                    <span>Rp {transaction()!.originalAmount.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div class="w-full flex justify-between text-xs font-bold font-sans italic">
+                    <span class={transaction()!.totalAmount > transaction()!.originalAmount ? "text-emerald-600" : "text-red-500"}>
+                      {transaction()!.totalAmount > transaction()!.originalAmount ? "Markup/Fee Platform" : "Potongan/Diskon"}
+                    </span>
+                    <span class={transaction()!.totalAmount > transaction()!.originalAmount ? "text-emerald-600" : "text-red-500"}>
+                      {transaction()!.totalAmount > transaction()!.originalAmount ? "+" : "-"} Rp {Math.abs(transaction()!.totalAmount - transaction()!.originalAmount).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+              </Show>
+
+              <div class="w-full flex justify-between text-lg font-black font-sans leading-none">
+                <span>Total Bayar</span>
                 <span>Rp {transaction()!.totalAmount.toLocaleString('id-ID')}</span>
               </div>
               <div class="w-full flex justify-between text-sm font-bold text-muted-foreground mt-3 font-sans">
