@@ -4,15 +4,26 @@ import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '~/data/mockProducts';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RawMaterialCost {
+  id: string;
   name: string;
-  cost: number;
+  cost: number; // Total cost (quantity * costPerUnit)
   unit: string;
   quantity: number;
+  costPerUnit?: number;
+}
+
+/** Pre-saved material in the library */
+export interface RawMaterialLibrary {
+  id: string;
+  name: string;
+  unit: string;
+  costPerUnit: number;
 }
 
 export interface VariantOption {
   name: string;
   priceModifier: number;
+  cogsModifier: number;
 }
 
 export interface VariantGroup {
@@ -20,6 +31,7 @@ export interface VariantGroup {
   name: string;
   isRequired: boolean;
   type: 'SINGLE' | 'MULTIPLE';
+  maxSelectable?: number;
   options: VariantOption[];
 }
 
@@ -29,6 +41,7 @@ export interface VariantTemplate {
   name: string;
   isRequired: boolean;
   type: 'SINGLE' | 'MULTIPLE';
+  maxSelectable?: number;
   options: VariantOption[];
 }
 
@@ -139,6 +152,7 @@ export class PosDatabase extends Dexie {
   variantTemplates!: EntityTable<VariantTemplate, 'id'>;
   staff!: EntityTable<Staff, 'id'>;
   roles!: EntityTable<Role, 'id'>;
+  rawMaterialLibrary!: EntityTable<RawMaterialLibrary, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -193,19 +207,6 @@ export class PosDatabase extends Dexie {
       staff: 'id, name, role, isActive',
     });
 
-    // Version 7: add roles table; update staff to link via roleId
-    this.version(7).stores({
-      products: 'id, name, category, stock',
-      categories: 'id, orderIndex',
-      transactions: 'id, receiptNumber, timestamp, status',
-      transactionItems: 'id, transactionId, productId',
-      expenses: 'id, category, timestamp',
-      settings: 'key',
-      variantTemplates: 'id, name',
-      staff: 'id, name, roleId, isActive',
-      roles: 'id, name',
-    });
-
     // Version 8: add email to staff
     this.version(8).stores({
       products: 'id, name, category, stock',
@@ -218,6 +219,57 @@ export class PosDatabase extends Dexie {
       staff: 'id, name, roleId, email, isActive',
       roles: 'id, name',
     });
+
+    // Version 9: internal cogsModifier added to variants objects (not indexed separately)
+    this.version(9).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
+    });
+
+    // Version 10: adding maxSelectable to variants objects (not indexed separately)
+    this.version(10).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
+    });
+
+    // Version 11: add rawMaterialLibrary table
+    this.version(11).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
+      rawMaterialLibrary: 'id, name',
+    });
+
+    this.products = this.table('products');
+    this.categories = this.table('categories');
+    this.transactions = this.table('transactions');
+    this.transactionItems = this.table('transactionItems');
+    this.expenses = this.table('expenses');
+    this.settings = this.table('settings');
+    this.variantTemplates = this.table('variantTemplates');
+    this.staff = this.table('staff');
+    this.roles = this.table('roles');
+    this.rawMaterialLibrary = this.table('rawMaterialLibrary');
   }
 }
 
@@ -253,7 +305,7 @@ export async function seedDatabase() {
 
       const products = MOCK_PRODUCTS.map(p => ({
         ...p,
-        cogs: p.price! * 0.45,
+        cogs: 0,
       })) as Product[];
       await db.products.bulkAdd(products);
       console.log('Database seeded.');

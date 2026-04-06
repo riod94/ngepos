@@ -60,17 +60,35 @@ export default function Home() {
     }
   };
 
-  const toggleVariant = (groupName: string, option: VariantOption, isSingle: boolean) => {
+  const toggleVariant = (group: any, option: VariantOption) => {
+    const groupName = group.name;
+    const isSingle = group.type === 'SINGLE';
+    const isRequired = group.isRequired;
+    const max = group.maxSelectable || 0;
+
     setSelectedVariants(prev => {
+      const isSelected = prev.some(v => v.groupName === groupName && v.option.name === option.name);
+
       if (isSingle) {
-         const filtered = prev.filter(v => v.groupName !== groupName);
-         return [...filtered, { groupName, option }];
+        if (isSelected) {
+          // If required, cannot unselect (must have at least one)
+          if (isRequired) return prev;
+          // If optional, unselect
+          return prev.filter(v => v.groupName !== groupName);
+        }
+        // Replace current selection in group
+        return [...prev.filter(v => v.groupName !== groupName), { groupName, option }];
       } else {
-         const exists = prev.find(v => v.groupName === groupName && v.option.name === option.name);
-         if (exists) {
-           return prev.filter(v => !(v.groupName === groupName && v.option.name === option.name));
-         }
-         return [...prev, { groupName, option }];
+        // MULTIPLE
+        if (isSelected) {
+          return prev.filter(v => !(v.groupName === groupName && v.option.name === option.name));
+        }
+        
+        // Check maxSelectable
+        const count = prev.filter(v => v.groupName === groupName).length;
+        if (max > 0 && count >= max) return prev;
+
+        return [...prev, { groupName, option }];
       }
     });
   };
@@ -86,6 +104,16 @@ export default function Home() {
   const handleConfirmModifier = () => {
     const prod = selectedProduct();
     if (!prod) return;
+
+    // Validate REQUIRED groups
+    const missing = prod.variants?.filter(g => 
+      g.isRequired && !selectedVariants().some(sv => sv.groupName === g.name)
+    );
+
+    if (missing && missing.length > 0) {
+      alert(`Mohon pilih varian: ${missing.map(m => m.name).join(', ')}`);
+      return;
+    }
     
     addToCart(prod, selectedVariants().map(v => ({ 
       groupName: v.groupName, 
@@ -193,17 +221,29 @@ export default function Home() {
             <For each={selectedProduct()?.variants}>
               {(group) => (
                 <div class="flex flex-col">
-                  <div class="flex items-center justify-between mb-3 bg-muted/40 p-3 rounded-2xl border border-border/50">
-                    <div>
-                      <h4 class="font-black text-base uppercase tracking-wide">{group.name}</h4>
-                      <p class="text-xs font-bold text-muted-foreground mt-0.5">
-                        {group.type === 'SINGLE' ? 'Pilih satu opsi' : 'Bisa pilih lebih dari satu'}
-                      </p>
+                   <div class={`flex items-center justify-between mb-3 p-3 rounded-2xl border transition-all ${
+                      group.isRequired && !selectedVariants().some(sv => sv.groupName === group.name)
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-muted/40 border-border/50'
+                    }`}>
+                      <div>
+                        <h4 class="font-black text-sm uppercase tracking-widest">{group.name}</h4>
+                        <p class="text-[10px] font-bold text-muted-foreground mt-0.5 uppercase tracking-wide">
+                          {group.type === 'SINGLE' 
+                            ? 'Pilih satu opsi' 
+                            : group.maxSelectable 
+                              ? `Pilih maksimal ${group.maxSelectable}` 
+                              : 'Bisa pilih lebih dari satu'}
+                        </p>
+                      </div>
+                      <Show when={group.isRequired}>
+                        <span class={`text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded-md ${
+                          !selectedVariants().some(sv => sv.groupName === group.name)
+                            ? 'bg-red-500 text-white'
+                            : 'bg-primary/10 text-primary'
+                        }`}>Wajib</span>
+                      </Show>
                     </div>
-                    <Show when={group.isRequired}>
-                      <span class="bg-primary/10 text-primary text-xs uppercase font-black tracking-widest px-2 py-1 rounded-md">Wajib</span>
-                    </Show>
-                  </div>
                   
                   <div class="flex flex-col gap-2">
                     <For each={group.options}>
@@ -212,7 +252,7 @@ export default function Home() {
                         return (
                           <button 
                             type="button"
-                            onClick={() => toggleVariant(group.name, option, group.type === 'SINGLE')}
+                            onClick={() => toggleVariant(group, option)}
                             class={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer w-full text-left ${
                               isSelected() 
                                 ? 'border-primary bg-primary/5 shadow-[0_4px_15px_rgba(230,90,20,0.05)]' 

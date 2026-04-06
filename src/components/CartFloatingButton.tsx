@@ -45,8 +45,24 @@ async function computeCogsTotal(): Promise<number> {
 	let total = 0;
 	for (const item of cart) {
 		const product = await db.products.get(item.id);
-		const cogs = product?.cogs ?? item.price * 0.45;
-		total += cogs * item.quantity;
+		let unitCogs = product?.cogs ?? item.price * 0.45;
+
+		// Add variant modifiers
+		if (item.selectedVariants) {
+			for (const sv of item.selectedVariants) {
+				// We need to find the modifier value. 
+				// Since we store only optionName in cart, we rely on priceModifier if cogsModifier not present,
+				// BUT now we have DB with cogsModifier.
+				// For now, let's assume we can add cogsModifier to the selectedVariants object in cart store too later,
+				// OR we fetch from product variants.
+				// Let's check Product structure again. 
+				const group = product?.variants?.find(g => g.name === sv.groupName);
+				const option = group?.options.find(o => o.name === sv.optionName);
+				unitCogs += option?.cogsModifier ?? 0;
+			}
+		}
+
+		total += unitCogs * item.quantity;
 	}
 	return total;
 }
@@ -116,16 +132,30 @@ export function CartFloatingButton() {
 				isAdjustment: finalAmount !== getCartTotal(),
 			} as any);
 
-			const items = cart.map((item, idx) => ({
-				id: `ti_${transactionId}_${idx}`,
-				transactionId,
-				productId: item.id,
-				productName: item.name,
-				quantity: item.quantity,
-				priceAtTime: item.price,
-				cogsAtTime: item.price * 0.45, // fallback if product not found
-				selectedVariants: item.selectedVariants,
-			}));
+			const items = [];
+			for (const [idx, item] of cart.entries()) {
+				const product = await db.products.get(item.id);
+				let unitCogs = product?.cogs ?? item.price * 0.45;
+
+				if (item.selectedVariants) {
+					for (const sv of item.selectedVariants) {
+						const group = product?.variants?.find((g) => g.name === sv.groupName);
+						const option = group?.options.find((o) => o.name === sv.optionName);
+						unitCogs += option?.cogsModifier ?? 0;
+					}
+				}
+
+				items.push({
+					id: `ti_${transactionId}_${idx}`,
+					transactionId,
+					productId: item.id,
+					productName: item.name,
+					quantity: item.quantity,
+					priceAtTime: item.price,
+					cogsAtTime: unitCogs,
+					selectedVariants: item.selectedVariants,
+				});
+			}
 			await db.transactionItems.bulkAdd(items);
 
 			// Update stock
