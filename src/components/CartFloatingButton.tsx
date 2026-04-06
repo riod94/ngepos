@@ -502,18 +502,19 @@ export function CartFloatingButton() {
 							</div>
 
 							<div class="flex flex-col gap-2">
-								<label for="adj-amount" class="text-xs font-black text-primary uppercase tracking-widest px-1">Total Tunai/Net Diterima</label>
-								<div class="relative">
-									<div class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-lg">Rp</div>
-									<input 
-										id="adj-amount"
-										type="number"
-										autofocus
-										class="w-full h-16 rounded-2xl border-2 border-primary/30 bg-card pl-12 pr-4 font-black text-2xl tracking-tighter focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-										value={adjustedAmount()}
-										onInput={e => setAdjustedAmount(Number.parseInt(e.currentTarget.value) || 0)}
-									/>
-								</div>
+								<label class="flex flex-col gap-2">
+									<span class="text-xs font-black text-primary uppercase tracking-widest px-1">Total Tunai/Net Diterima</span>
+									<div class="relative">
+										<div class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-lg">Rp</div>
+										<input 
+											type="number"
+											autofocus
+											class="w-full h-16 rounded-2xl border-2 border-primary/30 bg-card pl-12 pr-4 font-black text-2xl tracking-tighter focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+											value={adjustedAmount()}
+											onInput={e => setAdjustedAmount(Number.parseInt(e.currentTarget.value) || 0)}
+										/>
+									</div>
+								</label>
 							</div>
 
 							<div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">

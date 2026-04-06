@@ -104,6 +104,23 @@ export interface Expense {
   isBackdated: boolean;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  roleId: string;
+  pin: string;
+  email?: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt: number;
+}
+
 /** Simple key-value store for app settings (QRIS image, etc.) */
 export interface AppSetting {
   key: string;
@@ -120,6 +137,8 @@ export class PosDatabase extends Dexie {
   expenses!: EntityTable<Expense, 'id'>;
   settings!: EntityTable<AppSetting, 'key'>;
   variantTemplates!: EntityTable<VariantTemplate, 'id'>;
+  staff!: EntityTable<Staff, 'id'>;
+  roles!: EntityTable<Role, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -160,6 +179,44 @@ export class PosDatabase extends Dexie {
       return tx.table('transactions').toCollection().modify(t => {
         t.originalAmount ??= t.totalAmount;
       });
+    });
+
+    // Version 6: add staff table
+    this.version(6).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, role, isActive',
+    });
+
+    // Version 7: add roles table; update staff to link via roleId
+    this.version(7).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, isActive',
+      roles: 'id, name',
+    });
+
+    // Version 8: add email to staff
+    this.version(8).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
     });
   }
 }

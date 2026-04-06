@@ -7,6 +7,7 @@ import {
 	Tags,
 	QrCode,
 	Store,
+	ShieldCheck,
 } from "lucide-solid";
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -53,17 +54,23 @@ const MENU_ITEMS: MenuItem[] = [
 		iconBg: "bg-emerald-100",
 		iconColor: "text-emerald-600",
 		title: "Metode Pembayaran",
-		subtitle: "QRIS, GoFood, GrabFood & ShopeeFood",
+		subtitle: "QRIS & Pesanan Online",
 	},
 	{
-		href: "#",
+		href: "/app/settings/staff",
 		icon: Users,
-		iconBg: "bg-orange-100",
-		iconColor: "text-orange-600",
-		title: "Manajemen Staf",
-		subtitle: "Kelola akses dan peran kasir",
-		disabled: true,
-		badge: "Segera Hadir",
+		iconBg: "bg-indigo-100",
+		iconColor: "text-indigo-600",
+		title: "Manajemen Staff",
+		subtitle: "Kelola data & jabatan karyawan",
+	},
+	{
+		href: "/app/settings/roles",
+		icon: ShieldCheck,
+		iconBg: "bg-violet-100",
+		iconColor: "text-violet-600",
+		title: "Hak Akses & Peran",
+		subtitle: "Atur izin & peran staff dinamis",
 	},
 	{
 		href: "#",
