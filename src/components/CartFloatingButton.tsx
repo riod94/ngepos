@@ -136,10 +136,15 @@ export function CartFloatingButton() {
 	async function handleCash() {
 		const id = await submitTransaction("CASH");
 		if (!id) return;
-		clearCart();
-		setPayOpen(false);
-		setCartSheetOpen(false);
-		setTimeout(() => navigate(`/app/receipt/${id}`), 200);
+		// Step 1: show success state
+		setPayStep("done_ok");
+		// Step 2: close dialog + cart after brief success animation
+		setTimeout(() => {
+			clearCart();
+			setPayOpen(false);
+			setCartSheetOpen(false);
+			setTimeout(() => navigate(`/app/receipt/${id}`), 100);
+		}, 600);
 	}
 
 	async function handleQrConfirm(success: boolean) {
@@ -149,10 +154,15 @@ export function CartFloatingButton() {
 		}
 		const id = await submitTransaction("QRIS");
 		if (!id) return;
-		clearCart();
-		setPayOpen(false);
-		setCartSheetOpen(false);
-		setTimeout(() => navigate(`/app/receipt/${id}`), 200);
+		// Step 1: show success state
+		setPayStep("done_ok");
+		// Step 2: close dialog + cart after brief success animation
+		setTimeout(() => {
+			clearCart();
+			setPayOpen(false);
+			setCartSheetOpen(false);
+			setTimeout(() => navigate(`/app/receipt/${id}`), 100);
+		}, 600);
 	}
 
 	function openPay() {
@@ -169,7 +179,7 @@ export function CartFloatingButton() {
 			{/* Floating Cart Trigger */}
 			<div class="fixed bottom-19 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg px-4">
 				<Sheet open={cartSheetOpen()} onOpenChange={setCartSheetOpen}>
-					<SheetTrigger class="w-full h-15 rounded-2xl flex items-center justify-between px-5 py-3 bg-primary text-primary-foreground active:scale-[0.98] transition-all border-none shadow-[0_10px_30px_rgba(210,80,20,0.35)] relative overflow-hidden group">
+					<SheetTrigger class="w-full h-15 rounded-2xl flex items-center justify-between px-5 py-3 bg-primary text-primary-foreground active:scale-[0.98] transition-all border-none shadow-[0_10px_30px_rgba(67,56,202,0.35)] relative overflow-hidden group">
 						<div class="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 skew-x-12 pointer-events-none" />
 						<div class="flex items-center gap-3">
 							<div class="bg-primary-foreground text-primary rounded-xl w-7 h-7 flex items-center justify-center font-black text-sm shadow-sm shrink-0">
@@ -346,9 +356,10 @@ export function CartFloatingButton() {
 			<Dialog
 				open={payOpen()}
 				onOpenChange={(v) => {
-					if (!processing()) {
+					// Block closing while processing or navigating away
+					if (!processing() && payStep() !== "done_ok") {
 						setPayOpen(v);
-						resetPay();
+						if (!v) resetPay();
 					}
 				}}
 			>
@@ -472,6 +483,23 @@ export function CartFloatingButton() {
 							>
 								Ubah Metode Pembayaran
 							</button>
+						</div>
+					</Show>
+
+					{/* Step: Success — brief animation before navigate */}
+					<Show when={payStep() === "done_ok"}>
+						<div class="flex flex-col items-center gap-4 py-6">
+							<div class="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center animate-[scaleIn_0.3s_ease-out]">
+								<CircleCheck size={44} class="text-emerald-500" />
+							</div>
+							<div class="text-center">
+								<p class="font-bold text-xl text-emerald-600">
+									Pembayaran Berhasil!
+								</p>
+								<p class="text-sm text-muted-foreground mt-1">
+									Mengarahkan ke struk...
+								</p>
+							</div>
 						</div>
 					</Show>
 

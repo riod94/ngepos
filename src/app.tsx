@@ -4,6 +4,27 @@ import { Suspense, onMount } from "solid-js";
 import { seedDatabase } from "~/db/db";
 import "./app.css";
 
+const LoadingScreen = () => (
+  <div class="min-h-screen w-full bg-background flex flex-col items-center justify-center gap-6 relative overflow-hidden">
+    {/* Subtle background glow */}
+    <div class="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-secondary/5 pointer-events-none" />
+
+    {/* Logo wordmark */}
+    <img
+      src="/logo_wordmark.png"
+      alt="NgePos"
+      class="h-12 object-contain relative z-10 animate-[fadeIn_0.4s_ease-out]"
+    />
+
+    {/* Loading indicator */}
+    <div class="flex items-center gap-2 relative z-10">
+      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+    </div>
+  </div>
+);
+
 export default function App() {
   onMount(() => {
     seedDatabase().catch(console.error);
@@ -12,12 +33,7 @@ export default function App() {
   return (
     <Router
       root={props => (
-        <Suspense fallback={
-          <div class="min-h-screen w-full bg-[#fdfaf7] relative overflow-hidden flex items-center justify-center">
-            <div class="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-orange-400/5 opacity-50 blur-3xl"></div>
-            <div class="w-12 h-12 border-4 border-muted/30 border-t-primary rounded-full animate-spin relative z-10 shadow-[0_0_20px_rgba(230,90,20,0.2)]"></div>
-          </div>
-        }>
+        <Suspense fallback={<LoadingScreen />}>
           {props.children}
         </Suspense>
       )}

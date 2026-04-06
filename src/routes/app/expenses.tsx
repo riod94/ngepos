@@ -1,9 +1,10 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { Plus, Trash2, Pencil, Receipt } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { Plus, Trash2, Receipt } from "lucide-solid";
+
 import { db, type Expense, type ExpenseCategory, EXPENSE_CATEGORY_LABELS } from "~/db/db";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { ConfirmDialog } from "~/components/ConfirmDialog";
 
 const CATEGORY_COLORS: Record<ExpenseCategory, { bg: string; text: string }> = {
   bahan_baku: { bg: "bg-orange-100", text: "text-orange-700" },
@@ -42,6 +43,11 @@ export default function Expenses() {
   const [formDate, setFormDate] = createSignal(new Date().toISOString().split("T")[0]);
   const [formIsBackdated, setFormIsBackdated] = createSignal(false);
 
+  // Confirm delete + validation alert state
+  const [deleteTargetId, setDeleteTargetId] = createSignal<string | null>(null);
+  const [isDeleting, setIsDeleting] = createSignal(false);
+  const [validationError, setValidationError] = createSignal<string | null>(null);
+
   function openAdd() {
     setIsEditing(false);
     setFormId(`exp_${Date.now()}`);
@@ -70,7 +76,7 @@ export default function Expenses() {
     setIsSaving(true);
     try {
       const amount = parseInt(formAmount().replaceAll(/\D/g, ""), 10) || 0;
-      if (amount <= 0) throw new Error("Jumlah tidak valid");
+      if (amount <= 0) { setValidationError("Jumlah pengeluaran harus diisi dengan benar."); return; }
       const date = new Date(`${formDate()}T12:00:00`);
       const expense: Expense = {
         id: formId(),
@@ -85,7 +91,7 @@ export default function Expenses() {
       setSheetOpen(false);
       refetch();
     } catch {
-      alert("Jumlah pengeluaran harus diisi dengan benar.");
+      setValidationError("Jumlah pengeluaran harus diisi dengan benar.");
     } finally {
       setIsSaving(false);
     }
@@ -93,9 +99,20 @@ export default function Expenses() {
 
   async function handleDelete(id: string, ev: Event) {
     ev.stopPropagation();
-    if (!confirm("Hapus pengeluaran ini?")) return;
-    await db.expenses.delete(id);
-    refetch();
+    setDeleteTargetId(id);
+  }
+
+  async function confirmDelete() {
+    const id = deleteTargetId();
+    if (!id) return;
+    setIsDeleting(true);
+    try {
+      await db.expenses.delete(id);
+      refetch();
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
+    }
   }
 
   const totalExpenses = () => expenses()?.reduce((s, e) => s + e.amount, 0) ?? 0;
@@ -108,6 +125,30 @@ export default function Expenses() {
 
   return (
     <div class="flex flex-col min-h-screen bg-muted/10 pb-24">
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={deleteTargetId() !== null}
+        onOpenChange={(v) => !v && setDeleteTargetId(null)}
+        title="Hapus Pengeluaran?"
+        description="Data pengeluaran ini akan dihapus secara permanen."
+        confirmLabel="Ya, Hapus"
+        variant="danger"
+        loading={isDeleting()}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Validation Alert */}
+      <ConfirmDialog
+        open={validationError() !== null}
+        onOpenChange={(v) => !v && setValidationError(null)}
+        title="Perhatian"
+        description={validationError() ?? ""}
+        confirmLabel="OK"
+        cancelLabel=""
+        variant="warning"
+        onConfirm={() => setValidationError(null)}
+      />
+
       {/* Header */}
       <div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center justify-between mb-4">
@@ -172,7 +213,10 @@ export default function Expenses() {
               return (
                 <div
                   class="flex items-center gap-3 bg-card p-4 rounded-2xl border border-border/70 shadow-sm cursor-pointer active:scale-[0.98] transition-all hover:border-primary/30 group"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openEdit(expense)}
+                  onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(expense); } }}
                 >
                   <div class={`w-11 h-11 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center shrink-0 font-black text-sm`}>
                     {EXPENSE_CATEGORY_LABELS[expense.category].substring(0, 2).toUpperCase()}
@@ -285,7 +329,7 @@ export default function Expenses() {
             <Button
               type="submit"
               disabled={isSaving()}
-              class="w-full h-14 rounded-2xl font-black text-base bg-red-500 hover:bg-red-600 text-white shadow-lg border-none flex items-center justify-center gap-2 mb-4"
+              class="w-full h-14 rounded-2xl font-black text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg border-none flex items-center justify-center gap-2 mb-4"
             >
               {isSaving() ? (
                 <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

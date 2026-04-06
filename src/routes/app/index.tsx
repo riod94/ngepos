@@ -149,7 +149,10 @@ export default function Home() {
           {filteredProducts().map(product => (
             <Card 
               class="overflow-hidden border-border/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-2xl active:scale-[0.96] transition-transform duration-200 cursor-pointer pointer-events-auto group bg-card flex flex-col" 
+              role="button"
+              tabIndex={0}
               onClick={() => handleProductClick(product)}
+              onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleProductClick(product); } }}
             >
               <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
                 <img 
@@ -210,9 +213,10 @@ export default function Home() {
                       {(option) => {
                         const isSelected = () => isVariantSelected(group.name, option.name);
                         return (
-                          <div 
+                          <button 
+                            type="button"
                             onClick={() => toggleVariant(group.name, option, group.type === 'SINGLE')}
-                            class={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                            class={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer w-full text-left ${
                               isSelected() 
                                 ? 'border-primary bg-primary/5 shadow-[0_4px_15px_rgba(230,90,20,0.05)]' 
                                 : 'border-border/60 bg-card hover:bg-muted/30'
@@ -233,7 +237,7 @@ export default function Home() {
                                 + Rp {option.priceModifier.toLocaleString('id-ID')}
                               </span>
                             </Show>
-                          </div>
+                          </button>
                         );
                       }}
                     </For>

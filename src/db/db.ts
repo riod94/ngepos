@@ -23,6 +23,15 @@ export interface VariantGroup {
   options: VariantOption[];
 }
 
+/** Shared variant template that can be reused across products */
+export interface VariantTemplate {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  type: 'SINGLE' | 'MULTIPLE';
+  options: VariantOption[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -107,6 +116,7 @@ export class PosDatabase extends Dexie {
   transactionItems!: EntityTable<TransactionItem, 'id'>;
   expenses!: EntityTable<Expense, 'id'>;
   settings!: EntityTable<AppSetting, 'key'>;
+  variantTemplates!: EntityTable<VariantTemplate, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -131,6 +141,17 @@ export class PosDatabase extends Dexie {
       return tx.table('transactions').toCollection().modify(t => {
         if (t.cogsTotal == null) t.cogsTotal = 0;
       });
+    });
+
+    // Version 4: add variantTemplates table
+    this.version(4).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
     });
   }
 }

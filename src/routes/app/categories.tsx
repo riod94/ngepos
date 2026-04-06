@@ -1,9 +1,10 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { ArrowLeft, Plus, Pencil, Trash2, Tag } from "lucide-solid";
+import { ArrowLeft, Plus, Trash2, Tag } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db, type Category } from "~/db/db";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { ConfirmDialog } from "~/components/ConfirmDialog";
 
 export default function Categories() {
   const [categories, { refetch }] = createResource(async () =>
@@ -15,6 +16,11 @@ export default function Categories() {
   const [formId, setFormId] = createSignal("");
   const [formName, setFormName] = createSignal("");
   const [isSaving, setIsSaving] = createSignal(false);
+
+  // Confirm delete state
+  const [deleteTarget, setDeleteTarget] = createSignal<Category | null>(null);
+  const [deleteError, setDeleteError] = createSignal<string | null>(null);
+  const [isDeleting, setIsDeleting] = createSignal(false);
 
   const openAdd = () => {
     setIsEditing(false);
@@ -48,19 +54,26 @@ export default function Categories() {
     }
   };
 
-  const handleDelete = async (id: string, e: Event) => {
+  const requestDelete = async (cat: Category, e: Event) => {
     e.stopPropagation();
-    const productsInCat = await db.products.where("category").equals(
-      (await db.categories.get(id))?.name ?? ""
-    ).count();
-
+    const productsInCat = await db.products.where("category").equals(cat.name).count();
     if (productsInCat > 0) {
-      alert(`Tidak bisa menghapus — ada ${productsInCat} produk di kategori ini. Pindahkan produk terlebih dahulu.`);
+      setDeleteError(`Tidak bisa menghapus — ada ${productsInCat} produk di kategori ini. Pindahkan produk terlebih dahulu.`);
       return;
     }
-    if (confirm("Hapus kategori ini?")) {
-      await db.categories.delete(id);
+    setDeleteTarget(cat);
+  };
+
+  const handleDelete = async () => {
+    const cat = deleteTarget();
+    if (!cat) return;
+    setIsDeleting(true);
+    try {
+      await db.categories.delete(cat.id);
       refetch();
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -69,40 +82,45 @@ export default function Categories() {
       {/* Header */}
       <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
-          <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+          <A
+            href="/app/settings"
+            class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
+          >
             <ArrowLeft size={18} />
           </A>
           <div>
-            <h1 class="font-black text-xl tracking-tight leading-none">Kategori</h1>
-            <span class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1 block">Manajemen Kategori Produk</span>
+            <h1 class="font-bold text-lg tracking-tight leading-none">Kategori</h1>
+            <span class="text-xs font-semibold text-muted-foreground mt-0.5 block">
+              Manajemen Kategori Produk
+            </span>
           </div>
         </div>
         <Button
           onClick={openAdd}
-          class="h-11 px-5 rounded-full font-black text-sm uppercase tracking-wider shadow-md active:scale-95 transition-all"
+          class="h-10 px-4 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-all"
         >
-          <Plus size={16} class="mr-1.5" stroke-width={3} /> Tambah
+          <Plus size={15} class="mr-1.5" stroke-width={2.5} /> Tambah
         </Button>
       </div>
 
-      {/* Dialog */}
+      {/* Edit/Add Dialog */}
       <Dialog open={isOpen()} onOpenChange={setIsOpen}>
         <DialogContent class="w-[90vw] max-w-sm rounded-3xl p-6">
           <DialogHeader>
-            <DialogTitle class="text-xl font-black tracking-tight">
+            <DialogTitle class="text-lg font-bold tracking-tight">
               {isEditing() ? "Edit Kategori" : "Kategori Baru"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} class="flex flex-col gap-4 mt-4">
-            <div class="flex flex-col gap-2">
-              <label for="cat-name" class="text-sm font-black uppercase tracking-widest text-muted-foreground">
+            <div class="flex flex-col gap-1.5">
+              <label for="cat-name" class="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Nama Kategori
               </label>
               <input
                 id="cat-name"
                 required
                 type="text"
-                class="h-14 w-full rounded-xl border-2 border-border/80 bg-card px-4 font-bold text-base focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                class="h-12 w-full rounded-xl border border-border/80 bg-muted/30 px-3.5 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
                 value={formName()}
                 onInput={(e) => setFormName((e.target as HTMLInputElement).value)}
                 placeholder="Contoh: Minuman Panas"
@@ -111,60 +129,78 @@ export default function Categories() {
             <Button
               type="submit"
               disabled={isSaving()}
-              class="w-full h-14 rounded-2xl font-black text-base mt-2"
+              class="w-full h-12 rounded-xl font-bold text-sm mt-1"
             >
-              {isSaving() ? "Menyimpan..." : isEditing() ? "Perbarui Kategori" : "Simpan Kategori"}
+              {isSaving() ? "Menyimpan..." : isEditing() ? "Perbarui" : "Simpan Kategori"}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={deleteTarget() !== null}
+        onOpenChange={(v) => !v && setDeleteTarget(null)}
+        title="Hapus Kategori?"
+        description={`Kategori "${deleteTarget()?.name}" akan dihapus permanen.`}
+        confirmLabel="Ya, Hapus"
+        variant="danger"
+        loading={isDeleting()}
+        onConfirm={handleDelete}
+      />
+
+      {/* Error Dialog — kategori masih punya produk */}
+      <ConfirmDialog
+        open={deleteError() !== null}
+        onOpenChange={(v) => !v && setDeleteError(null)}
+        title="Tidak Bisa Dihapus"
+        description={deleteError() ?? ""}
+        confirmLabel="OK"
+        cancelLabel=""
+        variant="warning"
+        onConfirm={() => setDeleteError(null)}
+      />
+
       {/* List */}
-      <div class="p-5 flex flex-col gap-3">
+      <div class="p-4 flex flex-col gap-2.5">
         <Show
           when={categories() && categories()!.length > 0}
           fallback={
             <div class="flex flex-col items-center py-20 text-muted-foreground gap-4">
-              <div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center border border-border/50">
-                <Tag size={24} class="opacity-40" />
+              <div class="w-14 h-14 rounded-full bg-muted flex items-center justify-center border border-border/50">
+                <Tag size={22} class="opacity-40" />
               </div>
               <div class="text-center">
                 <p class="font-bold text-sm">Belum ada kategori</p>
-                <p class="text-sm mt-1">Tambahkan kategori untuk mengorganisir produk.</p>
+                <p class="text-xs mt-1 text-muted-foreground">Tambahkan kategori untuk mengorganisir produk.</p>
               </div>
             </div>
           }
         >
           <For each={categories()}>
             {(cat) => (
-              <div class="flex items-center gap-4 bg-card p-4 rounded-2xl border border-border/70 shadow-sm group hover:border-primary/30 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center shadow-inner shrink-0">
-                  <Tag size={20} stroke-width={2} />
+              <div
+                class="flex items-center gap-3 bg-card px-4 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
+                role="button"
+                tabIndex={0}
+                onClick={() => openEdit(cat)}
+                onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(cat); } }}
+              >
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Tag size={16} stroke-width={2} />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-black text-base tracking-tight">{cat.name}</h3>
-                  <p class="text-sm font-semibold text-muted-foreground mt-0.5">
-                    Urutan ke-{cat.orderIndex + 1}
-                  </p>
+                  <h3 class="font-bold text-sm tracking-tight truncate">{cat.name}</h3>
+                  <p class="text-xs text-muted-foreground mt-0.5">Urutan #{cat.orderIndex + 1}</p>
                 </div>
-                <div class="flex gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    class="h-9 w-9 rounded-full border-border/60 shadow-sm hover:border-blue-300"
-                    onClick={() => openEdit(cat)}
-                  >
-                    <Pencil size={14} class="text-blue-500" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    class="h-9 w-9 rounded-full border-border/60 bg-red-50 hover:bg-red-100 shadow-sm"
-                    onClick={(e) => handleDelete(cat.id, e)}
-                  >
-                    <Trash2 size={14} class="text-red-500" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
+                  onClick={(e) => requestDelete(cat, e)}
+                >
+                  <Trash2 size={13} />
+                </Button>
               </div>
             )}
           </For>
