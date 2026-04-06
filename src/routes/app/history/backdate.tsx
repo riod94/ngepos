@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { ArrowLeft, Save, Calendar, Clock } from "lucide-solid";
-import { A, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { db } from "~/db/db";
 import { Button } from "~/components/ui/button";
 
@@ -55,9 +55,13 @@ export default function BackdateTransaction() {
   return (
     <div class="flex flex-col min-h-screen bg-background pb-24">
       <div class="flex items-center gap-3 px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-        <A href="/app/history" class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+        <button 
+          type="button"
+          onClick={() => navigate(-1)} 
+          class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95"
+        >
           <ArrowLeft size={18} />
-        </A>
+        </button>
         <div>
           <h1 class="font-black text-xl tracking-tight leading-none">Input Lampau</h1>
           <span class="text-xs font-black text-muted-foreground uppercase tracking-[0.12em] mt-1 block">Catat Transaksi Masa Lalu</span>

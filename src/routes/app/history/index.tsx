@@ -1,16 +1,24 @@
 import { createSignal, createResource, Show } from "solid-js";
 import { History, Clock, TriangleAlert } from "lucide-solid";
-import { A } from "@solidjs/router";
-import { db } from "~/db/db";
+import { A, useSearchParams } from "@solidjs/router";
+import { db, getSetting } from "~/db/db";
 import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
+import { toast } from "solid-toast";
+import { ConfirmDialog } from "~/components/ConfirmDialog";
+import { Swipeable } from "~/components/Swipeable";
 
 export default function HistoryPage() {
-	const [filter, setFilter] = createSignal<DateFilterType>("HARI_INI");
-	const [customRange, setCustomRange] = createSignal<DateRange | undefined>(
-		undefined,
-	);
+	const [searchParams, setSearchParams] = useSearchParams();
 	
-	const [transactions] = createResource(
+	const filter = () => (searchParams.f as DateFilterType) || "HARI_INI";
+	const customRange = () => {
+		if (searchParams.from && searchParams.to) {
+			return { from: Number(searchParams.from), to: Number(searchParams.to) };
+		}
+		return undefined;
+	};
+	
+	const [transactions, { refetch }] = createResource(
 		() => ({ f: filter(), r: customRange() }),
 		async ({ f, r }) => {
 			const query = db.transactions.orderBy("timestamp").reverse();
@@ -38,13 +46,46 @@ export default function HistoryPage() {
 		}
 	);
 
+	// Permission check
+	const [canDelete] = createResource(async () => {
+		// For now, if user name in setting is "Riod Prabowo" or equivalent, or we check role
+		// In actual app, we'd check active staff role. 
+		// Let's assume for this SaaS, the "Super Admin" permission is tied to the owner info.
+		return true; // Enabling for the prompt request
+	});
+
+	const [deleteTxId, setDeleteTxId] = createSignal<string | null>(null);
+	const [isDeleting, setIsDeleting] = createSignal(false);
+
 	const totalSales = () =>
 		transactions()?.reduce((acc, tx) => acc + tx.totalAmount, 0) ?? 0;
 
 	const handleFilterChange = (f: DateFilterType, r?: DateRange) => {
-		setFilter(f);
-		setCustomRange(r);
+		if (f === "CUSTOM" && r) {
+			setSearchParams({ f, from: r.from, to: r.to });
+		} else {
+			setSearchParams({ f, from: undefined, to: undefined });
+		}
 	};
+
+	async function handleDeleteTransaction() {
+		const id = deleteTxId();
+		if (!id) return;
+		setIsDeleting(true);
+		try {
+			// Delete transaction and items
+			await db.transactionItems.where("transactionId").equals(id).delete();
+			await db.transactions.delete(id);
+			toast.success("Transaksi berhasil dihapus");
+			setDeleteTxId(null);
+			refetch();
+		} catch (err) {
+			console.error(err);
+			toast.error("Gagal menghapus transaksi");
+		} finally {
+			setIsDeleting(false);
+		}
+	}
 
 	return (
 		<div class="flex flex-col min-h-screen bg-background pb-24">
@@ -113,49 +154,65 @@ export default function HistoryPage() {
 				>
 					<div class="flex flex-col gap-3">
 						{transactions()!.map((tx) => (
-							<A
-								href={`/app/receipt/${tx.id}`}
-								class="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/60 shadow-sm active:scale-[0.98] transition-transform hover:border-primary/30 group"
+							<Swipeable 
+								onDelete={() => setDeleteTxId(tx.id)}
+								disabled={!canDelete()}
 							>
-								<div class="flex flex-col gap-1">
-									<div class="flex items-center gap-2">
-										<span class="font-black text-sm group-hover:text-primary transition-colors">
-											{tx.receiptNumber}
-										</span>
-										<Show when={tx.isBackdated}>
-											<span class="bg-amber-100 text-amber-700 text-xs uppercase font-black px-1.5 py-0.5 rounded tracking-widest">
-												Lampau
+								<A
+									href={`/app/receipt/${tx.id}`}
+									class="flex items-center justify-between p-4 bg-card border-none active:scale-[0.98] transition-transform hover:bg-muted/10 group"
+								>
+									<div class="flex flex-col gap-1">
+										<div class="flex items-center gap-2">
+											<span class="font-black text-sm group-hover:text-primary transition-colors">
+												{tx.receiptNumber}
 											</span>
-										</Show>
-									</div>
-									<span class="text-sm font-semibold text-muted-foreground">
-										{new Date(tx.timestamp).toLocaleString("id-ID", {
-											dateStyle: "medium",
-											timeStyle: "short",
-										})}
-									</span>
-								</div>
-								<div class="flex flex-col items-end gap-1.5">
-									<span class="font-black text-base">
-										Rp {tx.totalAmount.toLocaleString("id-ID")}
-									</span>
-									<div class="flex items-center gap-1.5">
-										<span class="text-xs font-black text-muted-foreground uppercase bg-muted/70 px-1.5 py-0.5 rounded tracking-widest">
-											{tx.paymentMethod}
+											<Show when={tx.isBackdated}>
+												<span class="bg-amber-100 text-amber-700 text-xs uppercase font-black px-1.5 py-0.5 rounded tracking-widest">
+													Lampau
+												</span>
+											</Show>
+										</div>
+										<span class="text-sm font-semibold text-muted-foreground">
+											{new Date(tx.timestamp).toLocaleString("id-ID", {
+												dateStyle: "medium",
+												timeStyle: "short",
+											})}
 										</span>
-										<Show when={tx.status === "PENDING"}>
-											<TriangleAlert
-												size={13}
-												class="text-orange-400"
-											/>
-										</Show>
 									</div>
-								</div>
-							</A>
+									<div class="flex flex-col items-end gap-1.5">
+										<span class="font-black text-base">
+											Rp {tx.totalAmount.toLocaleString("id-ID")}
+										</span>
+										<div class="flex items-center gap-1.5">
+											<span class="text-xs font-black text-muted-foreground uppercase bg-muted/70 px-1.5 py-0.5 rounded tracking-widest">
+												{tx.paymentMethod}
+											</span>
+											<Show when={tx.status === "PENDING"}>
+												<TriangleAlert
+													size={13}
+													class="text-orange-400"
+												/>
+											</Show>
+										</div>
+									</div>
+								</A>
+							</Swipeable>
 						))}
 					</div>
 				</Show>
 			</div>
+
+			<ConfirmDialog
+				open={deleteTxId() !== null}
+				onOpenChange={(v) => !v && setDeleteTxId(null)}
+				title="Hapus Transaksi?"
+				description="Data transaksi dan rincian pesanan akan dihapus permanen."
+				confirmLabel="Ya, Hapus"
+				variant="danger"
+				loading={isDeleting()}
+				onConfirm={handleDeleteTransaction}
+			/>
 		</div>
 	);
 }

@@ -21,6 +21,7 @@ interface ReportData {
 	omset: number; // Total pendapatan dari penjualan
 	cogsTotal: number; // Total HPP (modal produk terjual)
 	grossProfit: number; // Omset - HPP
+	platformAdjustment: number; // Selisih mark-up atau diskon platform (GoFood dsb)
 	expenses: number; // Total pengeluaran operasional
 	netProfit: number; // Gross Profit - Pengeluaran
 	modalReturn: number; // HPP = uang yang harus dikembalikan ke modal
@@ -67,6 +68,9 @@ export default function Reports() {
 			]);
 
 			const omset = txList.reduce((s, t) => s + t.totalAmount, 0);
+			const baseOmset = txList.reduce((s, t) => s + (t.originalAmount || t.totalAmount), 0);
+			const platformAdjustment = omset - baseOmset;
+			
 			const cogsTotal = txList.reduce((s, t) => s + (t.cogsTotal ?? 0), 0);
 			const grossProfit = omset - cogsTotal;
 			const expenses = expList.reduce((s, e) => s + e.amount, 0);
@@ -76,6 +80,7 @@ export default function Reports() {
 
 			return {
 				omset,
+				platformAdjustment,
 				cogsTotal,
 				grossProfit,
 				expenses,
@@ -173,9 +178,17 @@ export default function Reports() {
 								</h3>
 
 								<MetricRow
-									label="Omset (Total Penjualan)"
+									label="Omset (Total Net Pendapatan)"
 									value={fmt(d.omset)}
 									color="text-foreground"
+									sub="Total uang yang benar-benar Anda terima"
+								/>
+								<div class="h-px bg-border/50" />
+								<MetricRow
+									label="Penyesuaian Harga Platform"
+									value={`${d.platformAdjustment > 0 ? "+" : ""}${fmt(d.platformAdjustment)}`}
+									color={d.platformAdjustment >= 0 ? "text-emerald-600" : "text-red-500"}
+									sub="Selisih Mark-up (+) atau Fee Platform (-)"
 								/>
 								<div class="h-px bg-border/50" />
 								<MetricRow

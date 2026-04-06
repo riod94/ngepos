@@ -1,4 +1,12 @@
-import { createSignal, createResource, Show, For, Index, createMemo, type Accessor } from "solid-js";
+import {
+	createSignal,
+	createResource,
+	Show,
+	For,
+	Index,
+	createMemo,
+	type Accessor,
+} from "solid-js";
 import {
 	Plus,
 	Trash2,
@@ -35,6 +43,36 @@ function calcMargin(price: number, cogs: number) {
 	return Math.round(((price - cogs) / price) * 100);
 }
 
+function getMarginStatus(m: number) {
+	if (m < 30)
+		return {
+			label: "Kritis",
+			color: "text-red-600",
+			bg: "bg-red-50",
+			border: "border-red-200",
+		};
+	if (m <= 44)
+		return {
+			label: "Tipis",
+			color: "text-orange-600",
+			bg: "bg-orange-50",
+			border: "border-orange-200",
+		};
+	if (m <= 71)
+		return {
+			label: "Sehat",
+			color: "text-emerald-600",
+			bg: "bg-emerald-50",
+			border: "border-emerald-200",
+		};
+	return {
+		label: "Optimal",
+		color: "text-blue-600",
+		bg: "bg-blue-50",
+		border: "border-blue-200",
+	};
+}
+
 // ────────────── Main Component ──────────────
 export default function ProductsManager() {
 	const [products, { refetch }] = createResource(
@@ -56,6 +94,7 @@ export default function ProductsManager() {
 	const [activeTab, setActiveTab] = createSignal<"info" | "hpp" | "variants">(
 		"info",
 	);
+	const [showMarginGuide, setShowMarginGuide] = createSignal(false);
 
 	// ── Form state ──
 	const [formId, setFormId] = createSignal("");
@@ -165,7 +204,14 @@ export default function ProductsManager() {
 	function addRaw() {
 		setFormRaw([
 			...formRaw(),
-			{ id: `raw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, name: "", costPerUnit: 0, cost: 0, quantity: 1, unit: "" },
+			{
+				id: `raw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+				name: "",
+				costPerUnit: 0,
+				cost: 0,
+				quantity: 1,
+				unit: "",
+			},
 		]);
 	}
 	function updateRaw(
@@ -320,7 +366,7 @@ export default function ProductsManager() {
 	] as const;
 
 	return (
-		<div class="flex flex-col min-h-screen bg-muted/10 pb-24">
+		<div class="flex flex-col min-h-screen bg-muted/10 pb-24 text-left">
 			{/* Header */}
 			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3">
@@ -417,9 +463,17 @@ export default function ProductsManager() {
 												p.rawMaterials && p.rawMaterials.length > 0
 											}
 										>
-											<span class="text-xs font-semibold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">
-												Margin {calcMargin(p.price, p.cogs)}%
-											</span>
+											{(raw) => {
+												const m = calcMargin(p.price, p.cogs);
+												const status = getMarginStatus(m);
+												return (
+													<span
+														class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${status.color} ${status.bg}`}
+													>
+														{status.label} {m}%
+													</span>
+												);
+											}}
 										</Show>
 									</div>
 									<p class="text-xs mt-1.5 flex items-center gap-2 font-bold">
@@ -455,7 +509,7 @@ export default function ProductsManager() {
 			<Sheet open={sheetOpen()} onOpenChange={setSheetOpen}>
 				<SheetContent
 					position="bottom"
-					class="h-[96vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)]"
+					class="h-[96vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
 				>
 					{/* Sheet Header */}
 					<SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
@@ -494,7 +548,7 @@ export default function ProductsManager() {
 					>
 						{/* ── Tab 1: Info Dasar ── */}
 						<Show when={activeTab() === "info"}>
-							<div class="flex flex-col gap-4 p-4">
+							<div class="flex flex-col gap-4 p-4 text-left">
 								<div class="flex flex-col gap-1.5">
 									<label
 										for="prod-name"
@@ -590,7 +644,7 @@ export default function ProductsManager() {
 												name={formName() || "Produk"}
 											/>
 										</div>
-										<div class="flex flex-col gap-2 flex-1">
+										<div class="flex flex-col gap-2 flex-1 text-left">
 											<label class="cursor-pointer">
 												<input
 													type="file"
@@ -633,29 +687,107 @@ export default function ProductsManager() {
 
 						{/* ── Tab 2: Resep & HPP ── */}
 						<Show when={activeTab() === "hpp"}>
-							<div class="flex flex-col gap-4 p-5">
+							<div class="flex flex-col gap-4 p-5 text-left">
 								{/* Margin indicator */}
 								<div
-									class={`flex items-center justify-between p-4 rounded-2xl border-2 ${marginPct() >= 40 ? "border-emerald-200 bg-emerald-50" : "border-orange-200 bg-orange-50"}`}
+									class={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${getMarginStatus(marginPct()).border} ${getMarginStatus(marginPct()).bg}`}
 								>
 									<div>
-										<p class="text-xs font-black uppercase tracking-widest text-muted-foreground">
-											Estimasi Margin
+										<p
+											class={`text-[10px] font-black uppercase tracking-[0.2em] opacity-70 ${getMarginStatus(marginPct()).color}`}
+										>
+											{getMarginStatus(marginPct()).label} (
+											{marginPct()}%)
 										</p>
 										<p
-											class={`text-3xl font-black tracking-tighter ${marginPct() >= 40 ? "text-emerald-600" : "text-orange-600"}`}
+											class={`text-3xl font-black tracking-tighter mt-0.5 ${getMarginStatus(marginPct()).color}`}
 										>
-											{marginPct()}%
+											Rp{" "}
+											{(
+												Number.parseInt(formPrice()) - totalHPP()
+											).toLocaleString("id-ID")}
+											<span class="text-xs ml-1 opacity-60 font-semibold">
+												Profit/Unit
+											</span>
 										</p>
 									</div>
 									<div class="text-right">
-										<p class="text-xs font-black text-muted-foreground uppercase tracking-widest">
-											Total HPP
+										<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">
+											Modal (HPP)
 										</p>
-										<p class="font-black text-lg">
+										<p class="font-black text-lg text-foreground/80">
 											Rp {totalHPP().toLocaleString("id-ID")}
 										</p>
 									</div>
+								</div>
+
+								{/* Legend / Info Margin */}
+								<div class="flex flex-col gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											setShowMarginGuide(!showMarginGuide())
+										}
+										class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80 transition-opacity px-1"
+									>
+										<div class="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">
+											?
+										</div>
+										{showMarginGuide()
+											? "Sembunyikan Panduan Margin"
+											: "Lihat Panduan Margin"}
+									</button>
+
+									<Show when={showMarginGuide()}>
+										<div class="bg-card p-4 rounded-2xl border border-border/50 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+											<div class="grid grid-cols-2 gap-3">
+												<div class="flex items-center gap-2 p-2 rounded-xl bg-red-50/50">
+													<div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+													<div>
+														<p class="text-[10px] font-black text-red-700 leading-none">
+															&lt; 30%: KRITIS
+														</p>
+														<p class="text-[9px] font-semibold text-red-600/70 mt-1">
+															Berisiko tekor biaya OPEX
+														</p>
+													</div>
+												</div>
+												<div class="flex items-center gap-2 p-2 rounded-xl bg-orange-50/50">
+													<div class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+													<div>
+														<p class="text-[10px] font-black text-orange-700 leading-none">
+															30-44%: TIPIS
+														</p>
+														<p class="text-[9px] font-semibold text-orange-600/70 mt-1">
+															Cukup untuk biaya dasar
+														</p>
+													</div>
+												</div>
+												<div class="flex items-center gap-2 p-2 rounded-xl bg-emerald-50/50">
+													<div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+													<div>
+														<p class="text-[10px] font-black text-emerald-700 leading-none">
+															45-70%: SEHAT
+														</p>
+														<p class="text-[9px] font-semibold text-emerald-600/70 mt-1">
+															Target ideal industri F&B
+														</p>
+													</div>
+												</div>
+												<div class="flex items-center gap-2 p-2 rounded-xl bg-blue-50/50">
+													<div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+													<div>
+														<p class="text-[10px] font-black text-blue-700 leading-none">
+															&ge; 70%: OPTIMAL
+														</p>
+														<p class="text-[9px] font-semibold text-blue-600/70 mt-1">
+															Profit tunai yang sangat kuat
+														</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</Show>
 								</div>
 
 								<p class="text-sm font-bold text-muted-foreground">
@@ -663,10 +795,10 @@ export default function ProductsManager() {
 									keuntungan terhitung otomatis.
 								</p>
 
-								<div class="flex flex-col gap-4">
+								<div class="flex flex-col gap-4 mt-2">
 									{/* Library Picker Section */}
 									<Show when={showMaterialLib()}>
-										<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3">
+										<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
 											<div class="flex items-center justify-between">
 												<p class="text-xs font-bold uppercase tracking-widest text-primary">
 													Pilih dari Library Bahan
@@ -690,7 +822,7 @@ export default function ProductsManager() {
 													</p>
 												}
 											>
-												<div class="flex flex-col gap-2">
+												<div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
 													<For each={materialsLibrary()}>
 														{(lib) => (
 															<button
@@ -704,8 +836,12 @@ export default function ProductsManager() {
 																	<p class="font-bold text-sm">
 																		{lib.name}
 																	</p>
-																	<p class="text-xs text-muted-foreground mt-0.5">
-																		Rp {lib.costPerUnit.toLocaleString("id-ID")}/{lib.unit}
+																	<p class="text-[10px] font-black text-muted-foreground uppercase opacity-70 mt-0.5">
+																		Rp{" "}
+																		{lib.costPerUnit.toLocaleString(
+																			"id-ID",
+																		)}
+																		/{lib.unit}
 																	</p>
 																</div>
 																<Plus
@@ -722,20 +858,25 @@ export default function ProductsManager() {
 
 									<Index each={formRaw()}>
 										{(raw: Accessor<RawMaterialCost>, i: number) => {
-											// In <Index>, 'raw' is an accessor/signal for the item at that index
-											const lineTotal = createMemo(() => (raw().quantity || 0) * (raw().costPerUnit || raw().cost || 0));
-											
+											const lineTotal = createMemo(
+												() =>
+													(raw().quantity || 0) *
+													(raw().costPerUnit || raw().cost || 0),
+											);
+
 											return (
-												<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-sm hover:border-primary/20 transition-all">
+												<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-sm hover:border-primary/20 transition-all text-left">
 													<div class="flex items-center justify-between">
-														<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
+														<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 opacity-60">
 															Bahan #{i + 1}
 														</span>
 														<div class="flex items-center gap-1">
-															<button 
+															<button
 																type="button"
-																onClick={() => saveMaterialToLibrary(raw())}
-																class="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
+																onClick={() =>
+																	saveMaterialToLibrary(raw())
+																}
+																class="text-[10px] font-black uppercase tracking-wider text-primary hover:bg-primary/10 px-2 py-1.5 rounded-lg transition-colors"
 																title="Simpan ke library"
 															>
 																Simpan Library
@@ -744,61 +885,95 @@ export default function ProductsManager() {
 																type="button"
 																variant="ghost"
 																size="icon"
-																class="h-7 w-7 text-red-400 hover:text-red-500 hover:bg-red-50"
+																class="h-8 w-8 rounded-xl text-red-400 hover:text-red-500 hover:bg-red-50"
 																onClick={() => removeRaw(i)}
 															>
-																<Trash2 size={15} />
+																<Trash2 size={16} />
 															</Button>
 														</div>
 													</div>
-													
+
 													<div class="flex flex-col gap-1.5">
-														<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Nama Bahan Baku</p>
+														<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+															Nama Bahan Baku
+														</p>
 														<input
 															type="text"
-															class="h-11 w-full rounded-xl border border-border/70 bg-background px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+															class="h-12 w-full rounded-xl border border-border/70 bg-muted/20 px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 															placeholder="Contoh: Biji Kopi Arabica"
 															value={raw().name}
 															onInput={(e) =>
-																updateRaw(i, "name", e.currentTarget.value)
+																updateRaw(
+																	i,
+																	"name",
+																	e.currentTarget.value,
+																)
 															}
 														/>
 													</div>
 
 													<div class="grid grid-cols-3 gap-3">
 														<div class="flex flex-col gap-1.5">
-															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Qty</p>
+															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+																Qty
+															</p>
 															<input
 																type="number"
-																class="h-11 w-full rounded-xl border border-border/70 bg-background px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+																class="h-12 w-full rounded-xl border border-border/70 bg-muted/20 px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 																value={raw().quantity}
 																onInput={(e) =>
-																	updateRaw(i, "quantity", Number.parseFloat(e.currentTarget.value))
+																	updateRaw(
+																		i,
+																		"quantity",
+																		Number.parseFloat(
+																			e.currentTarget.value,
+																		) || 0,
+																	)
 																}
 															/>
 														</div>
 														<div class="flex flex-col gap-1.5">
-															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Unit</p>
+															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+																Unit
+															</p>
 															<input
 																type="text"
-																class="h-11 w-full rounded-xl border border-border/70 bg-background px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-																placeholder="gr, ml, pcs"
+																class="h-12 w-full rounded-xl border border-border/70 bg-muted/20 px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-center"
+																placeholder="gr"
 																value={raw().unit}
 																onInput={(e) =>
-																	updateRaw(i, "unit", e.currentTarget.value)
+																	updateRaw(
+																		i,
+																		"unit",
+																		e.currentTarget.value,
+																	)
 																}
 															/>
 														</div>
 														<div class="flex flex-col gap-1.5">
-															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Hrg Satuan</p>
+															<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+																Harga Satuan
+															</p>
 															<div class="relative">
-																<span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground">Rp</span>
+																<span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground/60">
+																	Rp
+																</span>
 																<input
 																	type="number"
-																	class="h-11 w-full rounded-xl border border-border/70 bg-background pl-8 pr-3 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-																	value={raw().costPerUnit || raw().cost}
+																	class="h-12 w-full rounded-xl border border-border/70 bg-muted/20 pl-8 pr-3 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+																	value={
+																		raw().costPerUnit ||
+																		raw().cost
+																	}
 																	onInput={(e) =>
-																		updateRaw(i, "costPerUnit", Number.parseInt(e.currentTarget.value) || 0)
+																		updateRaw(
+																			i,
+																			"costPerUnit",
+																			Number.parseInt(
+																				e.currentTarget
+																					.value,
+																			) || 0,
+																		)
 																	}
 																/>
 															</div>
@@ -806,9 +981,14 @@ export default function ProductsManager() {
 													</div>
 
 													<div class="mt-1 flex items-center justify-between px-2 pt-2 border-t border-border/40 border-dashed">
-														<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Kalkulasi Total</p>
+														<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+															Total Kalkulasi
+														</p>
 														<p class="text-sm font-black text-primary">
-															Rp {lineTotal().toLocaleString("id-ID")}
+															Rp{" "}
+															{lineTotal().toLocaleString(
+																"id-ID",
+															)}
 														</p>
 													</div>
 												</div>
@@ -838,10 +1018,10 @@ export default function ProductsManager() {
 
 						{/* ── Tab 3: Varian ── */}
 						<Show when={activeTab() === "variants"}>
-							<div class="flex flex-col gap-4 p-4">
+							<div class="flex flex-col gap-4 p-4 text-left">
 								{/* Library picker */}
 								<Show when={showTemplateLib()}>
-									<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3">
+									<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
 										<div class="flex items-center justify-between">
 											<p class="text-xs font-bold uppercase tracking-widest text-primary">
 												Pilih dari Library Varian
@@ -902,7 +1082,7 @@ export default function ProductsManager() {
 								{/* Active variant groups */}
 								<For each={formVariants()}>
 									{(vg, gi) => (
-										<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/70">
+										<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/70 text-left">
 											<div class="flex items-center justify-between">
 												<span class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
 													Grup #{gi() + 1}
@@ -943,7 +1123,7 @@ export default function ProductsManager() {
 											/>
 
 											<div class="grid grid-cols-2 gap-2">
-												<div class="flex flex-col gap-1">
+												<div class="flex flex-col gap-1 text-left">
 													<label
 														for={`type-${gi()}`}
 														class="text-xs font-black text-muted-foreground uppercase tracking-widest"
@@ -973,7 +1153,7 @@ export default function ProductsManager() {
 													</select>
 												</div>
 												<Show when={vg.type === "MULTIPLE"}>
-													<div class="flex flex-col gap-1">
+													<div class="flex flex-col gap-1 text-left">
 														<label
 															for={`max-${gi()}`}
 															class="text-xs font-black text-muted-foreground uppercase tracking-widest"
@@ -998,7 +1178,7 @@ export default function ProductsManager() {
 														/>
 													</div>
 												</Show>
-												<div class="flex flex-col gap-1">
+												<div class="flex flex-col gap-1 text-left">
 													<label
 														for={`req-${gi()}`}
 														class="text-xs font-black text-muted-foreground uppercase tracking-widest"
@@ -1029,11 +1209,11 @@ export default function ProductsManager() {
 											<div class="flex flex-col gap-3 bg-muted/20 p-3 rounded-2xl border border-border/50">
 												<For each={vg.options}>
 													{(opt, oi) => (
-														<div class="relative flex flex-col gap-3 p-4 bg-background border border-border/60 rounded-2xl shadow-sm hover:border-primary/30 transition-all group">
+														<div class="relative flex flex-col gap-3 p-4 bg-background border border-border/60 rounded-2xl shadow-sm hover:border-primary/30 transition-all group text-left">
 															{/* Row 1: Name & Delete */}
-															<div class="flex items-end gap-2">
-																<div class="flex-1 flex flex-col gap-1.5">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+															<div class="flex items-end gap-2 text-left">
+																<div class="flex-1 flex flex-col gap-1.5 text-left">
+																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
 																		Nama Opsi
 																	</p>
 																	<input
@@ -1046,7 +1226,8 @@ export default function ProductsManager() {
 																				gi(),
 																				oi(),
 																				"name",
-																				e.currentTarget.value,
+																				e.currentTarget
+																					.value,
 																			)
 																		}
 																	/>
@@ -1056,16 +1237,18 @@ export default function ProductsManager() {
 																	variant="ghost"
 																	size="icon"
 																	class="h-11 w-11 rounded-xl text-red-400 hover:text-red-500 hover:bg-red-50 shrink-0 border border-transparent hover:border-red-100 transition-all"
-																	onClick={() => removeOption(gi(), oi())}
+																	onClick={() =>
+																		removeOption(gi(), oi())
+																	}
 																>
 																	<Trash2 size={18} />
 																</Button>
 															</div>
 
 															{/* Row 2: Pricing & HPP */}
-															<div class="grid grid-cols-2 gap-3">
-																<div class="flex flex-col gap-1.5">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+															<div class="grid grid-cols-2 gap-3 text-left">
+																<div class="flex flex-col gap-1.5 text-left">
+																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
 																		Harga +/-
 																	</p>
 																	<div class="relative">
@@ -1076,22 +1259,26 @@ export default function ProductsManager() {
 																			type="number"
 																			class="w-full h-11 rounded-xl border border-border/60 bg-background pl-10 pr-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 																			placeholder="0"
-																			value={opt.priceModifier}
+																			value={
+																				opt.priceModifier
+																			}
 																			onInput={(e) =>
 																				updateOption(
 																					gi(),
 																					oi(),
 																					"priceModifier",
 																					Number.parseInt(
-																						e.currentTarget.value,
+																						e
+																							.currentTarget
+																							.value,
 																					) || 0,
 																				)
 																			}
 																		/>
 																	</div>
 																</div>
-																<div class="flex flex-col gap-1.5">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+																<div class="flex flex-col gap-1.5 text-left">
+																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
 																		HPP +/-
 																	</p>
 																	<div class="relative">
@@ -1102,14 +1289,18 @@ export default function ProductsManager() {
 																			type="number"
 																			class="w-full h-11 rounded-xl border border-primary/20 bg-primary/5 pl-10 pr-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 text-primary transition-all underline-offset-4"
 																			placeholder="0"
-																			value={opt.cogsModifier}
+																			value={
+																				opt.cogsModifier
+																			}
 																			onInput={(e) =>
 																				updateOption(
 																					gi(),
 																					oi(),
 																					"cogsModifier",
 																					Number.parseInt(
-																						e.currentTarget.value,
+																						e
+																							.currentTarget
+																							.value,
 																					) || 0,
 																				)
 																			}

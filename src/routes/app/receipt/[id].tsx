@@ -1,4 +1,4 @@
-import { useParams, A } from "@solidjs/router";
+import { useParams, useNavigate, A } from "@solidjs/router";
 import { createResource, Show, For } from "solid-js";
 import { ArrowLeft, Printer, Store } from "lucide-solid";
 import { db, getSetting } from "~/db/db";
@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 
 export default function Receipt() {
   const params = useParams();
+  const navigate = useNavigate();
 
   const [transaction] = createResource(params.id, async (id) => {
     const tx = await db.transactions.get(id);
@@ -24,9 +25,13 @@ export default function Receipt() {
       {/* App Bar */}
       <div class="flex items-center justify-between p-5 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
-          <A href="/app/history" class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+          <button 
+            type="button"
+            onClick={() => navigate(-1)} 
+            class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95"
+          >
             <ArrowLeft size={18} />
-          </A>
+          </button>
           <div>
             <h1 class="font-black text-xl tracking-tight leading-none">Detail Transaksi</h1>
             <p class="text-xs font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5 block">Nota Digital #{transaction()?.receiptNumber || '...'}</p>
@@ -75,13 +80,24 @@ export default function Receipt() {
                 <For each={transaction()!.items}>
                   {(item) => (
                     <div class="flex justify-between items-start text-sm">
-                      <div class="flex flex-col">
-                        <span class="font-black text-foreground font-sans">{item.productName}</span>
+                      <div class="flex flex-col flex-1 truncate">
+                        <span class="font-black text-foreground font-sans truncate">{item.productName}</span>
+                        <Show when={item.selectedVariants && item.selectedVariants.length > 0}>
+                          <div class="flex flex-wrap gap-x-1 gap-y-0.5 mt-0.5 mb-1">
+                            <For each={item.selectedVariants}>
+                              {(v) => (
+                                <span class="text-[10px] font-bold text-muted-foreground/70 font-sans">
+                                  • {v.optionName}
+                                </span>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
                         <span class="text-xs text-muted-foreground font-bold font-sans">
                           {item.quantity} × Rp {item.priceAtTime.toLocaleString('id-ID')}
                         </span>
                       </div>
-                      <span class="font-black text-foreground">
+                      <span class="font-black text-foreground ml-2">
                         {(item.quantity * item.priceAtTime).toLocaleString('id-ID')}
                       </span>
                     </div>

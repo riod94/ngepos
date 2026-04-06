@@ -1,4 +1,5 @@
 import { Show, createSignal, For, createResource } from "solid-js";
+import { unwrap } from "solid-js/store";
 import {
 	Plus,
 	Minus,
@@ -12,6 +13,7 @@ import {
 	Bike,
 	Truck,
 	ShoppingBag,
+	PencilLine,
 } from "lucide-solid";
 import { useNavigate } from "@solidjs/router";
 import {
@@ -19,8 +21,10 @@ import {
 	getCartTotal,
 	getCartCount,
 	updateQuantity,
+	updateCartItemVariants,
 	clearCart,
 } from "~/stores/cart";
+import { VariantSelector } from "~/components/VariantSelector";
 import { Button } from "~/components/ui/button";
 import {
 	Sheet,
@@ -37,32 +41,29 @@ import {
 	DialogDescription,
 } from "~/components/ui/dialog";
 import { db, getSetting } from "~/db/db";
+import { toast } from "solid-toast";
 
 type PayStep = "select" | "adjustment" | "qris_pending" | "done_ok" | "done_fail";
 
-// ─── helper: compute total COGS from cart ─────────────────────────────────────
-async function computeCogsTotal(): Promise<number> {
+// ─── helper: compute total COGS from items list ──────────────────────────────
+async function computeCogsTotal(items: any[]): Promise<number> {
 	let total = 0;
-	for (const item of cart) {
-		const product = await db.products.get(item.id);
-		let unitCogs = product?.cogs ?? item.price * 0.45;
+	try {
+		for (const item of items) {
+			const product = await db.products.get(item.id);
+			let unitCogs = product?.cogs ?? item.price * 0.45;
 
-		// Add variant modifiers
-		if (item.selectedVariants) {
-			for (const sv of item.selectedVariants) {
-				// We need to find the modifier value. 
-				// Since we store only optionName in cart, we rely on priceModifier if cogsModifier not present,
-				// BUT now we have DB with cogsModifier.
-				// For now, let's assume we can add cogsModifier to the selectedVariants object in cart store too later,
-				// OR we fetch from product variants.
-				// Let's check Product structure again. 
-				const group = product?.variants?.find(g => g.name === sv.groupName);
-				const option = group?.options.find(o => o.name === sv.optionName);
-				unitCogs += option?.cogsModifier ?? 0;
+			if (item.selectedVariants) {
+				for (const sv of item.selectedVariants) {
+					const group = product?.variants?.find((g: any) => g.name === sv.groupName);
+					const option = group?.options.find((o: any) => o.name === sv.optionName);
+					unitCogs += option?.cogsModifier ?? 0;
+				}
 			}
+			total += unitCogs * item.quantity;
 		}
-
-		total += unitCogs * item.quantity;
+	} catch (e) {
+		console.warn("COGS calc error:", e);
 	}
 	return total;
 }
@@ -70,6 +71,8 @@ async function computeCogsTotal(): Promise<number> {
 export function CartFloatingButton() {
 	const navigate = useNavigate();
 	const [cartSheetOpen, setCartSheetOpen] = createSignal(false);
+	const [editVariantOpen, setEditVariantOpen] = createSignal(false);
+	const [editingItem, setEditingItem] = createSignal<any>(null);
 
 	// Payment dialog
 	const [payOpen, setPayOpen] = createSignal(false);
@@ -110,65 +113,97 @@ export function CartFloatingButton() {
 		return ts < todayStart.getTime();
 	};
 
-	// ── Save transaction to DB ────────────────────────────────────────────────
+	// ── Save transaction to DB with ATOMICITY ────────────────────────────────────
 	async function submitTransaction(method: string, finalAmount: number) {
 		if (processing()) return null;
+		
+		// 1. Capture snapshot with deep clone after UNWRAPPING Solid Store
+		// Proxy objects can cause issues during async/await or cloning
+		const rawCart = unwrap(cart);
+		const cartSnapshot = structuredClone(rawCart);
+		const originalTotal = getCartTotal();
+
+		if (!cartSnapshot || cartSnapshot.length === 0) {
+			toast.error("Gagal: Keranjang belanja kosong.");
+			return null;
+		}
+		
 		setProcessing(true);
 		try {
-			const cogsTotal = await computeCogsTotal();
-			const transactionId = `txn_${Date.now()}`;
-			const ts = transactionTimestamp();
+			// Using string table names for maximum Dexie stability
+			const resultTransactionId = await db.transaction(
+				"rw",
+				["transactions", "transactionItems", "products"],
+				async () => {
+					// We'll calculate COGS inside the transaction context for consistency
+					let cogsTotal = 0;
+					const transactionId = `txn_${Date.now()}`;
+					const ts = transactionTimestamp();
 
-			await db.transactions.add({
-				id: transactionId,
-				receiptNumber: `INV-${Date.now()}`,
-				totalAmount: finalAmount,
-				originalAmount: getCartTotal(),
-				cogsTotal,
-				paymentMethod: method,
-				timestamp: ts,
-				status: "PENDING",
-				isBackdated: isBackdated(),
-				isAdjustment: finalAmount !== getCartTotal(),
-			} as any);
+					// Prepare line items and calculate total COGS
+					const itemsToSave = [];
+					for (const [idx, item] of cartSnapshot.entries()) {
+						// Fetch latest product info to get real-time stock/cogs
+						const product = await db.products.get(item.id);
+						let unitCogs = product?.cogs ?? item.price * 0.45;
 
-			const items = [];
-			for (const [idx, item] of cart.entries()) {
-				const product = await db.products.get(item.id);
-				let unitCogs = product?.cogs ?? item.price * 0.45;
+						if (item.selectedVariants) {
+							for (const sv of item.selectedVariants) {
+								const group = product?.variants?.find((g) => g.name === sv.groupName);
+								const option = group?.options.find((o) => o.name === sv.optionName);
+								unitCogs += option?.cogsModifier ?? 0;
+							}
+						}
 
-				if (item.selectedVariants) {
-					for (const sv of item.selectedVariants) {
-						const group = product?.variants?.find((g) => g.name === sv.groupName);
-						const option = group?.options.find((o) => o.name === sv.optionName);
-						unitCogs += option?.cogsModifier ?? 0;
+						cogsTotal += unitCogs * item.quantity;
+
+						itemsToSave.push({
+							id: `ti_${transactionId}_${idx}`,
+							transactionId,
+							productId: item.id,
+							productName: item.name,
+							quantity: item.quantity,
+							priceAtTime: item.price,
+							cogsAtTime: unitCogs,
+							selectedVariants: item.selectedVariants,
+						});
+
+						// Update stock inside the same transaction
+						if (product) {
+							await db.products.update(item.id, {
+								stock: Math.max(0, product.stock - item.quantity),
+							});
+						}
 					}
+
+					if (itemsToSave.length === 0) throw new Error("Item tidak terdeteksi");
+
+					// A. Add Transaction Header
+					await db.transactions.add({
+						id: transactionId,
+						receiptNumber: `INV-${Date.now()}`,
+						totalAmount: finalAmount,
+						originalAmount: originalTotal,
+						cogsTotal,
+						paymentMethod: method,
+						timestamp: ts,
+						status: "PENDING",
+						isBackdated: isBackdated(),
+						isAdjustment: finalAmount !== originalTotal,
+					} as any);
+
+					// B. Add All Items
+					await db.transactionItems.bulkAdd(itemsToSave);
+					
+					return transactionId;
 				}
+			);
 
-				items.push({
-					id: `ti_${transactionId}_${idx}`,
-					transactionId,
-					productId: item.id,
-					productName: item.name,
-					quantity: item.quantity,
-					priceAtTime: item.price,
-					cogsAtTime: unitCogs,
-					selectedVariants: item.selectedVariants,
-				});
-			}
-			await db.transactionItems.bulkAdd(items);
-
-			// Update stock
-			for (const item of cart) {
-				const product = await db.products.get(item.id);
-				if (product) {
-					await db.products.update(item.id, {
-						stock: Math.max(0, product.stock - item.quantity),
-					});
-				}
-			}
-
-			return transactionId;
+			return resultTransactionId;
+		} catch (err: any) {
+			console.error("CRITICAL CHECKOUT ERROR:", err);
+			toast.error(`Kegagalan Checkout: ${err?.message || "Kesalahan Database"}`);
+			return null;
 		} finally {
 			setProcessing(false);
 		}
@@ -221,6 +256,21 @@ export function CartFloatingButton() {
 
 	function resetPay() {
 		setPayStep("select");
+		setProcessing(false);
+	}
+
+	function openEditVariant(item: any) {
+		setEditingItem(item);
+		setEditVariantOpen(true);
+	}
+
+	function handleConfirmEditVariant(newVariants: any[]) {
+		const item = editingItem();
+		if (!item) return;
+
+		updateCartItemVariants(item.cartItemId, newVariants);
+		setEditVariantOpen(false);
+		setEditingItem(null);
 	}
 
 	return (
@@ -350,35 +400,58 @@ export function CartFloatingButton() {
 												Rp {item.price.toLocaleString("id-ID")}
 											</p>
 										</div>
-										<div class="flex items-center gap-2 bg-muted/60 rounded-full p-1 border border-border/60 shadow-inner shrink-0">
-											<Button
-												variant="ghost"
-												size="icon"
-												class="h-8 w-8 rounded-full hover:bg-background"
-												onClick={() =>
-													updateQuantity(item.cartItemId, -1)
-												}
-											>
-												<Minus size={16} stroke-width={3} />
-											</Button>
-											<span class="font-black text-base w-5 text-center select-none">
-												{item.quantity}
-											</span>
-											<Button
-												variant="ghost"
-												size="icon"
-												class="h-8 w-8 rounded-full bg-background border border-border/60 hover:bg-card"
-												onClick={() =>
-													updateQuantity(item.cartItemId, 1)
-												}
-											>
-												<Plus size={16} stroke-width={3} />
-											</Button>
+										<div class="flex flex-col items-center gap-2">
+											<Show when={item.variants && item.variants.length > 0}>
+												<Button
+													variant="ghost"
+													size="icon"
+													class="h-9 w-9 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-100"
+													onClick={() => openEditVariant(item)}
+													title="Edit Varian"
+												>
+													<PencilLine size={16} />
+												</Button>
+											</Show>
+											<div class="flex items-center gap-2 bg-muted/60 rounded-full p-1 border border-border/60 shadow-inner shrink-0">
+												<Button
+													variant="ghost"
+													size="icon"
+													class="h-8 w-8 rounded-full hover:bg-background"
+													onClick={() =>
+														updateQuantity(item.cartItemId, -1)
+													}
+												>
+													<Minus size={16} stroke-width={3} />
+												</Button>
+												<span class="font-black text-base w-5 text-center select-none">
+													{item.quantity}
+												</span>
+												<Button
+													variant="ghost"
+													size="icon"
+													class="h-8 w-8 rounded-full bg-background border border-border/60 hover:bg-card"
+													onClick={() =>
+														updateQuantity(item.cartItemId, 1)
+													}
+												>
+													<Plus size={16} stroke-width={3} />
+												</Button>
+											</div>
 										</div>
 									</div>
 								)}
 							</For>
 						</div>
+
+						{/* Edit Variant Dialog */}
+						<VariantSelector
+							product={editingItem()}
+							open={editVariantOpen()}
+							onOpenChange={setEditVariantOpen}
+							initialVariants={editingItem()?.selectedVariants}
+							onConfirm={handleConfirmEditVariant}
+							confirmLabel="Simpan Perubahan"
+						/>
 
 						{/* Footer */}
 						<div class="px-5 pb-8 pt-4 border-t border-border/40 bg-background shrink-0">
@@ -441,7 +514,11 @@ export function CartFloatingButton() {
 								class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
 							>
 								<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-									<Banknote size={22} stroke-width={2.5} />
+									{processing() ? (
+										<div class="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-600 rounded-full animate-spin" />
+									) : (
+										<Banknote size={22} stroke-width={2.5} />
+									)}
 								</div>
 								<span class="font-black text-xs uppercase tracking-widest">Tunai</span>
 							</button>
