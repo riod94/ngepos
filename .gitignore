@@ -1,0 +1,46 @@
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.output/
+.nitro/
+.vinxi/
+dist/
+.wrangler/
+.vercel/
+.netlify/
+
+# Build/Dev temporary files
+app.config.timestamp_*.js
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.settings/
+*.launch
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env*.local
+
+# Antigravity / AI Agent Specific Files (Internal tool state)
+.agents/
+.gemini/
+skills-lock.json
+
+# Optional: keep PRD.txt if you want it documented, but usually documentation should be in README or a docs/ folder
+# PRD.txt
