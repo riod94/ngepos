@@ -8,5 +8,13 @@ export default defineConfig({
       ssr: false
     }),
     nitro()
-  ]
+  ],
+  optimizeDeps: {
+    include: ["dexie"]
+  },
+  server: {
+    fs: {
+      allow: [".."]
+    }
+  }
 });

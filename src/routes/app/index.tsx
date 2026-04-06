@@ -1,4 +1,4 @@
-import { createSignal, createResource, Show, For } from "solid-js";
+import { createSignal, createResource, Show, For, Suspense } from "solid-js";
 import { Search, Plus, Check } from "lucide-solid";
 import { db, type Product, type VariantOption } from "~/db/db";
 import { Card, CardContent } from "~/components/ui/card";
@@ -6,6 +6,20 @@ import { Button } from "~/components/ui/button";
 import { addToCart } from "~/stores/cart";
 import { CartFloatingButton } from "~/components/CartFloatingButton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+
+const ProductSkeleton = () => (
+  <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2 w-full animate-pulse">
+    {Array.from({ length: 8 }).map(() => (
+      <div class="overflow-hidden border border-border/30 rounded-2xl bg-card/60 flex flex-col h-full shadow-sm">
+        <div class="aspect-square w-full bg-muted/40 rounded-t-[18px]"></div>
+        <div class="p-3.5 flex flex-col justify-between flex-1 gap-3">
+          <div class="h-3.5 bg-muted/50 rounded-full w-3/4"></div>
+          <div class="h-3 bg-muted/30 rounded-full w-1/2 mt-1"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 export default function Home() {
   const [searchQuery, setSearchQuery] = createSignal("");
   const [activeCategory, setActiveCategory] = createSignal("Semua");
@@ -89,8 +103,8 @@ export default function Home() {
     <div class="flex flex-col gap-5 pb-32 px-5 py-4">
       {/* Neo-Header */}
       <div class="flex flex-col gap-1 mb-2">
-        <h1 class="font-black text-[28px] tracking-tighter text-foreground leading-[1.1]">Selamat Datang,</h1>
-        <p class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-0.5">Apa yang ingin dipesan hari ini?</p>
+        <h1 class="font-black text-2xl tracking-tighter text-foreground leading-[1.1]">Selamat Datang,</h1>
+        <p class="text-xs font-black text-muted-foreground uppercase tracking-[0.12em] mt-0.5">Apa yang ingin dipesan hari ini?</p>
       </div>
 
       {/* Search Header */}
@@ -99,7 +113,7 @@ export default function Home() {
         <input 
           type="text"
           placeholder="Cari kopi, pastry, sirup..." 
-          class="flex h-14 w-full rounded-[20px] border-2 border-border/80 bg-card px-3 py-2 text-[15px] font-bold ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 pl-12 shadow-[0_4px_15px_rgba(0,0,0,0.02)] transition-all"
+          class="flex h-14 w-full rounded-2xl border-2 border-border/80 bg-card px-3 py-2 text-sm font-bold ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 pl-12 shadow-[0_4px_15px_rgba(0,0,0,0.02)] transition-all"
           value={searchQuery()}
           onInput={(e: Event) => setSearchQuery((e.target as HTMLInputElement).value)}
         />
@@ -109,7 +123,7 @@ export default function Home() {
       <div class="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
         <Button
             variant={activeCategory() === "Semua" ? "default" : "outline"}
-            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-[13px] uppercase tracking-wider transition-all ${
+            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-sm uppercase tracking-wider transition-all ${
               activeCategory() === "Semua" ? 'shadow-md shadow-primary/20' : 'bg-card hover:bg-muted/50 border-border/50 text-muted-foreground'
             }`}
             onClick={() => setActiveCategory("Semua")}
@@ -119,7 +133,7 @@ export default function Home() {
         {categories()?.filter(c => c.name.toLowerCase() !== "semua").map(category => (
           <Button
             variant={activeCategory() === category.name ? "default" : "outline"}
-            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-[13px] uppercase tracking-wider transition-all ${
+            class={`whitespace-nowrap rounded-full px-6 h-11 font-black text-sm uppercase tracking-wider transition-all ${
               activeCategory() === category.name ? 'shadow-md shadow-primary/20' : 'bg-card hover:bg-muted/50 border-border/50 text-muted-foreground'
             }`}
             onClick={() => setActiveCategory(category.name)}
@@ -130,47 +144,49 @@ export default function Home() {
       </div>
 
       {/* Dense Product Grid (3 or 4 cols) */}
-      <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2">
-        {filteredProducts().map(product => (
-          <Card 
-            class="overflow-hidden border-border/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[20px] active:scale-[0.96] transition-transform duration-200 cursor-pointer pointer-events-auto group bg-card flex flex-col" 
-            onClick={() => handleProductClick(product)}
-          >
-            <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
-              <img 
-                src={product.image} 
-                alt={product.name} 
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                loading="lazy"
-              />
-              <Show when={product.stock < 10}>
-                <div class="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm">
-                  Sisa {product.stock}
-                </div>
-              </Show>
-              <Show when={product.variants && product.variants.length > 0}>
-                <div class="absolute top-2 right-2 bg-background/90 backdrop-blur-sm text-foreground text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm border border-border/50">
-                  Kustom
-                </div>
-              </Show>
-              <Button size="icon" class="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-md bg-white/95 text-primary group-hover:bg-primary group-hover:text-white backdrop-blur border-none flex-shrink-0">
-                <Plus size={18} stroke-width={3} />
-              </Button>
-            </div>
-            <CardContent class="p-3.5 flex flex-col justify-between flex-1">
-              <h3 class="font-black text-[14px] leading-tight line-clamp-2 text-foreground/90">{product.name}</h3>
-              <p class="text-primary font-black text-[15px] mt-2 tracking-tighter italic">Rp {(product.price / 1000).toFixed(0)}k</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Suspense fallback={<ProductSkeleton />}>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2">
+          {filteredProducts().map(product => (
+            <Card 
+              class="overflow-hidden border-border/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-2xl active:scale-[0.96] transition-transform duration-200 cursor-pointer pointer-events-auto group bg-card flex flex-col" 
+              onClick={() => handleProductClick(product)}
+            >
+              <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
+                <img 
+                  src={product.image} 
+                  alt={product.name} 
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                  loading="lazy"
+                />
+                <Show when={product.stock < 10}>
+                  <div class="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm">
+                    Sisa {product.stock}
+                  </div>
+                </Show>
+                <Show when={product.variants && product.variants.length > 0}>
+                  <div class="absolute top-2 right-2 bg-background/90 backdrop-blur-sm text-foreground text-xs uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm border border-border/50">
+                    Kustom
+                  </div>
+                </Show>
+                <Button size="icon" class="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-md bg-white/95 text-primary group-hover:bg-primary group-hover:text-white backdrop-blur border-none flex-shrink-0">
+                  <Plus size={18} stroke-width={3} />
+                </Button>
+              </div>
+              <CardContent class="p-3.5 flex flex-col justify-between flex-1">
+                <h3 class="font-black text-sm leading-tight line-clamp-2 text-foreground/90">{product.name}</h3>
+                <p class="text-primary font-black text-sm mt-2 tracking-tighter italic">Rp {(product.price / 1000).toFixed(0)}k</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </Suspense>
       
       {/* Varian Modifier Sheet (GoFood Style) */}
       <Sheet open={modifierSheetOpen()} onOpenChange={setModifierSheetOpen}>
         <SheetContent position="bottom" class="h-[90vh] md:max-w-lg md:mx-auto rounded-t-[32px] pt-6 flex flex-col px-0 pb-0 shadow-[0_-20px_50px_rgba(0,0,0,0.15)] border-none">
           <SheetHeader class="px-6 mb-2 text-left">
-             <SheetTitle class="font-black text-[26px] tracking-tight">{selectedProduct()?.name}</SheetTitle>
-             <p class="text-[15px] font-bold text-primary mt-1">Rp {selectedProduct()?.price.toLocaleString('id-ID')}</p>
+             <SheetTitle class="font-black text-2xl tracking-tight">{selectedProduct()?.name}</SheetTitle>
+             <p class="text-sm font-bold text-primary mt-1">Rp {selectedProduct()?.price.toLocaleString('id-ID')}</p>
           </SheetHeader>
           
           <div class="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide flex flex-col gap-6 mt-4">
@@ -179,13 +195,13 @@ export default function Home() {
                 <div class="flex flex-col">
                   <div class="flex items-center justify-between mb-3 bg-muted/40 p-3 rounded-2xl border border-border/50">
                     <div>
-                      <h4 class="font-black text-[16px] uppercase tracking-wide">{group.name}</h4>
-                      <p class="text-[11px] font-bold text-muted-foreground mt-0.5">
+                      <h4 class="font-black text-base uppercase tracking-wide">{group.name}</h4>
+                      <p class="text-xs font-bold text-muted-foreground mt-0.5">
                         {group.type === 'SINGLE' ? 'Pilih satu opsi' : 'Bisa pilih lebih dari satu'}
                       </p>
                     </div>
                     <Show when={group.isRequired}>
-                      <span class="bg-primary/10 text-primary text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded-md">Wajib</span>
+                      <span class="bg-primary/10 text-primary text-xs uppercase font-black tracking-widest px-2 py-1 rounded-md">Wajib</span>
                     </Show>
                   </div>
                   
@@ -196,7 +212,7 @@ export default function Home() {
                         return (
                           <div 
                             onClick={() => toggleVariant(group.name, option, group.type === 'SINGLE')}
-                            class={`flex items-center justify-between p-4 rounded-[20px] border-2 transition-all cursor-pointer ${
+                            class={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                               isSelected() 
                                 ? 'border-primary bg-primary/5 shadow-[0_4px_15px_rgba(230,90,20,0.05)]' 
                                 : 'border-border/60 bg-card hover:bg-muted/30'
@@ -210,10 +226,10 @@ export default function Home() {
                                   <Check size={12} stroke-width={4} />
                                 </Show>
                               </div>
-                              <span class={`font-bold text-[15px] ${isSelected() ? 'text-foreground' : 'text-foreground/80'}`}>{option.name}</span>
+                              <span class={`font-bold text-sm ${isSelected() ? 'text-foreground' : 'text-foreground/80'}`}>{option.name}</span>
                             </div>
                             <Show when={option.priceModifier > 0}>
-                              <span class="font-bold text-[14px] text-muted-foreground bg-muted/60 px-2 py-1 rounded-lg">
+                              <span class="font-bold text-sm text-muted-foreground bg-muted/60 px-2 py-1 rounded-lg">
                                 + Rp {option.priceModifier.toLocaleString('id-ID')}
                               </span>
                             </Show>
@@ -228,7 +244,7 @@ export default function Home() {
           </div>
 
           <div class="border-t border-border/50 bg-background/95 backdrop-blur-xl p-5 pb-safe sticky bottom-0 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-             <Button class="w-full h-16 rounded-[24px] text-[18px] font-black premium-shadow border-none hover:bg-primary/95 flex items-center justify-between px-6" onClick={handleConfirmModifier}>
+             <Button class="w-full h-14 rounded-2xl text-base font-black premium-shadow border-none hover:bg-primary/95 flex items-center justify-between px-6" onClick={handleConfirmModifier}>
                 <span>Tambah Pesanan</span>
                 <span>Rp {((selectedProduct()?.price || 0) + currentVariantPrice()).toLocaleString('id-ID')}</span>
              </Button>

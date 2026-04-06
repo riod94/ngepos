@@ -146,15 +146,15 @@ export default function ProductsManager() {
       {/* Header */}
       <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
-          <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+          <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
             <ArrowLeft size={18} />
           </A>
           <div>
-            <h1 class="font-black text-[24px] tracking-tight leading-none">Katalog Produk</h1>
-            <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1 block">Inventaris & HPP</span>
+            <h1 class="font-black text-xl tracking-tight leading-none">Katalog Produk</h1>
+            <span class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1 block">Inventaris & HPP</span>
           </div>
         </div>
-        <Button onClick={openAdd} class="h-11 px-5 rounded-full font-black text-[13px] uppercase tracking-wider shadow-md active:scale-95 transition-all">
+        <Button onClick={openAdd} class="h-11 px-5 rounded-full font-black text-sm uppercase tracking-wider shadow-md active:scale-95 transition-all">
           <Plus size={16} class="mr-1.5" stroke-width={3} /> Tambah
         </Button>
       </div>
@@ -169,7 +169,7 @@ export default function ProductsManager() {
                 <Tag size={24} class="opacity-40" />
               </div>
               <div class="text-center">
-                <p class="font-bold text-[15px]">Belum ada produk</p>
+                <p class="font-bold text-sm">Belum ada produk</p>
                 <p class="text-sm mt-1">Tambahkan produk pertama Anda.</p>
               </div>
             </div>
@@ -178,28 +178,28 @@ export default function ProductsManager() {
           <For each={products()}>
             {(p) => (
               <div
-                class="flex items-center gap-3 bg-card p-4 rounded-[20px] border border-border/70 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.98] group"
+                class="flex items-center gap-3 bg-card p-4 rounded-2xl border border-border/70 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.98] group"
                 onClick={() => openEdit(p)}
               >
-                <div class="w-16 h-16 rounded-[14px] bg-muted overflow-hidden shrink-0 border border-border/50">
+                <div class="w-16 h-16 rounded-2xl bg-muted overflow-hidden shrink-0 border border-border/50">
                   <img src={p.image} alt={p.name} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-black text-[15px] leading-tight truncate">{p.name}</h3>
+                  <h3 class="font-black text-sm leading-tight truncate">{p.name}</h3>
                   <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <span class="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{p.category}</span>
+                    <span class="text-xs font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{p.category}</span>
                     <Show when={p.variants && p.variants.length > 0}>
-                      <span class="text-[10px] font-black text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded uppercase tracking-widest flex items-center gap-0.5">
+                      <span class="text-xs font-black text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded uppercase tracking-widest flex items-center gap-0.5">
                         <Layers size={9} /> Varian
                       </span>
                     </Show>
                     <Show when={p.rawMaterials && p.rawMaterials.length > 0}>
-                      <span class="text-[10px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-widest">
+                      <span class="text-xs font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-widest">
                         Margin {calcMargin(p.price, p.cogs)}%
                       </span>
                     </Show>
                   </div>
-                  <p class="font-black text-[14px] mt-1.5">Rp {p.price.toLocaleString('id-ID')}</p>
+                  <p class="font-black text-sm mt-1.5">Rp {p.price.toLocaleString('id-ID')}</p>
                 </div>
                 <div class="shrink-0 flex items-center gap-2">
                   <Button variant="outline" size="icon" class="h-9 w-9 rounded-full border-border/60 bg-red-50 hover:bg-red-100"
@@ -218,7 +218,7 @@ export default function ProductsManager() {
         <SheetContent position="bottom" class="h-[96vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)]">
           {/* Sheet Header */}
           <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
-            <SheetTitle class="font-black text-[22px] tracking-tight">
+            <SheetTitle class="font-black text-xl tracking-tight">
               {isEditing() ? "Edit Produk" : "Tambah Produk"}
             </SheetTitle>
           </SheetHeader>
@@ -230,7 +230,7 @@ export default function ProductsManager() {
                 <button
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  class={`flex-1 h-10 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all ${
+                  class={`flex-1 h-10 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
                     activeTab() === tab.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:bg-muted"
@@ -248,12 +248,12 @@ export default function ProductsManager() {
             <Show when={activeTab() === "info"}>
               <div class="flex flex-col gap-5 p-5">
                 <div class="flex flex-col gap-2">
-                  <label for="prod-name" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Nama Produk</label>
+                  <label for="prod-name" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Nama Produk</label>
                   <input
                     id="prod-name"
                     required
                     type="text"
-                    class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-[16px] focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                    class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-base focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                     value={formName()}
                     onInput={e => setFormName(e.currentTarget.value)}
                     placeholder="Nama produk..."
@@ -262,23 +262,23 @@ export default function ProductsManager() {
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="flex flex-col gap-2">
-                    <label for="prod-price" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Harga Jual (Rp)</label>
+                    <label for="prod-price" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Harga Jual (Rp)</label>
                     <input
                       id="prod-price"
                       required
                       type="number"
-                      class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-[22px] focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                      class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-xl focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                       value={formPrice()}
                       onInput={e => setFormPrice(e.currentTarget.value)}
                     />
                   </div>
                   <div class="flex flex-col gap-2">
-                    <label for="prod-stock" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Stok Awal</label>
+                    <label for="prod-stock" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Stok Awal</label>
                     <input
                       id="prod-stock"
                       required
                       type="number"
-                      class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-[22px] focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                      class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-xl focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                       value={formStock()}
                       onInput={e => setFormStock(e.currentTarget.value)}
                     />
@@ -286,11 +286,11 @@ export default function ProductsManager() {
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <label for="prod-cat" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Kategori</label>
+                  <label for="prod-cat" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Kategori</label>
                   <select
                     id="prod-cat"
                     required
-                    class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-[15px] focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                    class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-sm focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                     value={formCategoryId()}
                     onChange={e => setFormCategoryId(e.currentTarget.value)}
                   >
@@ -308,18 +308,18 @@ export default function ProductsManager() {
                 {/* Margin indicator */}
                 <div class={`flex items-center justify-between p-4 rounded-2xl border-2 ${marginPct() >= 40 ? "border-emerald-200 bg-emerald-50" : "border-orange-200 bg-orange-50"}`}>
                   <div>
-                    <p class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Estimasi Margin</p>
-                    <p class={`text-[32px] font-black tracking-tighter ${marginPct() >= 40 ? "text-emerald-600" : "text-orange-600"}`}>
+                    <p class="text-xs font-black uppercase tracking-widest text-muted-foreground">Estimasi Margin</p>
+                    <p class={`text-3xl font-black tracking-tighter ${marginPct() >= 40 ? "text-emerald-600" : "text-orange-600"}`}>
                       {marginPct()}%
                     </p>
                   </div>
                   <div class="text-right">
-                    <p class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Total HPP</p>
-                    <p class="font-black text-[18px]">Rp {totalHPP().toLocaleString('id-ID')}</p>
+                    <p class="text-xs font-black text-muted-foreground uppercase tracking-widest">Total HPP</p>
+                    <p class="font-black text-lg">Rp {totalHPP().toLocaleString('id-ID')}</p>
                   </div>
                 </div>
 
-                <p class="text-[12px] font-bold text-muted-foreground">
+                <p class="text-sm font-bold text-muted-foreground">
                   Masukkan bahan baku dan biayanya agar margin keuntungan terhitung otomatis.
                 </p>
 
@@ -328,43 +328,43 @@ export default function ProductsManager() {
                     {(raw, i) => (
                       <div class="flex flex-col gap-2 bg-card p-4 rounded-2xl border border-border/60">
                         <div class="flex items-center justify-between">
-                          <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Bahan #{i() + 1}</span>
+                          <span class="text-xs font-black text-muted-foreground uppercase tracking-widest">Bahan #{i() + 1}</span>
                           <Button type="button" variant="ghost" size="icon" class="h-7 w-7 text-red-400 hover:text-red-500" onClick={() => removeRaw(i())}>
                             <X size={16} />
                           </Button>
                         </div>
                         <input
                           type="text"
-                          class="h-11 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          class="h-11 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                           placeholder="Nama bahan"
                           value={raw.name}
                           onInput={e => updateRaw(i(), "name", e.currentTarget.value)}
                         />
                         <div class="grid grid-cols-3 gap-2">
                           <div class="flex flex-col gap-1 col-span-1">
-                            <label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Qty</label>
+                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Qty</label>
                             <input
                               type="number"
-                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-[14px] focus:outline-none"
+                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               value={raw.quantity}
                               onInput={e => updateRaw(i(), "quantity", parseFloat(e.currentTarget.value))}
                             />
                           </div>
                           <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Unit</label>
+                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Unit</label>
                             <input
                               type="text"
-                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-[14px] focus:outline-none"
+                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               placeholder="gr, ml"
                               value={raw.unit}
                               onInput={e => updateRaw(i(), "unit", e.currentTarget.value)}
                             />
                           </div>
                           <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Biaya (Rp)</label>
+                            <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Biaya (Rp)</label>
                             <input
                               type="number"
-                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-[14px] focus:outline-none"
+                              class="h-10 w-full rounded-xl border border-border/70 bg-background px-3 font-bold text-sm focus:outline-none"
                               value={raw.cost}
                               onInput={e => updateRaw(i(), "cost", parseInt(e.currentTarget.value) || 0)}
                             />
@@ -375,7 +375,7 @@ export default function ProductsManager() {
                   </For>
 
                   <Button type="button" onClick={addRaw} variant="outline"
-                    class="w-full h-12 rounded-2xl font-black border-dashed border-2 border-border/60 text-[13px] text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all">
+                    class="w-full h-12 rounded-2xl font-black border-dashed border-2 border-border/60 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all">
                     <Plus size={16} class="mr-2" /> Tambah Bahan Baku
                   </Button>
                 </div>
@@ -385,7 +385,7 @@ export default function ProductsManager() {
             {/* ── Tab 3: Varian ── */}
             <Show when={activeTab() === "variants"}>
               <div class="flex flex-col gap-4 p-5">
-                <p class="text-[12px] font-bold text-muted-foreground">
+                <p class="text-sm font-bold text-muted-foreground">
                   Buat opsi pilihan seperti ukuran gelas, tingkat kemanisan, atau toping tambahan.
                 </p>
 
@@ -393,7 +393,7 @@ export default function ProductsManager() {
                   {(vg, gi) => (
                     <div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/70">
                       <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Grup Varian #{gi() + 1}</span>
+                        <span class="text-xs font-black text-muted-foreground uppercase tracking-widest">Grup Varian #{gi() + 1}</span>
                         <Button type="button" variant="ghost" size="icon" class="h-7 w-7 text-red-400 hover:text-red-500" onClick={() => removeGroup(gi())}>
                           <X size={16} />
                         </Button>
@@ -401,7 +401,7 @@ export default function ProductsManager() {
 
                       <input
                         type="text"
-                        class="h-12 w-full rounded-xl border border-border/70 bg-background px-4 font-black text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        class="h-12 w-full rounded-xl border border-border/70 bg-background px-4 font-black text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="Judul grup, mis: Pilihan Ukuran"
                         value={vg.name}
                         onInput={e => updateGroup(gi(), "name", e.currentTarget.value)}
@@ -409,9 +409,9 @@ export default function ProductsManager() {
 
                       <div class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1">
-                          <label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Tipe Pilihan</label>
+                          <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Tipe Pilihan</label>
                           <select
-                            class="h-11 rounded-xl border border-border/60 bg-background px-3 font-bold text-[13px] focus:outline-none"
+                            class="h-11 rounded-xl border border-border/60 bg-background px-3 font-bold text-sm focus:outline-none"
                             value={vg.type}
                             onChange={e => updateGroup(gi(), "type", e.currentTarget.value as "SINGLE" | "MULTIPLE")}
                           >
@@ -420,9 +420,9 @@ export default function ProductsManager() {
                           </select>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Status</label>
+                          <label class="text-xs font-black text-muted-foreground uppercase tracking-widest">Status</label>
                           <select
-                            class="h-11 rounded-xl border border-border/60 bg-background px-3 font-bold text-[13px] focus:outline-none"
+                            class="h-11 rounded-xl border border-border/60 bg-background px-3 font-bold text-sm focus:outline-none"
                             value={vg.isRequired ? "1" : "0"}
                             onChange={e => updateGroup(gi(), "isRequired", e.currentTarget.value === "1")}
                           >
@@ -434,20 +434,20 @@ export default function ProductsManager() {
 
                       {/* Options */}
                       <div class="flex flex-col gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
-                        <p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Opsi Pilihan</p>
+                        <p class="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">Opsi Pilihan</p>
                         <For each={vg.options}>
                           {(opt, oi) => (
                             <div class="flex items-center gap-2">
                               <input
                                 type="text"
-                                class="flex-1 h-10 rounded-lg border border-border/60 bg-background px-3 font-bold text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-0"
+                                class="flex-1 h-10 rounded-lg border border-border/60 bg-background px-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-0"
                                 placeholder="Label opsi"
                                 value={opt.name}
                                 onInput={e => updateOption(gi(), oi(), "name", e.currentTarget.value)}
                               />
                               <input
                                 type="number"
-                                class="w-24 h-10 shrink-0 rounded-lg border border-border/60 bg-background px-3 font-bold text-[13px] focus:outline-none"
+                                class="w-24 h-10 shrink-0 rounded-lg border border-border/60 bg-background px-3 font-bold text-sm focus:outline-none"
                                 placeholder="+Harga"
                                 value={opt.priceModifier}
                                 onInput={e => updateOption(gi(), oi(), "priceModifier", parseInt(e.currentTarget.value) || 0)}
@@ -460,7 +460,7 @@ export default function ProductsManager() {
                           )}
                         </For>
                         <Button type="button" variant="outline" size="sm" onClick={() => addOption(gi())}
-                          class="mt-1 h-9 text-[12px] font-black border-dashed rounded-lg text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5">
+                          class="mt-1 h-9 text-sm font-black border-dashed rounded-lg text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5">
                           + Tambah Opsi
                         </Button>
                       </div>
@@ -469,7 +469,7 @@ export default function ProductsManager() {
                 </For>
 
                 <Button type="button" onClick={addGroup}
-                  class="w-full h-14 rounded-2xl font-black border-dashed border-2 border-border/60 text-[13px] bg-transparent text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all">
+                  class="w-full h-14 rounded-2xl font-black border-dashed border-2 border-border/60 text-sm bg-transparent text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all">
                   <PlusCircle size={18} class="mr-2" /> Tambah Grup Varian
                 </Button>
               </div>
@@ -482,7 +482,7 @@ export default function ProductsManager() {
               type="submit"
               form="product-form"
               disabled={isSaving()}
-              class="w-full h-16 rounded-[24px] font-black text-[17px] bg-foreground text-background shadow-lg hover:bg-foreground/90 flex items-center justify-center gap-2 border-none transition-all hover:scale-[1.01]"
+              class="w-full h-14 rounded-2xl font-black text-base bg-foreground text-background shadow-lg hover:bg-foreground/90 flex items-center justify-center gap-2 border-none transition-all hover:scale-[1.01]"
             >
               {isSaving() ? (
                 <div class="w-6 h-6 border-2 border-background/30 border-t-background rounded-full animate-spin" />

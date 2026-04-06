@@ -39,14 +39,14 @@ function QrisSettings() {
   };
 
   return (
-    <div class="bg-card p-5 rounded-[24px] border border-border/70 shadow-sm flex flex-col gap-4">
+    <div class="bg-card p-5 rounded-3xl border border-border/70 shadow-sm flex flex-col gap-4">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-[14px] bg-blue-100 text-blue-600 flex items-center justify-center shadow-inner shrink-0">
+        <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-inner shrink-0">
           <QrCode size={22} stroke-width={2} />
         </div>
         <div>
-          <h3 class="font-black text-[16px] tracking-tight">QRIS Statis</h3>
-          <p class="text-[12px] font-semibold text-muted-foreground mt-0.5">Upload gambar QR code pembayaran Anda</p>
+          <h3 class="font-black text-base tracking-tight">QRIS Statis</h3>
+          <p class="text-sm font-semibold text-muted-foreground mt-0.5">Upload gambar QR code pembayaran Anda</p>
         </div>
       </div>
 
@@ -57,8 +57,8 @@ function QrisSettings() {
             <Upload size={22} class="text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <div class="text-center">
-            <p class="font-black text-[14px]">Upload Gambar QRIS</p>
-            <p class="text-[12px] text-muted-foreground font-semibold mt-0.5">PNG, JPG, max 2MB</p>
+            <p class="font-black text-sm">Upload Gambar QRIS</p>
+            <p class="text-sm text-muted-foreground font-semibold mt-0.5">PNG, JPG, max 2MB</p>
           </div>
           {saving() && <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
         </label>
@@ -77,15 +77,15 @@ function QrisSettings() {
           <div class="flex gap-2">
             <label class="flex-1">
               <input type="file" accept="image/*" class="hidden" onChange={handleFile} />
-              <div class="w-full h-11 rounded-xl border border-border/70 bg-muted/30 flex items-center justify-center gap-2 font-black text-[13px] cursor-pointer hover:bg-muted/50 transition-colors">
+              <div class="w-full h-11 rounded-xl border border-border/70 bg-muted/30 flex items-center justify-center gap-2 font-black text-sm cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload size={15} /> Ganti Gambar
               </div>
             </label>
-            <Button variant="outline" class="flex-1 h-11 rounded-xl font-black text-[13px] text-red-500 border-red-200 hover:bg-red-50" onClick={handleRemove}>
+            <Button variant="outline" class="flex-1 h-11 rounded-xl font-black text-sm text-red-500 border-red-200 hover:bg-red-50" onClick={handleRemove}>
               Hapus QRIS
             </Button>
           </div>
-          <p class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+          <p class="text-xs font-bold text-emerald-600 flex items-center gap-1">
             <Check size={13} /> QRIS aktif — metode QRIS tersedia di kasir
           </p>
         </div>
@@ -118,8 +118,8 @@ export default function SettingsPage() {
   return (
     <div class="flex flex-col min-h-screen bg-muted/10 pb-24">
       <div class="px-5 pt-6 pb-5 border-b border-border/40 bg-background sticky top-0 z-10 backdrop-blur-xl">
-        <h1 class="font-black text-[28px] tracking-tighter leading-none">Pengaturan</h1>
-        <p class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5">Konfigurasi & Manajemen Sistem</p>
+        <h1 class="font-black text-2xl tracking-tighter leading-none">Pengaturan</h1>
+        <p class="text-xs font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5">Konfigurasi & Manajemen Sistem</p>
       </div>
 
       <div class="p-5 flex flex-col gap-3">
@@ -130,20 +130,20 @@ export default function SettingsPage() {
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const inner = (
-            <div class={`flex items-center gap-4 bg-background p-4 rounded-[20px] border shadow-sm transition-all ${
+            <div class={`flex items-center gap-4 bg-background p-4 rounded-2xl border shadow-sm transition-all ${
               item.disabled
                 ? "border-border/50 opacity-50 cursor-not-allowed"
                 : "border-border/70 hover:border-primary/30 hover:bg-muted/20 active:scale-[0.98]"
             }`}>
-              <div class={`w-12 h-12 rounded-[14px] ${item.iconBg} ${item.iconColor} flex items-center justify-center shadow-inner shrink-0`}>
+              <div class={`w-12 h-12 rounded-2xl ${item.iconBg} ${item.iconColor} flex items-center justify-center shadow-inner shrink-0`}>
                 <Icon size={22} stroke-width={2} />
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="font-black text-[16px] tracking-tight">{item.title}</h3>
-                <p class="text-[12px] font-semibold text-muted-foreground mt-0.5">{item.subtitle}</p>
+                <h3 class="font-black text-base tracking-tight">{item.title}</h3>
+                <p class="text-sm font-semibold text-muted-foreground mt-0.5">{item.subtitle}</p>
               </div>
               {item.badge && (
-                <span class="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-lg whitespace-nowrap">
+                <span class="text-xs font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-lg whitespace-nowrap">
                   {item.badge}
                 </span>
               )}
@@ -154,7 +154,7 @@ export default function SettingsPage() {
       </div>
 
       <div class="mt-auto px-5 pb-6 text-center">
-        <p class="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-widest">Ngepos POS · v0.3.0-alpha</p>
+        <p class="text-xs font-bold text-muted-foreground/50 uppercase tracking-widest">Ngepos POS · v0.3.0-alpha</p>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { ArrowLeft, Plus, Trash2, Pencil, Receipt } from "lucide-solid";
+import { Plus, Trash2, Pencil, Receipt } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db, type Expense, type ExpenseCategory, EXPENSE_CATEGORY_LABELS } from "~/db/db";
 import { Button } from "~/components/ui/button";
@@ -111,16 +111,11 @@ export default function Expenses() {
       {/* Header */}
       <div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
-              <ArrowLeft size={18} />
-            </A>
-            <div>
-              <h1 class="font-black text-[24px] tracking-tight leading-none">Pengeluaran</h1>
-              <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1 block">Catatan Biaya Operasional</span>
-            </div>
+          <div>
+            <h1 class="font-black text-xl tracking-tight leading-none">Pengeluaran</h1>
+            <span class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1.5 block leading-none">Catatan Biaya Operasional</span>
           </div>
-          <Button onClick={openAdd} class="h-11 px-5 rounded-full font-black text-[13px] uppercase tracking-wider shadow-md active:scale-95 transition-all">
+          <Button onClick={openAdd} class="h-10 px-4 rounded-full font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all">
             <Plus size={16} class="mr-1.5" stroke-width={3} /> Catat
           </Button>
         </div>
@@ -132,7 +127,7 @@ export default function Expenses() {
               <button
                 type="button"
                 onClick={() => setPeriod(p.key)}
-                class={`flex-1 h-10 rounded-full text-[12px] font-black uppercase tracking-widest transition-all ${
+                class={`flex-1 h-10 rounded-full text-sm font-black uppercase tracking-widest transition-all ${
                   period() === p.key
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted"
@@ -147,11 +142,11 @@ export default function Expenses() {
 
       <div class="p-5 flex flex-col gap-4">
         {/* Total Card */}
-        <div class="p-5 rounded-[24px] bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
+        <div class="p-5 rounded-3xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
           <div class="absolute -right-6 -top-6 opacity-10"><Receipt size={120} /></div>
-          <span class="text-[11px] font-black uppercase tracking-widest opacity-80 block mb-1">Total Pengeluaran</span>
-          <p class="text-[36px] font-black tracking-tighter">Rp {totalExpenses().toLocaleString("id-ID")}</p>
-          <span class="text-xs font-bold opacity-70 mt-1 block bg-black/10 w-fit px-2 py-0.5 rounded">
+          <span class="text-xs font-black uppercase tracking-widest opacity-80 block mb-1">Total Pengeluaran</span>
+          <p class="text-3xl font-black tracking-tighter leading-none">Rp {totalExpenses().toLocaleString("id-ID")}</p>
+          <span class="text-xs font-black tracking-widest uppercase opacity-70 mt-2 block bg-black/10 w-fit px-2 py-0.5 rounded-md">
             {expenses()?.length ?? 0} Entri
           </span>
         </div>
@@ -165,7 +160,7 @@ export default function Expenses() {
                 <Receipt size={22} class="opacity-40" />
               </div>
               <div class="text-center">
-                <p class="font-bold text-[15px]">Belum ada pengeluaran</p>
+                <p class="font-bold text-sm">Belum ada pengeluaran</p>
                 <p class="text-sm mt-1 opacity-70">Catat biaya operasional Anda di sini.</p>
               </div>
             </div>
@@ -176,28 +171,28 @@ export default function Expenses() {
               const colors = CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.lainnya;
               return (
                 <div
-                  class="flex items-center gap-3 bg-card p-4 rounded-[20px] border border-border/70 shadow-sm cursor-pointer active:scale-[0.98] transition-all hover:border-primary/30 group"
+                  class="flex items-center gap-3 bg-card p-4 rounded-2xl border border-border/70 shadow-sm cursor-pointer active:scale-[0.98] transition-all hover:border-primary/30 group"
                   onClick={() => openEdit(expense)}
                 >
-                  <div class={`w-11 h-11 rounded-[12px] ${colors.bg} ${colors.text} flex items-center justify-center shrink-0 font-black text-[13px]`}>
+                  <div class={`w-11 h-11 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center shrink-0 font-black text-sm`}>
                     {EXPENSE_CATEGORY_LABELS[expense.category].substring(0, 2).toUpperCase()}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="font-black text-[15px] leading-tight truncate">{expense.description || EXPENSE_CATEGORY_LABELS[expense.category]}</p>
+                    <p class="font-black text-sm leading-tight truncate">{expense.description || EXPENSE_CATEGORY_LABELS[expense.category]}</p>
                     <div class="flex items-center gap-1.5 mt-1">
-                      <span class={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
+                      <span class={`text-xs font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
                         {EXPENSE_CATEGORY_LABELS[expense.category]}
                       </span>
                       <Show when={expense.isBackdated}>
-                        <span class="text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase tracking-widest">Lampau</span>
+                        <span class="text-xs font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase tracking-widest">Lampau</span>
                       </Show>
                     </div>
-                    <p class="text-[12px] font-semibold text-muted-foreground mt-0.5">
+                    <p class="text-sm font-semibold text-muted-foreground mt-0.5">
                       {new Date(expense.timestamp).toLocaleDateString("id-ID", { dateStyle: "medium" })}
                     </p>
                   </div>
                   <div class="flex flex-col items-end gap-2 shrink-0">
-                    <p class="font-black text-[15px] text-red-500">−Rp {expense.amount.toLocaleString("id-ID")}</p>
+                    <p class="font-black text-sm text-red-500">−Rp {expense.amount.toLocaleString("id-ID")}</p>
                     <Button variant="outline" size="icon" class="h-8 w-8 rounded-full border-border/60 bg-red-50 hover:bg-red-100"
                       onClick={(e) => handleDelete(expense.id, e)}>
                       <Trash2 size={13} class="text-red-500" />
@@ -214,18 +209,18 @@ export default function Expenses() {
       <Sheet open={sheetOpen()} onOpenChange={setSheetOpen}>
         <SheetContent position="bottom" class="h-auto max-h-[90vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)]">
           <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
-            <SheetTitle class="font-black text-[22px] tracking-tight">
+            <SheetTitle class="font-black text-xl tracking-tight">
               {isEditing() ? "Edit Pengeluaran" : "Catat Pengeluaran"}
             </SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSave} class="flex flex-col gap-5 p-5 overflow-y-auto">
             {/* Amount */}
             <div class="flex flex-col gap-2">
-              <label for="exp-amount" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Jumlah (Rp)</label>
+              <label for="exp-amount" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Jumlah (Rp)</label>
               <input
                 id="exp-amount"
                 required type="number"
-                class="h-16 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-[28px] focus:outline-none focus:border-red-400/60 focus:ring-4 focus:ring-red-400/10 transition-all"
+                class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-black text-xl focus:outline-none focus:border-red-400/60 focus:ring-4 focus:ring-red-400/10 transition-all"
                 value={formAmount()}
                 onInput={e => setFormAmount(e.currentTarget.value)}
                 placeholder="0"
@@ -234,10 +229,10 @@ export default function Expenses() {
 
             {/* Category */}
             <div class="flex flex-col gap-2">
-              <label for="exp-cat" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Kategori</label>
+              <label for="exp-cat" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Kategori</label>
               <select
                 id="exp-cat"
-                class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-[15px] focus:outline-none focus:border-primary/50 transition-all"
+                class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 font-bold text-sm focus:outline-none focus:border-primary/50 transition-all"
                 value={formCategory()}
                 onChange={e => setFormCategory(e.currentTarget.value as ExpenseCategory)}
               >
@@ -249,11 +244,11 @@ export default function Expenses() {
 
             {/* Description */}
             <div class="flex flex-col gap-2">
-              <label for="exp-desc" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Keterangan</label>
+              <label for="exp-desc" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Keterangan</label>
               <input
                 id="exp-desc"
                 type="text"
-                class="h-12 w-full rounded-xl border border-border/70 bg-card px-4 font-bold text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                class="h-12 w-full rounded-xl border border-border/70 bg-card px-4 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 value={formDesc()}
                 onInput={e => setFormDesc(e.currentTarget.value)}
                 placeholder="Keterangan opsional..."
@@ -262,11 +257,11 @@ export default function Expenses() {
 
             {/* Date */}
             <div class="flex flex-col gap-2">
-              <label for="exp-date" class="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Tanggal</label>
+              <label for="exp-date" class="text-xs font-black uppercase tracking-widest text-muted-foreground">Tanggal</label>
               <input
                 id="exp-date"
                 type="date"
-                class="h-12 w-full rounded-xl border border-border/70 bg-card px-4 font-bold text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                class="h-12 w-full rounded-xl border border-border/70 bg-card px-4 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 value={formDate()}
                 onInput={e => setFormDate(e.currentTarget.value)}
               />
@@ -275,8 +270,8 @@ export default function Expenses() {
             {/* Backdated toggle */}
             <div class="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-200">
               <div>
-                <p class="font-black text-[14px] text-amber-900">Tandai sebagai Lampau</p>
-                <p class="text-[11px] text-amber-700 font-semibold mt-0.5">Pengeluaran dari hari/waktu sebelumnya</p>
+                <p class="font-black text-sm text-amber-900">Tandai sebagai Lampau</p>
+                <p class="text-xs text-amber-700 font-semibold mt-0.5">Pengeluaran dari hari/waktu sebelumnya</p>
               </div>
               <button
                 type="button"
@@ -290,7 +285,7 @@ export default function Expenses() {
             <Button
               type="submit"
               disabled={isSaving()}
-              class="w-full h-16 rounded-[24px] font-black text-[17px] bg-red-500 hover:bg-red-600 text-white shadow-lg border-none flex items-center justify-center gap-2 mb-4"
+              class="w-full h-14 rounded-2xl font-black text-base bg-red-500 hover:bg-red-600 text-white shadow-lg border-none flex items-center justify-center gap-2 mb-4"
             >
               {isSaving() ? (
                 <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

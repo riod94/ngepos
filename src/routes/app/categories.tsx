@@ -69,17 +69,17 @@ export default function Categories() {
       {/* Header */}
       <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
-          <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+          <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-3xl shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
             <ArrowLeft size={18} />
           </A>
           <div>
-            <h1 class="font-black text-[24px] tracking-tight leading-none">Kategori</h1>
-            <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1 block">Manajemen Kategori Produk</span>
+            <h1 class="font-black text-xl tracking-tight leading-none">Kategori</h1>
+            <span class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1 block">Manajemen Kategori Produk</span>
           </div>
         </div>
         <Button
           onClick={openAdd}
-          class="h-11 px-5 rounded-full font-black text-[13px] uppercase tracking-wider shadow-md active:scale-95 transition-all"
+          class="h-11 px-5 rounded-full font-black text-sm uppercase tracking-wider shadow-md active:scale-95 transition-all"
         >
           <Plus size={16} class="mr-1.5" stroke-width={3} /> Tambah
         </Button>
@@ -87,22 +87,22 @@ export default function Categories() {
 
       {/* Dialog */}
       <Dialog open={isOpen()} onOpenChange={setIsOpen}>
-        <DialogContent class="w-[90vw] max-w-sm rounded-[28px] p-6">
+        <DialogContent class="w-[90vw] max-w-sm rounded-3xl p-6">
           <DialogHeader>
-            <DialogTitle class="text-[20px] font-black tracking-tight">
+            <DialogTitle class="text-xl font-black tracking-tight">
               {isEditing() ? "Edit Kategori" : "Kategori Baru"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} class="flex flex-col gap-4 mt-4">
             <div class="flex flex-col gap-2">
-              <label for="cat-name" class="text-[12px] font-black uppercase tracking-widest text-muted-foreground">
+              <label for="cat-name" class="text-sm font-black uppercase tracking-widest text-muted-foreground">
                 Nama Kategori
               </label>
               <input
                 id="cat-name"
                 required
                 type="text"
-                class="h-14 w-full rounded-xl border-2 border-border/80 bg-card px-4 font-bold text-[16px] focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                class="h-14 w-full rounded-xl border-2 border-border/80 bg-card px-4 font-bold text-base focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
                 value={formName()}
                 onInput={(e) => setFormName((e.target as HTMLInputElement).value)}
                 placeholder="Contoh: Minuman Panas"
@@ -111,7 +111,7 @@ export default function Categories() {
             <Button
               type="submit"
               disabled={isSaving()}
-              class="w-full h-14 rounded-2xl font-black text-[16px] mt-2"
+              class="w-full h-14 rounded-2xl font-black text-base mt-2"
             >
               {isSaving() ? "Menyimpan..." : isEditing() ? "Perbarui Kategori" : "Simpan Kategori"}
             </Button>
@@ -129,7 +129,7 @@ export default function Categories() {
                 <Tag size={24} class="opacity-40" />
               </div>
               <div class="text-center">
-                <p class="font-bold text-[15px]">Belum ada kategori</p>
+                <p class="font-bold text-sm">Belum ada kategori</p>
                 <p class="text-sm mt-1">Tambahkan kategori untuk mengorganisir produk.</p>
               </div>
             </div>
@@ -137,13 +137,13 @@ export default function Categories() {
         >
           <For each={categories()}>
             {(cat) => (
-              <div class="flex items-center gap-4 bg-card p-4 rounded-[20px] border border-border/70 shadow-sm group hover:border-primary/30 transition-all">
-                <div class="w-12 h-12 rounded-[14px] bg-violet-100 text-violet-600 flex items-center justify-center shadow-inner shrink-0">
+              <div class="flex items-center gap-4 bg-card p-4 rounded-2xl border border-border/70 shadow-sm group hover:border-primary/30 transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center shadow-inner shrink-0">
                   <Tag size={20} stroke-width={2} />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-black text-[16px] tracking-tight">{cat.name}</h3>
-                  <p class="text-[12px] font-semibold text-muted-foreground mt-0.5">
+                  <h3 class="font-black text-base tracking-tight">{cat.name}</h3>
+                  <p class="text-sm font-semibold text-muted-foreground mt-0.5">
                     Urutan ke-{cat.orderIndex + 1}
                   </p>
                 </div>
