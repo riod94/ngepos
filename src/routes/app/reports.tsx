@@ -1,5 +1,5 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, BarChart3, RefreshCw, Wallet, ShoppingBag, ArrowUpRight, ArrowDownRight } from "lucide-solid";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, ChartBar, RefreshCw, Wallet, ShoppingBag, ArrowUpRight, ArrowDownRight } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db } from "~/db/db";
 import { Button } from "~/components/ui/button";
@@ -71,16 +71,16 @@ export default function Reports() {
       <div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <A href="/app/pengaturan" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60">
+            <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
               <ArrowLeft size={18} />
             </A>
             <div>
-              <h1 class="font-black text-[22px] tracking-tight">Laporan Keuangan</h1>
-              <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">P&L Overview</span>
+              <h1 class="font-black text-[24px] tracking-tight leading-none">Laporan Keuangan</h1>
+              <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1 block">P&L Overview</span>
             </div>
           </div>
           {/* Shortcut to expenses */}
-          <A href="/app/expenses" class="h-10 px-3 rounded-full bg-red-100 text-red-600 flex items-center gap-1.5 font-black text-[12px] uppercase tracking-widest hover:bg-red-200 transition-colors">
+          <A href="/app/expenses" class="h-10 px-4 rounded-full bg-red-100 text-red-600 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest hover:bg-red-200 transition-all active:scale-95 shadow-sm">
             <ArrowDownRight size={16} /> Pengeluaran
           </A>
         </div>
@@ -176,7 +176,7 @@ export default function Reports() {
               {/* Section 3: Alokasi Modal & Profit Murni */}
               <div class={`p-5 rounded-[24px] border-2 shadow-sm flex flex-col gap-4 ${isPositive(d.trueProfit) ? "border-emerald-200 bg-emerald-50/50" : "border-red-200 bg-red-50/50"}`}>
                 <h3 class={`font-black text-[13px] uppercase tracking-widest flex items-center gap-2 ${isPositive(d.trueProfit) ? "text-emerald-700" : "text-red-700"}`}>
-                  <BarChart3 size={16} /> Analisis Modal & Profit
+                  <ChartBar size={16} /> Analisis Modal & Profit
                 </h3>
 
                 <MetricRow label="Modal Harus Kembali (HPP)" value={`−${fmt(d.modalReturn)}`} color="text-orange-600" sub="Dialokasikan untuk restok bahan baku" />
@@ -208,7 +208,7 @@ export default function Reports() {
                     <p class="text-[10px] text-muted-foreground font-semibold">Kelola biaya</p>
                   </div>
                 </A>
-                <A href="/app/riwayat" class="bg-card p-4 rounded-[20px] border border-border/60 shadow-sm flex items-center gap-3 hover:border-primary/30 transition-colors active:scale-[0.98]">
+                <A href="/app/history" class="bg-card p-4 rounded-[20px] border border-border/60 shadow-sm flex items-center gap-3 hover:border-primary/30 transition-all active:scale-[0.98]">
                   <div class="w-10 h-10 rounded-[12px] bg-primary/10 text-primary flex items-center justify-center">
                     <ArrowUpRight size={20} />
                   </div>

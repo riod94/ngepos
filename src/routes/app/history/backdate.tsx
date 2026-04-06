@@ -27,6 +27,7 @@ export default function BackdateTransaction() {
         id: transactionId,
         receiptNumber: `BD-${Date.now()}`,
         totalAmount: parsedTotal,
+        cogsTotal: 0,
         paymentMethod: method(),
         timestamp: dateTime.getTime(),
         status: 'PENDING',
@@ -39,10 +40,11 @@ export default function BackdateTransaction() {
         productId: "bd_item",
         productName: "Entri Transaksi Manual",
         quantity: 1,
-        priceAtTime: parsedTotal
+        priceAtTime: parsedTotal,
+        cogsAtTime: 0
       });
 
-      setTimeout(() => navigate('/app/riwayat'), 400);
+      setTimeout(() => navigate('/app/history'), 400);
     } catch {
       alert("Pastikan total diisi dengan angka yang benar.");
     } finally {
@@ -53,12 +55,12 @@ export default function BackdateTransaction() {
   return (
     <div class="flex flex-col min-h-screen bg-background pb-24">
       <div class="flex items-center gap-3 px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-        <A href="/app/riwayat" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60">
+        <A href="/app/history" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
           <ArrowLeft size={18} />
         </A>
         <div>
-          <h1 class="font-black text-[22px] tracking-tight">Input Lampau</h1>
-          <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Catat Transaksi Masa Lalu</span>
+          <h1 class="font-black text-[24px] tracking-tight leading-none">Input Lampau</h1>
+          <span class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-1 block">Catat Transaksi Masa Lalu</span>
         </div>
       </div>
 

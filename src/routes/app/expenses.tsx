@@ -112,15 +112,15 @@ export default function Expenses() {
       <div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <A href="/app/pengaturan" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60">
+            <A href="/app/settings" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
               <ArrowLeft size={18} />
             </A>
             <div>
-              <h1 class="font-black text-[22px] tracking-tight">Pengeluaran</h1>
-              <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Catatan Biaya Operasional</span>
+              <h1 class="font-black text-[24px] tracking-tight leading-none">Pengeluaran</h1>
+              <span class="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1 block">Catatan Biaya Operasional</span>
             </div>
           </div>
-          <Button onClick={openAdd} class="h-10 px-4 rounded-full font-black text-[13px] shadow-md">
+          <Button onClick={openAdd} class="h-11 px-5 rounded-full font-black text-[13px] uppercase tracking-wider shadow-md active:scale-95 transition-all">
             <Plus size={16} class="mr-1.5" stroke-width={3} /> Catat
           </Button>
         </div>

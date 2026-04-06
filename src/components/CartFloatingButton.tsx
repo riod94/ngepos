@@ -1,5 +1,5 @@
 import { Show, createSignal, For, createResource } from "solid-js";
-import { Plus, Minus, QrCode, Banknote, ChevronLeft, CheckCircle, XCircle, Clock, Calendar } from "lucide-solid";
+import { Plus, Minus, QrCode, Banknote, ChevronLeft, CircleCheck, CircleX, Clock, Calendar } from "lucide-solid";
 import { useNavigate } from "@solidjs/router";
 import { cart, getCartTotal, getCartCount, updateQuantity, clearCart } from "~/stores/cart";
 import { Button } from "~/components/ui/button";
@@ -148,8 +148,8 @@ export function CartFloatingButton() {
           </SheetTrigger>
 
           <SheetContent position="bottom" class="h-[88vh] rounded-t-[32px] md:max-w-lg md:mx-auto flex flex-col p-0 border-none bg-background shadow-[0_-15px_50px_rgba(0,0,0,0.1)]">
-            <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
-              <SheetTitle class="font-black text-2xl tracking-tight">Pesanan Anda</SheetTitle>
+            <SheetHeader class="px-6 pt-7 pb-4 border-b border-border/50 shrink-0">
+              <SheetTitle class="font-black text-[28px] tracking-tighter leading-none">Pesanan Anda</SheetTitle>
             </SheetHeader>
 
             {/* Backdate Toggle */}
@@ -208,7 +208,7 @@ export function CartFloatingButton() {
                 {(item) => (
                   <div class="flex items-center gap-3 bg-card px-4 py-4 rounded-[22px] border border-border/60 shadow-sm">
                     <div class="flex-1 min-w-0">
-                      <h4 class="font-black text-[15px] leading-tight truncate">{item.name}</h4>
+                      <h4 class="font-black text-[16px] leading-tight truncate text-foreground/90">{item.name}</h4>
                       <Show when={item.selectedVariants && item.selectedVariants.length > 0}>
                         <div class="flex flex-wrap gap-1 mt-1">
                           <For each={item.selectedVariants}>
@@ -323,7 +323,7 @@ export function CartFloatingButton() {
                   onClick={() => handleQrConfirm(false)}
                   class="flex-1 h-14 rounded-2xl border-2 border-red-200 bg-red-50 text-red-600 font-black text-[15px] flex items-center justify-center gap-2 hover:bg-red-100 transition-colors disabled:opacity-50"
                 >
-                  <XCircle size={20} /> Gagal
+                  <CircleX size={20} /> Gagal
                 </button>
                 <button
                   type="button"
@@ -333,7 +333,7 @@ export function CartFloatingButton() {
                 >
                   {processing()
                     ? <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    : <><CheckCircle size={20} /> Sukses</>
+                    : <><CircleCheck size={20} /> Sukses</>
                   }
                 </button>
               </div>
@@ -348,7 +348,7 @@ export function CartFloatingButton() {
           <Show when={payStep() === "done_fail"}>
             <div class="flex flex-col items-center gap-4 py-2">
               <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                <XCircle size={36} class="text-red-500" />
+                <CircleX size={36} class="text-red-500" />
               </div>
               <div class="text-center">
                 <p class="font-black text-[20px] text-red-600">Pembayaran Gagal</p>

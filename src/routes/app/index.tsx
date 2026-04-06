@@ -89,8 +89,8 @@ export default function Home() {
     <div class="flex flex-col gap-5 pb-32 px-5 py-4">
       {/* Neo-Header */}
       <div class="flex flex-col gap-1 mb-2">
-        <h1 class="font-black text-2xl tracking-tighter text-foreground leading-none">Selamat Datang,</h1>
-        <p class="text-[13px] font-bold text-muted-foreground uppercase tracking-widest">Apa yang ingin dipesan hari ini?</p>
+        <h1 class="font-black text-[28px] tracking-tighter text-foreground leading-[1.1]">Selamat Datang,</h1>
+        <p class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-0.5">Apa yang ingin dipesan hari ini?</p>
       </div>
 
       {/* Search Header */}
@@ -157,9 +157,9 @@ export default function Home() {
                 <Plus size={18} stroke-width={3} />
               </Button>
             </div>
-            <CardContent class="p-3 flex flex-col justify-between flex-1">
-              <h3 class="font-black text-[13px] leading-snug line-clamp-2 text-foreground/90">{product.name}</h3>
-              <p class="text-primary font-black text-[12px] mt-1.5 tracking-tight">Rp {(product.price / 1000).toFixed(0)}k</p>
+            <CardContent class="p-3.5 flex flex-col justify-between flex-1">
+              <h3 class="font-black text-[14px] leading-tight line-clamp-2 text-foreground/90">{product.name}</h3>
+              <p class="text-primary font-black text-[15px] mt-2 tracking-tighter italic">Rp {(product.price / 1000).toFixed(0)}k</p>
             </CardContent>
           </Card>
         ))}

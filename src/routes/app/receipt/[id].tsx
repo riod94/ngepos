@@ -17,12 +17,16 @@ export default function Receipt() {
   return (
     <div class="flex flex-col min-h-screen bg-muted/20 pb-24">
       {/* App Bar */}
-      <div class="flex items-center justify-between p-4 bg-background/80 backdrop-blur-md sticky top-0 z-10 border-b border-border/50">
-        <A href="/app/riwayat" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60">
-          <ArrowLeft size={20} />
-        </A>
-        <span class="font-black text-[17px] tracking-tight">Struk Transaksi</span>
-        <div class="w-10" />
+      <div class="flex items-center justify-between p-5 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
+        <div class="flex items-center gap-3">
+          <A href="/app/history" class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95">
+            <ArrowLeft size={18} />
+          </A>
+          <div>
+            <h1 class="font-black text-[24px] tracking-tight leading-none">Detail Transaksi</h1>
+            <p class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5 block">Nota Digital #{transaction()?.receiptNumber || '...'}</p>
+          </div>
+        </div>
       </div>
 
       <Show

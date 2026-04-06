@@ -1,6 +1,6 @@
 import { createSignal, createResource, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import { Package, Users, Database, BarChart3, Tags, Receipt, QrCode, Upload, Check } from "lucide-solid";
+import { Package, Users, Database, Tags, QrCode, Upload, Check } from "lucide-solid";
 import { db, getSetting, setSetting } from "~/db/db";
 import { Button } from "~/components/ui/button";
 
@@ -108,20 +108,18 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { href: "/app/reports",   icon: BarChart3, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", title: "Laporan Keuangan",    subtitle: "P&L omset, HPP & profit nyata" },
-  { href: "/app/expenses",  icon: Receipt,   iconBg: "bg-red-100",     iconColor: "text-red-600",     title: "Pengeluaran",         subtitle: "Catat biaya operasional harian" },
   { href: "/app/products",  icon: Package,   iconBg: "bg-blue-100",    iconColor: "text-blue-600",    title: "Katalog Produk",      subtitle: "Atur menu, stok, HPP & varian" },
   { href: "/app/categories",icon: Tags,      iconBg: "bg-violet-100",  iconColor: "text-violet-600",  title: "Manajemen Kategori",  subtitle: "Tambah & atur kategori produk" },
   { href: "#", icon: Users, iconBg: "bg-orange-100", iconColor: "text-orange-600", title: "Manajemen Staf",    subtitle: "Kelola akses dan peran kasir", disabled: true, badge: "Segera Hadir" },
   { href: "#", icon: Database, iconBg: "bg-teal-100", iconColor: "text-teal-600",  title: "Sinkronisasi Cloud", subtitle: "Backup & sync data ke server",  disabled: true, badge: "Segera Hadir" },
 ];
 
-export default function Pengaturan() {
+export default function SettingsPage() {
   return (
     <div class="flex flex-col min-h-screen bg-muted/10 pb-24">
       <div class="px-5 pt-6 pb-5 border-b border-border/40 bg-background sticky top-0 z-10 backdrop-blur-xl">
-        <h1 class="font-black text-[26px] tracking-tight">Pengaturan</h1>
-        <p class="text-sm font-semibold text-muted-foreground mt-0.5">Konfigurasi & Manajemen Sistem</p>
+        <h1 class="font-black text-[28px] tracking-tighter leading-none">Pengaturan</h1>
+        <p class="text-[11px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5">Konfigurasi & Manajemen Sistem</p>
       </div>
 
       <div class="p-5 flex flex-col gap-3">
