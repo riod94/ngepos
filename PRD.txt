@@ -1,369 +1,329 @@
-One-pager: AI-Powered Mobile-First POS Web Application
+═══════════════════════════════════════════════════════════════════════════════
+  NGEPOS — Product Requirements Document (PRD)
+  Mobile-First POS Web Application for F&B Businesses
+  Last Updated: 2026-04-07
+═══════════════════════════════════════════════════════════════════════════════
+
 1. TL;DR
-A modern, mobile-first web-based Point of Sale (POS) system designed for small to medium-sized food and beverage businesses. This application combines instant checkout capabilities, AI-powered features, comprehensive inventory management, and offline functionality to deliver a seamless transaction experience comparable to platforms like Gojek and Shopee Food. The system supports both real-time and retroactive transaction recording, enabling business owners to maintain accurate records even when entering past sales data.
+────────────────────────────────────────────────────────────────────────────────
+Ngepos is a modern, mobile-first web-based Point of Sale (POS) system designed
+for small to medium-sized food & beverage businesses in Indonesia. Built with
+SolidStart (SPA mode) + Dexie.js (IndexedDB), it runs entirely in the browser
+with offline-first architecture — no server required for core operations.
 
-Target Users: Restaurant owners, café operators, food stall vendors, and small retail businesses requiring a flexible, mobile-accessible POS solution.
+The system provides instant checkout, advanced product management with variant
+& recipe support, COGS/HPP tracking with margin analytics, multi-channel
+payment processing (Cash, QRIS, GoFood, GrabFood, ShopeeFood), expense
+tracking, financial reporting, and role-based staff management.
 
-Why It Matters: Most existing POS systems are either too complex, desktop-dependent, or lack the flexibility needed by modern mobile-first businesses. This solution bridges that gap with an intuitive interface, offline capabilities, and AI assistance for inventory and sales optimization.
+Target Users : Restaurant owners, café operators, food stall vendors, and
+               small retail businesses requiring a flexible, mobile-accessible
+               POS solution.
 
-2. Goals
-Business Goals
-Capture market share in the mobile-first POS segment, particularly targeting food service and small retail businesses
-Achieve 70% mobile transaction completion rate within first 6 months of launch
-Drive user adoption through simplified onboarding and intuitive UI that requires minimal training
-Enable business growth through data-driven insights and AI-powered recommendations
-Build a scalable platform that supports both online and offline operational modes
-Establish a competitive advantage through AI features for inventory optimization and sales forecasting
-User Goals
-Complete transactions in under 30 seconds with minimal clicks
-Access the POS system from any device (mobile, tablet, or desktop) without app installation
-Manage inventory with automatic cost tracking and low-stock alerts
-Process payments through multiple channels (cash, QRIS, digital wallets) seamlessly
-Generate comprehensive reports for sales, expenses, profit margins, and operational insights
-Record past transactions to maintain complete historical records
-Operate the business without internet connectivity disruptions
-Reduce product waste through better inventory forecasting
-Manage multiple staff members with role-based access control
-Non-Goals
-Building native iOS or Android applications (focus is on Progressive Web App)
-Supporting complex enterprise ERP integrations in the initial release
-Offering built-in accounting software (will integrate with existing tools)
-Managing supplier relationships and procurement workflows in V1
-Providing customer loyalty program management (future consideration)
-Supporting multi-location franchise operations in the first phase
-3. User stories
-Primary Persona: Maya - Café Owner
+Why It Matters: Most existing POS systems are either too complex, server-
+               dependent, or lack the flexibility needed by modern mobile-
+               first businesses. Ngepos bridges that gap with an intuitive
+               interface, offline-first architecture, and built-in business
+               intelligence for F&B operations.
 
-As a café owner, I want to quickly process customer orders from my phone so that I can serve customers efficiently during peak hours
-As a business owner, I want to see my daily profit margins in real-time so that I can make informed pricing decisions
-As a manager, I want to set different access levels for my staff so that sensitive financial data remains secure
-As an inventory manager, I want automatic alerts when ingredients run low so that I never run out of popular items
-Secondary Persona: Rizki - Food Stall Operator
 
-As a food stall operator with unstable internet, I want to continue taking orders offline so that my business never stops
-As someone who isn't tech-savvy, I want a simple checkout process so that I can focus on cooking rather than learning software
-As a business owner tracking expenses manually, I want to record all my costs in one place so that I understand my true profitability
-As someone who forgets to log sales immediately, I want to enter past transactions so that my records stay accurate
-Tertiary Persona: Dina - Restaurant Manager
+2. GOALS
+────────────────────────────────────────────────────────────────────────────────
 
-As a restaurant manager, I want to create combo meals and bundled offerings so that I can increase average order value
-As someone managing deliveries, I want to add delivery fees to transactions so that all costs are properly captured
-As a manager reviewing performance, I want detailed sales reports by time period, product, and staff member so that I can identify trends
-As someone handling multiple payment methods, I want a unified system that tracks cash, QRIS, and digital payments separately
-4. Functional requirements
-P0 - Must Have (MVP)
+Business Goals:
+  • Capture market share in the mobile-first POS segment for Indonesian F&B
+  • Achieve <15 second average checkout time through optimized mobile UI
+  • Drive adoption through zero-setup onboarding (no server, no registration)
+  • Enable data-driven decisions via built-in margin analytics and reporting
+  • Build a scalable, offline-first platform supporting online & offline modes
+
+User Goals:
+  • Complete transactions in under 30 seconds with minimal taps
+  • Access the POS from any device without app installation (PWA)
+  • Manage inventory with automatic cost tracking and margin visibility
+  • Process payments through multiple channels (Cash, QRIS, delivery platforms)
+  • Generate reports for sales, expenses, profit margins, and operational data
+  • Record past transactions to maintain complete historical records
+  • Operate without internet connectivity disruptions
+
+Non-Goals (Current Phase):
+  • Building native iOS or Android applications
+  • Complex enterprise ERP integrations
+  • Built-in accounting software (future integration target)
+  • Supplier management and procurement workflows
+  • Customer loyalty program management
+  • Multi-location franchise operations
+
+
+3. USER STORIES
+────────────────────────────────────────────────────────────────────────────────
+
+Primary Persona: Maya — Café Owner
+  [✓] As a café owner, I want to quickly process orders from my phone so that
+      I can serve customers efficiently
+  [✓] As a business owner, I want to see my product profit margins so that I
+      can make informed pricing decisions
+  [ ] As a manager, I want to enforce access levels for my staff so that
+      sensitive data remains secure (UI built, enforcement partial)
+  [ ] As an inventory manager, I want automatic alerts when items run low
+
+Secondary Persona: Rizki — Food Stall Operator
+  [~] As a stall operator with unstable internet, I want to continue taking
+      orders offline (data persists via IndexedDB; sync not yet implemented)
+  [✓] As someone not tech-savvy, I want a simple checkout process
+  [✓] As a business owner, I want to record all costs in one place
+  [✓] As someone who forgets to log sales, I want to enter past transactions
+
+Tertiary Persona: Dina — Restaurant Manager
+  [ ] As a manager, I want to create combo meals and bundled offerings
+  [✓] As someone managing deliveries, I want platform-specific payment tracking
+  [✓] As a manager, I want detailed financial reports by time period
+  [✓] As someone handling multiple payment methods, I want unified tracking
+
+Legend: [✓] Implemented  [~] Partial  [ ] Not Started
+
+
+4. FUNCTIONAL REQUIREMENTS & IMPLEMENTATION STATUS
+────────────────────────────────────────────────────────────────────────────────
+
+P0 — Must Have (MVP)  ════════════════════
+Status: ~85% Complete
+
 Core POS Functionality:
+  [✓] Instant checkout interface optimized for mobile (large touch targets)
+  [✓] Quick product search with category filtering
+  [ ] Barcode scanning support
+  [✓] Shopping cart/session management with real-time total
+  [ ] Split payment support (partial cash, partial digital)
+  [✓] Digital receipt generation with variant detail
+  [✓] Backdated transaction recording with timestamp adjustment
 
-Instant checkout interface optimized for mobile screens with large touch targets
-Quick product search and selection with barcode scanning support
-Shopping cart/session management with ability to hold and recall multiple orders
-Split payment support (partial cash, partial digital)
-Receipt generation (digital and print-ready)
-Ability to record backdated transactions with timestamp adjustment
 Product & Inventory Management:
+  [✓] Product catalog with images, pricing, and categories
+  [✓] Variant management (single/multi select, COGS modifier per variant)
+  [✓] Variant template library (save & reuse across products)
+  [✓] Raw material/ingredient tracking with per-unit cost
+  [✓] Raw material library (save & reuse materials)
+  [✓] COGS/HPP calculation per product (auto-computed from materials)
+  [✓] 4-tier margin analytics (Kritis/Tipis/Sehat/Optimal) with color coding
+  [✓] Interactive margin guide with show/hide toggle
+  [✓] Basic stock tracking with manual adjustments
+  [~] Low stock indicator (visual badge on product, no push notification)
 
-Product catalog with images, pricing, and descriptions
-Ingredient/component tracking with portion control
-Cost of Goods Sold (COGS/HPP) calculation per product
-Basic inventory tracking with manual stock adjustments
-Low stock alerts and notifications
 Payment Processing:
+  [✓] Cash payment recording with change calculation
+  [✓] QRIS static image display for payment (upload via settings)
+  [✓] Payment method tracking per transaction (Cash, QRIS, Platform)
+  [✓] GoFood, GrabFood, ShopeeFood as payment channels
+  [✓] Platform price adjustment (mark-up/discount for delivery platforms)
 
-Cash payment recording with change calculation
-QRIS integration for instant payment verification
-Manual digital payment recording (for other methods)
-Payment method tracking per transaction
 User Management:
+  [✓] Staff CRUD with name, email, phone, PIN
+  [✓] Role definition with granular permissions
+  [✓] Role assignment to staff members
+  [~] Permission enforcement (UI-level gating on some features)
+  [ ] Activity logging for accountability
 
-Multi-user support with individual login credentials
-Role-based access control (Owner, Manager, Cashier, Viewer)
-Permission management for sensitive features (reports, settings, deletions)
-Activity logging for accountability
 Offline Functionality:
+  [✓] Full POS operation without internet (IndexedDB via Dexie.js)
+  [✓] Local data persistence (all data stored client-side)
+  [ ] Multi-device sync when online
+  [ ] Conflict resolution for multi-device usage
 
-Full POS operation without internet connectivity
-Local data storage with automatic sync when online
-Conflict resolution for multi-device usage
-Offline payment recording (cash and manual entry)
 Basic Reporting:
+  [✓] Sales summary with payment method breakdown
+  [✓] Gross Profit (Omset − HPP)
+  [✓] Platform adjustment tracking (delivery margin impact)
+  [✓] Net Profit (Gross Profit − Expenses)
+  [✓] True Profit (Net Profit − Modal Return)
+  [✓] Date range filtering (Hari Ini, Bulan Ini, Custom Range)
+  [✓] Transaction count and expense count
 
-Daily sales summary with payment method breakdown
-Sales by product and category
-Expense tracking and recording
-Basic profit calculation (revenue minus COGS and expenses)
-Date range filtering for all reports
-P1 - Should Have (Post-MVP, Phase 2)
+P1 — Should Have (Post-MVP / Phase 2)  ════════════════════
+Status: ~30% Complete
+
 Advanced Product Features:
+  [ ] Product bundling and combo deals with automatic pricing
+  [ ] Discount management (percentage, fixed amount, buy-one-get-one)
+  [✓] Variant management (size, temperature, add-ons) — DONE
+  [✓] Recipe management for accurate COGS calculation — DONE
+  [ ] Bulk product import via CSV/Excel
 
-Product bundling and combo deals with automatic pricing
-Discount management (percentage, fixed amount, buy-one-get-one)
-Variant management (size, temperature, add-ons)
-Recipe management for accurate COGS calculation
-Bulk product import via CSV/Excel
 Enhanced Inventory:
+  [ ] Automatic stock deduction based on sales
+  [ ] Purchase order creation and tracking
+  [ ] Stock transfer between locations
+  [ ] Inventory valuation reports (FIFO/LIFO)
+  [ ] Waste and spoilage tracking
 
-Automatic stock deduction based on sales
-Purchase order creation and tracking
-Stock transfer between locations (if multi-store)
-Inventory valuation reports (FIFO/LIFO methods)
-Waste and spoilage tracking
 Delivery & Service Modes:
+  [✓] Delivery platform integration (GoFood/GrabFood/ShopeeFood)
+  [ ] Table/order number assignment for dine-in
+  [ ] Order status tracking (pending, preparing, completed)
+  [ ] Customer information capture
 
-Delivery fee calculation and assignment
-Table/order number assignment for dine-in
-Order status tracking (pending, preparing, completed)
-Customer information capture for delivery orders
 Advanced Reporting:
+  [ ] Revenue and profit trend visualizations (charts)
+  [ ] Product performance analysis (best/worst sellers)
+  [ ] Peak hours and sales pattern analysis
+  [ ] Staff performance metrics
+  [ ] Tax reporting and calculation
+  [ ] Comparative reports (day-over-day, month-over-month)
+  [ ] Export to PDF and Excel
 
-Revenue and profit trends with visualization
-Product performance analysis (best/worst sellers)
-Peak hours and sales pattern analysis
-Staff performance metrics
-Tax reporting and calculation
-Comparative reports (day-over-day, month-over-month)
-Export to PDF and Excel
 AI-Powered Features:
+  [ ] Smart inventory forecasting based on sales patterns
+  [ ] Suggested reorder quantities and timing
+  [ ] Price optimization recommendations
+  [ ] Product bundling suggestions based on purchase history
 
-Smart inventory forecasting based on sales patterns
-Suggested reorder quantities and timing
-Price optimization recommendations
-Product bundling suggestions based on purchase history
-Sales predictions for better staffing and inventory planning
-P2 - Nice to Have (Future Enhancements)
-Customer relationship management (CRM) with purchase history
-Loyalty program integration
-Table management for restaurants
-Kitchen display system (KDS) integration
-Supplier management and automatic reordering
-Multi-currency support
-SMS/WhatsApp receipt delivery
-Integration with popular accounting software (e.g., Jurnal, Accurate)
-Advanced AI chatbot for customer support and setup assistance
-Predictive maintenance alerts for equipment based on usage patterns
-Voice-activated order entry
-Third-party delivery platform integration (Gojek, Grab, ShopeeFood)
-5. User experience
-Primary User Journey - Completing a Sale
-User opens the web app on mobile device (loads instantly via PWA)
-Dashboard shows quick access to "New Sale" button prominently displayed
-User taps "New Sale" and sees product grid with search bar at top
-User either searches or browses categories to add products to cart
-Each product tap adds to cart with visual confirmation (number badge increases)
-Cart icon shows real-time total amount
-User taps cart icon to review order (shows product list, quantities, subtotal)
-User selects payment method from bottom sheet (Cash/QRIS/Other)
-For QRIS: system generates QR code; user receives automatic confirmation when paid
-For Cash: user enters amount received, system calculates change
-Receipt is automatically generated (option to print or send digitally)
-Transaction completes, user returns to new sale screen
-Secondary Journey - Recording Past Transaction
-User accesses "Past Transactions" from menu
-Taps "Add Past Sale" button
-System shows date/time picker allowing user to select when sale occurred
-User follows standard product selection flow
-System tags transaction as backdated with clear timestamp
-Transaction appears in reports for the correct historical date
-Edge Cases & UI Notes
-Offline Mode:
+P2 — Nice to Have (Future)  ════════════════════
+  [ ] Customer relationship management (CRM) with purchase history
+  [ ] Loyalty program integration
+  [ ] Table management for restaurants
+  [ ] Kitchen display system (KDS) integration
+  [ ] Supplier management and automatic reordering
+  [ ] Multi-currency support
+  [ ] SMS/WhatsApp receipt delivery
+  [ ] Integration with accounting software (Jurnal, Accurate)
+  [ ] Voice-activated order entry
+  [ ] Third-party delivery platform deep integration
 
-Clear visual indicator when offline (orange banner at top)
-All features work normally except QRIS auto-verification
-Pending sync indicator shows number of unsynced transactions
-Auto-sync when connection restored with progress indicator
-Split Payments:
 
-User can select "Split Payment" option before finalizing
-Interface allows adding multiple payment methods with amounts
-System validates total matches order amount before proceeding
-Inventory Alerts:
+5. USER EXPERIENCE
+────────────────────────────────────────────────────────────────────────────────
 
-Non-intrusive notification badge on inventory icon when items are low
-Warning shown when selling product with zero or low stock (doesn't block sale)
-Option to continue sale anyway or adjust stock first
-Cart Management:
+Primary Journey — Completing a Sale: [IMPLEMENTED]
+  1. User opens app → sees product grid with category tabs and search
+  2. Taps product → adds to cart (or opens variant selector if variants exist)
+  3. Floating cart button shows item count and total in real-time
+  4. Cart sheet slides up → full item list, edit variants, adjust quantities
+  5. Taps "Bayar" → payment method selection (Cash/QRIS/GoFood/etc.)
+  6. For QRIS: static QR shown; for Cash: amount received → change calculated
+  7. For Platform: amount adjustment for mark-up/discount recorded
+  8. Transaction saved → receipt generated → redirect to receipt page
 
-"Hold Order" button saves current cart with unique reference number
-Held orders appear in sidebar for quick recall
-Maximum 10 held orders with visual indication of order time
-Product Modifiers:
+Secondary Journey — Recording a Past Transaction: [IMPLEMENTED]
+  1. User navigates to History → taps "Catat Penjualan Lampau"
+  2. Date/time picker allows selecting when sale occurred
+  3. Standard product selection flow follows
+  4. Transaction tagged as backdated with visual indicator in history
 
-Quick access to common modifiers (add-ons, sizes) via button below product
-Modifier selections shown clearly in cart with individual pricing
-Role-Based Views:
+Variant Selection Flow: [IMPLEMENTED]
+  1. Product with variants shows "Kustom" badge in catalog grid
+  2. Tapping product opens VariantSelector sheet (reusable component)
+  3. User selects from SINGLE or MULTIPLE variant groups
+  4. Price adjusts in real-time based on selected modifiers
+  5. Cart shows variants inline; edit button allows re-selection from cart
 
-Cashier role: Cannot access reports, settings, or user management
-Manager role: Can access all features except user deletion and role changes
-Owner role: Full access to all features
-Viewer role: Read-only access to reports and inventory
-Mobile Optimization:
+Margin Analytics Flow: [IMPLEMENTED]
+  1. In product create/edit → "RESEP & HPP" tab
+  2. Add raw materials with qty, unit, cost per unit
+  3. Margin indicator auto-computes: profit, %, and status tier
+  4. 4-tier color system: Kritis(<30%), Tipis(30-44%), Sehat(45-71%), Optimal(≥72%)
+  5. Toggleable educational guide explains each tier
+  6. Product list shows margin badge for products with HPP data
 
-Bottom navigation for primary actions (always accessible)
-Swipe gestures for common actions (swipe cart items to delete)
-Large, finger-friendly touch targets (minimum 44x44px)
-Minimal text input; prefer selection and buttons
-Pull-to-refresh for reports and inventory lists
-6. Narrative
-Morning at "Kopi Santai"
+Navigation Structure (Bottom Tab Bar):
+  • Kasir    — POS / product grid, checkout
+  • Riwayat  — Transaction history with date filtering
+  • Pengeluaran — Expense tracking and categorization
+  • Laporan  — Financial reports (Omset, HPP, Profit)
+  • Setelan  — Settings hub (outlet, products, categories, payment, staff, roles)
 
-Maya arrives at her café at 6 AM, pulls out her phone while setting up, and opens her POS web app. The dashboard immediately shows yesterday's numbers: Rp 3.2 million in sales, Rp 1.1 million profit—a new record. She smiles, remembering the system's AI suggestion last week to create a breakfast combo deal that's now a bestseller.
 
-The morning rush begins. A customer orders an Americano and croissant. Maya taps both items on her phone—two taps, done. "Cash or QRIS?" she asks. "QRIS," the customer replies. Maya taps the QRIS button, a QR code appears instantly on her screen. The customer scans it, and within two seconds, her phone vibrates with a confirmation. The receipt is already generated. Total time: 15 seconds.
+6. SUCCESS METRICS
+────────────────────────────────────────────────────────────────────────────────
 
-Around 9 AM, the internet goes down—something that used to panic her. Now she just notices a small orange indicator at the top of her screen. No problem. She continues taking orders seamlessly. The system stores everything locally and will sync automatically when the connection returns.
+Transaction Efficiency:
+  • Average checkout time                       Target: < 30 seconds
+  • Transaction success rate                    Target: > 99%
+  • Cart abandonment rate                       Target: < 5%
 
-At 11 AM, her employee Andi arrives for the lunch shift. He logs in with his cashier credentials and immediately starts serving customers. Maya notices the milk is running low—an alert popped up on her inventory screen. The AI suggests she'll need to reorder by tomorrow based on sales patterns. She makes a mental note and adds the milk purchase to next week's shopping list.
+Product Adoption:
+  • % of products with HPP/COGS configured      Target: > 60%
+  • Variant usage rate (products with variants)  Target: > 30%
+  • Material library utilization rate            Target: > 40%
 
-During the quiet afternoon period, Maya remembers she forgot to record three cash sales from yesterday when the internet was down and her phone died. She opens "Past Transactions," selects yesterday's date and evening time, and quickly enters those sales. Her reports are now accurate again.
+Business Impact:
+  • Daily transaction volume per business        Baseline to track growth
+  • Expense tracking adoption (% logging daily)  Target: > 50%
+  • Report viewing frequency                    Target: 3x/week per user
 
-By 4 PM, Maya's curious about her profit margin on that popular breakfast combo. She opens the reports section, selects "Product Performance," and immediately sees detailed breakdowns: the combo costs her Rp 18,000 to make (the app calculated this from her ingredient costs), sells for Rp 35,000, giving her a 48% profit margin—her best performer. The AI suggests she could increase the price by Rp 2,000 without affecting demand based on market data.
+System Performance:
+  • App load time on mobile                     Target: < 2 seconds
+  • Offline mode reliability (no crashes)       Target: 100%
+  • IndexedDB data integrity                    Target: 100%
 
-She creates a bundled "Afternoon Delight" deal—coffee and cake for Rp 40,000. The system automatically calculates the bundled pricing and tracks it as a separate product. Within an hour, she's sold four of them.
 
-Before closing at 8 PM, Maya reviews the day's complete picture: 87 transactions, Rp 3.8 million in revenue, Rp 1.4 million in profit, 23 transactions via QRIS, 64 cash. She notices Friday afternoons are becoming increasingly busy—the AI chart shows a 25% uptick over the past month. She decides to schedule an extra staff member for next Friday.
+7. MILESTONES & CURRENT PROGRESS
+────────────────────────────────────────────────────────────────────────────────
 
-She locks up, confident that every transaction is recorded, every expense is tracked, and tomorrow she'll start with clear, actionable insights. The system handled everything from instant checkouts to complex inventory calculations, all from her phone, working seamlessly whether she was online or offline.
+Phase 0: Foundation ✅ COMPLETE
+  [✓] Tech stack: SolidStart (SPA) + Dexie.js + TailwindCSS + Kobalte UI
+  [✓] Database schema (IndexedDB via Dexie, 11 versions)
+  [✓] UI/UX design system (custom component library built on Kobalte)
+  [✓] Data models for products, transactions, inventory, staff, settings
 
-7. Success metrics
-Product Adoption & Usage
-Monthly Active Users (MAU) and Daily Active Users (DAU) ratio
-Average session duration per user
-Number of transactions processed per day per business
-Feature adoption rates (percentage of users using inventory, reports, etc.)
-Mobile vs. desktop usage ratio (target: 70% mobile)
-Transaction Efficiency
-Average time to complete a transaction (target: < 30 seconds)
-Transaction success rate (target: > 99%)
-Offline transaction volume as percentage of total
-Sync success rate for offline transactions (target: > 98%)
-Cart abandonment rate (target: < 5%)
-Business Impact
-Average transaction value per business (tracking growth over time)
-Number of products per transaction (indicating upselling effectiveness)
-Percentage of businesses using bundling and discount features
-User retention rate after 30, 60, 90 days (target: > 70% at 90 days)
-Net Promoter Score (NPS) among users (target: > 50)
-AI Feature Performance
-Accuracy of inventory forecasting (within 15% of actual needs)
-Adoption rate of AI-suggested actions (reordering, pricing, bundling)
-Percentage of businesses reducing waste after using AI recommendations
-User satisfaction with AI features (separate survey metric)
-System Performance
-App load time on mobile (target: < 2 seconds)
-Offline mode reliability (successful operations without crashes)
-Data sync accuracy (zero data loss, target: 100%)
-System uptime (target: 99.9%)
-Error rate per 1,000 transactions (target: < 1)
-Revenue & Growth
-Customer Acquisition Cost (CAC)
-Customer Lifetime Value (LTV)
-Monthly Recurring Revenue (MRR) growth
-Conversion rate from trial to paid subscription
-Churn rate (target: < 5% monthly)
-8. Milestones & sequencing
-Phase 0: Foundation (Weeks 1-2)
-Technical architecture design and stack selection
-Database schema design for offline-first architecture
-UI/UX design system and mobile-first wireframes
-User research with 10-15 target business owners
-Define data models for products, transactions, inventory, and users
-Phase 1: MVP Core (Weeks 3-8)
-Week 3-4: Basic POS
+Phase 1: MVP Core ✅ COMPLETE
+  [✓] Product catalog & management interface (with images, search, filter)
+  [✓] Instant checkout flow (mobile-optimized, < 30s target)
+  [✓] Cart/session management with variant support
+  [✓] Cash payment recording with change calculation
+  [✓] QRIS payment (static QR image upload)
+  [✓] Receipt generation (digital, detailed with variants)
+  [✓] Expense recording with categorization (7 categories)
+  [✓] Basic inventory tracking (manual stock)
+  [✓] COGS/HPP tracking per product (raw material cost rollup)
+  [✓] Backdated transaction recording
 
-Build product catalog and management interface
-Implement instant checkout flow (mobile-optimized)
-Create cart/session management
-Build cash payment recording
-Week 5-6: Essential Features
+Phase 2: Enhancement 🔄 IN PROGRESS (~45%)
+  [✓] Variant management (SINGLE/MULTIPLE, template library)
+  [✓] Recipe management with material library
+  [✓] Raw Material Library (reusable material database)
+  [✓] Delivery platform payment channels (GoFood, GrabFood, ShopeeFood)
+  [✓] Platform price adjustment (mark-up/discount tracking)
+  [✓] Role-based access control (staff + roles CRUD)
+  [✓] Financial reports (Omset, HPP, Gross/Net/True Profit)
+  [✓] Date range filtering for reports & history
+  [✓] 4-tier margin analytics with educational guide
+  [✓] Outlet profile management
+  [ ] Discount system (percentage, fixed)
+  [ ] Product bundling and combo deals
+  [ ] Automatic stock deduction based on sales
+  [ ] Report visualizations (charts & graphs)
+  [ ] Export to PDF/Excel
+  [ ] Activity logging
 
-QRIS payment integration
-Receipt generation system
-User authentication and basic role management
-Expense recording functionality
-Week 7-8: Offline & Inventory
+Phase 3: AI Integration ⏳ NOT STARTED
+  [ ] AI/ML framework integration
+  [ ] Sales pattern analysis
+  [ ] Inventory forecasting
+  [ ] Price optimization
+  [ ] Smart reorder suggestions
 
-Implement offline functionality with local storage
-Build automatic sync mechanism
-Create basic inventory management (manual tracking)
-Develop COGS/HPP tracking per product
-Milestone 1 Deliverable: Working POS that can process sales online and offline with basic reporting
+Phase 4: Polish & Scale ⏳ NOT STARTED
+  [ ] Performance optimization for low-end devices
+  [ ] Multi-device sync (cloud layer)
+  [ ] Comprehensive testing (unit, integration, e2e)
+  [ ] PWA manifest & service worker for full offline
+  [ ] Onboarding flow for new users
 
-Phase 2: Enhancement (Weeks 9-14)
-Week 9-10: Advanced Product Management
 
-Product bundling and combo deals
-Discount system (percentage and fixed)
-Variant management (sizes, add-ons)
-Delivery fee functionality
-Week 11-12: User Management & Reports
+8. TECH STACK
+────────────────────────────────────────────────────────────────────────────────
+  Framework    : SolidStart (SPA mode, alpha 2.0)
+  UI Library   : Solid.js 1.9+ with fine-grained reactivity
+  Styling      : TailwindCSS 3.4 + tailwindcss-animate
+  Components   : Custom design system on Kobalte (headless UI primitives)
+  Icons        : Lucide Solid
+  Typography   : Outfit + Plus Jakarta Sans (via @fontsource)
+  Database     : Dexie.js 4.4 (IndexedDB wrapper, offline-first)
+  State        : SolidJS createStore (cart), createSignal (local state)
+  Routing      : @solidjs/router
+  Toasts       : solid-toast
+  Build Tool   : Vite 7
+  Runtime      : Bun
+  Node         : >= 22
 
-Role-based access control implementation
-Comprehensive sales reports with filters
-Profit margin calculations and reports
-Expense categorization and reporting
-Activity logging
-Week 13-14: Inventory Automation
-
-Automatic stock deduction
-Low stock alerts and notifications
-Backdated transaction feature
-Inventory valuation reports
-Milestone 2 Deliverable: Feature-complete POS with advanced inventory and reporting capabilities
-
-Phase 3: AI Integration (Weeks 15-18)
-Week 15-16: AI Foundation
-
-Integrate AI/ML framework
-Build sales pattern analysis engine
-Implement inventory forecasting algorithm
-Create data pipeline for AI training
-Week 17-18: AI Features
-
-Smart reorder suggestions
-Sales prediction dashboard
-Price optimization recommendations
-Product bundling suggestions based on patterns
-Milestone 3 Deliverable: AI-powered insights and recommendations live in production
-
-Phase 4: Polish & Scale (Weeks 19-22)
-Week 19-20: Optimization
-
-Performance optimization for mobile devices
-Advanced offline conflict resolution
-UI/UX refinements based on beta feedback
-Accessibility improvements
-Week 21-22: Launch Prep
-
-Comprehensive testing (unit, integration, e2e)
-Documentation and help center content
-Onboarding flow optimization
-Marketing materials and demo videos
-Milestone 4 Deliverable: Production-ready application with full documentation
-
-Post-Launch: Iterate & Expand (Ongoing)
-Month 2-3:
-
-Gather user feedback and usage analytics
-Fix critical bugs and usability issues
-Add most-requested features from user feedback
-Implement advanced reporting visualizations
-Month 4-6:
-
-Customer management features (CRM lite)
-Third-party integrations (accounting software)
-Multi-location support
-Kitchen display system integration
-Team Structure (Small & Scrappy):
-
-1 Product Manager (you)
-2 Full-stack Engineers (focus on web and PWA)
-1 UI/UX Designer (mobile-first specialist)
-1 AI/ML Engineer (joins in Phase 3)
-1 QA Engineer (joins in Phase 2)
-Scrappy Approach:
-
-Use existing UI component libraries (e.g., shadcn/ui, Material-UI)
-Leverage open-source AI models (fine-tune rather than build from scratch)
-Start with one payment gateway, add more based on demand
-Use serverless architecture to minimize DevOps overhead
-Implement analytics via existing tools (Mixpanel, Amplitude)
-Beta test with 5-10 friendly businesses before wider launch
+═══════════════════════════════════════════════════════════════════════════════

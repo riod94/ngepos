@@ -1,0 +1,492 @@
+═══════════════════════════════════════════════════════════════════════════════
+  NGEPOS — Technical Specifications (SPECS)
+  Architecture, Data Models, Component Registry & API Reference
+  Last Updated: 2026-04-07
+═══════════════════════════════════════════════════════════════════════════════
+
+
+1. ARCHITECTURE OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │                        BROWSER (Client)                       │
+  │                                                               │
+  │  ┌─────────────┐   ┌──────────────┐   ┌──────────────────┐  │
+  │  │   Routes     │──▶│  Components  │──▶│  UI Primitives   │  │
+  │  │  (Pages)     │   │  (Business)  │   │  (Kobalte/CVA)   │  │
+  │  └──────┬───────┘   └──────┬───────┘   └──────────────────┘  │
+  │         │                  │                                  │
+  │         ▼                  ▼                                  │
+  │  ┌─────────────┐   ┌──────────────┐                          │
+  │  │   Stores     │──▶│   Database   │                          │
+  │  │  (Signals)   │   │  (Dexie.js)  │                          │
+  │  └─────────────┘   └──────┬───────┘                          │
+  │                           │                                   │
+  │                    ┌──────▼───────┐                          │
+  │                    │  IndexedDB    │  ◀── Offline-First       │
+  │                    │  (ngepos_db)  │      No Server Required  │
+  │                    └──────────────┘                          │
+  └──────────────────────────────────────────────────────────────┘
+
+  Key Design Decisions:
+  • Offline-First: All data persisted to IndexedDB. No server dependency.
+  • SPA Mode: SolidStart configured as Single Page Application (no SSR).
+  • Fine-Grained Reactivity: SolidJS signals for instant UI updates.
+  • Component Composition: Kobalte headless primitives + CVA for variants.
+
+
+2. DIRECTORY STRUCTURE
+────────────────────────────────────────────────────────────────────────────────
+
+  ngepos/
+  ├── src/
+  │   ├── app.tsx                    # Root layout wrapper
+  │   ├── app.css                    # Global styles + TailwindCSS config
+  │   ├── entry-client.tsx           # Client entry (browser hydration)
+  │   ├── entry-server.tsx           # Server entry (SSR stub for SPA)
+  │   ├── global.d.ts                # Global TypeScript declarations
+  │   │
+  │   ├── components/                # Reusable UI Components
+  │   │   ├── BottomNav.tsx          # 5-tab bottom navigation bar
+  │   │   ├── CartFloatingButton.tsx # Cart FAB + checkout flow (768 LOC)
+  │   │   ├── ConfirmDialog.tsx      # Reusable confirmation modal
+  │   │   ├── Counter.tsx            # Simple counter component
+  │   │   ├── DateFilter.tsx         # Date range picker (Hari Ini/Bulan/Custom)
+  │   │   ├── Nav.tsx                # Top navigation (deprecated?)
+  │   │   ├── ProductImage.tsx       # Product image with fallback avatar
+  │   │   ├── Swipeable.tsx          # Swipe-to-delete gesture handler
+  │   │   ├── TopNav.tsx             # Top navigation bar
+  │   │   ├── VariantSelector.tsx    # Reusable variant picker sheet
+  │   │   └── ui/                    # Design system primitives
+  │   │       ├── button.tsx         # CVA button variants
+  │   │       ├── card.tsx           # Card container
+  │   │       ├── dialog.tsx         # Modal dialog (Kobalte)
+  │   │       ├── label.tsx          # Form label
+  │   │       └── sheet.tsx          # Bottom/side sheet (Kobalte)
+  │   │
+  │   ├── data/
+  │   │   └── mockProducts.ts        # Seed data (4 categories, sample products)
+  │   │
+  │   ├── db/
+  │   │   └── db.ts                  # Dexie database schema (11 versions)
+  │   │
+  │   ├── lib/
+  │   │   └── utils.ts               # Utility functions (cn helper)
+  │   │
+  │   ├── stores/
+  │   │   └── cart.ts                # Cart state (SolidJS createStore)
+  │   │
+  │   └── routes/
+  │       ├── index.tsx              # Landing page (/)
+  │       ├── about.tsx              # About page (/about)
+  │       ├── [...404].tsx           # 404 fallback
+  │       ├── app.tsx                # App layout with BottomNav (/app/*)
+  │       └── app/
+  │           ├── index.tsx          # POS cashier page (/app)
+  │           ├── products.tsx       # Product CRUD (/app/products)
+  │           ├── categories.tsx     # Category management (/app/categories)
+  │           ├── expenses.tsx       # Expense tracking (/app/expenses)
+  │           ├── reports.tsx        # Financial reports (/app/reports)
+  │           ├── profile.tsx        # User profile (/app/profile)
+  │           ├── history/
+  │           │   ├── index.tsx      # Transaction history (/app/history)
+  │           │   └── backdate.tsx   # Backdated entry (/app/history/backdate)
+  │           ├── receipt/
+  │           │   └── [id].tsx       # Receipt detail (/app/receipt/:id)
+  │           └── settings/
+  │               ├── index.tsx      # Settings hub (/app/settings)
+  │               ├── outlet.tsx     # Outlet info (/app/settings/outlet)
+  │               ├── payment.tsx    # Payment config (/app/settings/payment)
+  │               ├── staff.tsx      # Staff CRUD (/app/settings/staff)
+  │               └── roles.tsx      # Role/permission (/app/settings/roles)
+  │
+  ├── PRD.txt                        # Product Requirements Document
+  ├── SPECS.txt                      # This file
+  ├── package.json
+  ├── tailwind.config.js
+  ├── tsconfig.json
+  └── vite.config.ts
+
+
+3. DATABASE SCHEMA (IndexedDB via Dexie.js)
+────────────────────────────────────────────────────────────────────────────────
+
+Database Name: ngepos_db
+Current Version: 11
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: products                                                             │
+│ Indexes: id (PK), name, category, stock                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Field             │ Type              │ Description                         │
+│───────────────────│───────────────────│─────────────────────────────────────│
+│ id                │ string            │ Unique ID (e.g. "prod_1712345678") │
+│ name              │ string            │ Product display name                │
+│ price             │ number            │ Selling price (Rupiah)              │
+│ cogs              │ number            │ Cost of goods / HPP (computed)      │
+│ category          │ string            │ Category name reference             │
+│ stock             │ number            │ Current stock count                 │
+│ image             │ string            │ Base64 data URL or external URL     │
+│ rawMaterials?     │ RawMaterialCost[] │ Recipe ingredients + costs          │
+│ variants?         │ VariantGroup[]    │ Variant groups with options         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: categories                                                           │
+│ Indexes: id (PK), orderIndex                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ name              │ string            │ Category display name               │
+│ orderIndex        │ number            │ Sort order for display              │
+│ icon?             │ string            │ Emoji or icon name                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: transactions                                                         │
+│ Indexes: id (PK), receiptNumber, timestamp, status                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ receiptNumber     │ string            │ Human-readable receipt number       │
+│ totalAmount       │ number            │ Final net amount received           │
+│ originalAmount    │ number            │ Cart subtotal before adjustments    │
+│ cogsTotal         │ number            │ Total HPP for this transaction      │
+│ paymentMethod     │ string            │ "TUNAI"|"QRIS"|"GOFOOD"|"GRAB"...  │
+│ timestamp         │ number            │ Unix timestamp (ms)                 │
+│ status            │ string            │ "PENDING" | "SYNCED"                │
+│ isBackdated       │ boolean           │ Whether manually backdated          │
+│ backdatedNote?    │ string            │ Note for backdated context          │
+│ isAdjustment?     │ boolean           │ Platform price adjustment flag      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: transactionItems                                                     │
+│ Indexes: id (PK), transactionId, productId                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ transactionId     │ string            │ FK → transactions.id                │
+│ productId         │ string            │ FK → products.id                    │
+│ productName       │ string            │ Snapshot of product name at sale    │
+│ quantity          │ number            │ Units sold                          │
+│ priceAtTime       │ number            │ Unit price at time of sale          │
+│ cogsAtTime        │ number            │ Unit COGS at time of sale           │
+│ selectedVariants? │ SelectedVariant[] │ Variant choices made                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  SelectedVariant = { groupName: string, optionName: string, priceModifier: number }
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: expenses                                                             │
+│ Indexes: id (PK), category, timestamp                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ amount            │ number            │ Expense amount (Rupiah)             │
+│ category          │ ExpenseCategory   │ One of 7 predefined categories      │
+│ description       │ string            │ Free-text note                      │
+│ timestamp         │ number            │ Unix timestamp (ms)                 │
+│ isBackdated       │ boolean           │ Whether manually backdated          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  ExpenseCategory = "bahan_baku" | "operasional" | "sewa" | "gaji"
+                  | "utilitas"  | "marketing"    | "lainnya"
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: settings                                                             │
+│ Indexes: key (PK)                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ key               │ string            │ Setting identifier                  │
+│ value             │ string            │ Setting value (stringified)         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Known Settings Keys:
+    "qris_image"        — Base64 QRIS static image
+    "enable_gofood"     — "true" | "false"
+    "enable_grabfood"   — "true" | "false"
+    "enable_shopeefood" — "true" | "false"
+    "outlet_name"       — Outlet display name
+    "outlet_address"    — Outlet address
+    "outlet_phone"      — Outlet phone
+    "outlet_logo"       — Base64 outlet logo
+    "user_name"         — Owner/operator name
+    "user_email"        — Owner email
+    "user_phone"        — Owner phone
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: variantTemplates                                                      │
+│ Indexes: id (PK), name                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ name              │ string            │ Template name                       │
+│ isRequired        │ boolean           │ Whether selection is mandatory      │
+│ type              │ string            │ "SINGLE" | "MULTIPLE"               │
+│ maxSelectable?    │ number            │ Max multi-select count              │
+│ options           │ VariantOption[]   │ Available variant options           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: rawMaterialLibrary                                                    │
+│ Indexes: id (PK), name                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ name              │ string            │ Material name                       │
+│ unit              │ string            │ Unit of measure (gr, ml, pcs, etc.) │
+│ costPerUnit       │ number            │ Cost per unit (Rupiah)              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: staff                                                                │
+│ Indexes: id (PK), name, roleId, email, isActive                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ name              │ string            │ Staff display name                  │
+│ roleId            │ string            │ FK → roles.id                       │
+│ pin               │ string            │ 4-6 digit PIN for login             │
+│ email?            │ string            │ Optional email                      │
+│ phone?            │ string            │ Optional phone                      │
+│ isActive          │ boolean           │ Whether currently active            │
+│ createdAt         │ number            │ Unix timestamp (ms)                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Table: roles                                                                │
+│ Indexes: id (PK), name                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ id                │ string            │ Unique ID                           │
+│ name              │ string            │ Role name (e.g. "Kasir", "Manager") │
+│ permissions       │ string[]          │ List of permission keys             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+4. EMBEDDED TYPES (TypeScript)
+────────────────────────────────────────────────────────────────────────────────
+
+  interface RawMaterialCost {
+    id: string;
+    name: string;
+    cost: number;          // Total = quantity × costPerUnit
+    unit: string;
+    quantity: number;
+    costPerUnit?: number;
+  }
+
+  interface VariantOption {
+    name: string;
+    priceModifier: number;   // +/- to selling price
+    cogsModifier: number;    // +/- to COGS
+  }
+
+  interface VariantGroup {
+    id: string;
+    name: string;
+    isRequired: boolean;
+    type: "SINGLE" | "MULTIPLE";
+    maxSelectable?: number;
+    options: VariantOption[];
+  }
+
+
+5. STATE MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+Cart Store (src/stores/cart.ts):
+  Global reactive store using SolidJS createStore.
+
+  Type: CartItem = Product & {
+    cartItemId: string;     // Composite: "productId-variantHash"
+    quantity: number;
+    basePrice: number;      // Original product price (before variant modifiers)
+    selectedVariants?: { groupName, optionName, priceModifier }[];
+  }
+
+  Exported Functions:
+  ┌──────────────────────────┬─────────────────────────────────────────────────┐
+  │ addToCart(product, vars?) │ Add product; merge if same variant combo exists│
+  │ updateCartItemVariants() │ Change variants on existing cart item           │
+  │ updateQuantity(id, +/-1) │ Increment/decrement; remove at 0               │
+  │ getCartTotal()           │ Computed sum of price × quantity                │
+  │ getCartCount()           │ Computed sum of all quantities                  │
+  │ clearCart()              │ Empty the cart                                  │
+  └──────────────────────────┴─────────────────────────────────────────────────┘
+
+  Cart Item ID Strategy:
+    cartItemId = "{productId}-{sorted variant option names joined by '-'}"
+    This ensures the same product with different variant selections becomes
+    separate line items, while identical combos merge (increment quantity).
+
+
+6. COMPONENT REGISTRY
+────────────────────────────────────────────────────────────────────────────────
+
+Business Components:
+  ┌──────────────────────────┬─────────────────────────────────────────────────┐
+  │ BottomNav                │ 5-tab fixed bottom bar (Kasir/Riwayat/etc.)    │
+  │ CartFloatingButton       │ FAB + full checkout flow (cart → payment)      │
+  │ ConfirmDialog            │ Reusable modal: danger, warning, info variants │
+  │ DateFilter               │ Period picker: HARI_INI, BULAN_INI, CUSTOM     │
+  │ ProductImage             │ Image with fallback avatar (initials)          │
+  │ Swipeable                │ Touch swipe-to-reveal gesture (for delete)     │
+  │ VariantSelector          │ Bottom sheet for variant group selection        │
+  └──────────────────────────┴─────────────────────────────────────────────────┘
+
+UI Primitives (src/components/ui/):
+  ┌──────────────────────────┬─────────────────────────────────────────────────┐
+  │ Button                   │ CVA button: default, ghost, outline, icon sizes │
+  │ Card / CardContent       │ Container card with content slot               │
+  │ Dialog / DialogContent   │ Modal overlay (Kobalte Dialog primitive)        │
+  │ Label                    │ Form label component                           │
+  │ Sheet / SheetContent     │ Bottom/side slide panel (Kobalte Dialog)       │
+  └──────────────────────────┴─────────────────────────────────────────────────┘
+
+
+7. BUSINESS LOGIC
+────────────────────────────────────────────────────────────────────────────────
+
+Margin Calculation:
+  marginPct = Math.round(((price - cogs) / price) * 100)
+
+Margin Classification (4-Tier):
+  ┌────────────────┬────────┬───────────────────┬─────────────────────────────┐
+  │ Category       │ Range  │ Color             │ Meaning                     │
+  │────────────────│────────│───────────────────│─────────────────────────────│
+  │ Kritis         │ < 30%  │ Red               │ Risk of OPEX loss           │
+  │ Tipis          │ 30-44% │ Orange            │ Minimum viable margin       │
+  │ Sehat          │ 45-71% │ Emerald / Green   │ Ideal F&B industry target   │
+  │ Optimal        │ ≥ 72%  │ Blue              │ Strong cash profit          │
+  └────────────────┴────────┴───────────────────┴─────────────────────────────┘
+
+  Note: Thresholds adjustable in getMarginStatus() in products.tsx.
+  User updated Tipis to ≤44%, Sehat to ≤71% from the original 40%/69%.
+
+HPP / COGS Computation:
+  For each product:
+    totalHPP = Σ (rawMaterial.costPerUnit × rawMaterial.quantity)
+
+  At checkout (per cart item):
+    unitCogs = product.cogs + Σ(selectedVariant.cogsModifier)
+    totalCogs = unitCogs × quantity
+
+  If no raw materials configured:
+    fallback cogs = price × 0.45 (45% assumption)
+
+Payment Processing:
+  Payment Methods: TUNAI, QRIS, GOFOOD, GRABFOOD, SHOPEEFOOD
+
+  For platform orders (GoFood, GrabFood, ShopeeFood):
+    • originalAmount = cart subtotal (menu price)
+    • totalAmount = platform net received (after commission/markup)
+    • platformAdjustment = totalAmount - originalAmount
+    • This delta represents platform commission or adjusted pricing
+
+Receipt Number Generation:
+  Format: "NP-{YYYYMMDD}-{incrementing 4-digit}"
+  Example: NP-20260407-0042
+
+Financial Report Calculation:
+  ┌──────────────────┬──────────────────────────────────────────────────────┐
+  │ Omset            │ Σ transaction.totalAmount (excluding adjustments)   │
+  │ COGS Total       │ Σ transaction.cogsTotal                             │
+  │ Gross Profit     │ Omset - COGS Total                                  │
+  │ Platform Adj.    │ Σ (totalAmount - originalAmount) for platform tx    │
+  │ Expenses         │ Σ expense.amount                                     │
+  │ Net Profit       │ Gross Profit + Platform Adj. - Expenses             │
+  │ Modal Return     │ COGS Total (capital to be reinvested)               │
+  │ True Profit      │ Net Profit - Modal Return                           │
+  └──────────────────┴──────────────────────────────────────────────────────┘
+
+
+8. ROUTING TABLE
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────────┬───────────────────────┬─────────────────────────┐
+  │ Route                   │ File                  │ Description             │
+  │─────────────────────────│───────────────────────│─────────────────────────│
+  │ /                       │ routes/index.tsx      │ Landing / hero page     │
+  │ /about                  │ routes/about.tsx      │ About page              │
+  │ /app                    │ routes/app/index.tsx   │ POS Cashier (main)     │
+  │ /app/products           │ routes/app/products   │ Product management      │
+  │ /app/categories         │ routes/app/categories │ Category management     │
+  │ /app/history            │ routes/app/history/   │ Transaction history     │
+  │ /app/history/backdate   │ routes/app/history/   │ Backdated entry form    │
+  │ /app/expenses           │ routes/app/expenses   │ Expense tracker         │
+  │ /app/reports            │ routes/app/reports    │ Financial reports       │
+  │ /app/profile            │ routes/app/profile    │ User profile            │
+  │ /app/receipt/:id        │ routes/app/receipt/   │ Receipt detail view     │
+  │ /app/settings           │ routes/app/settings/  │ Settings hub            │
+  │ /app/settings/outlet    │ routes/app/settings/  │ Outlet info config      │
+  │ /app/settings/payment   │ routes/app/settings/  │ Payment config (QRIS)   │
+  │ /app/settings/staff     │ routes/app/settings/  │ Staff management        │
+  │ /app/settings/roles     │ routes/app/settings/  │ Role/permission mgmt    │
+  │ /*                      │ routes/[...404].tsx   │ 404 fallback            │
+  └─────────────────────────┴───────────────────────┴─────────────────────────┘
+
+
+9. DESIGN SYSTEM TOKENS
+────────────────────────────────────────────────────────────────────────────────
+
+Typography:
+  • Primary Font    : "Outfit" (headings, buttons, labels)
+  • Secondary Font  : "Plus Jakarta Sans" (body text)
+  • Sizing Strategy : text-[10px] for micro-labels, text-sm for body, text-xl+ for headings
+
+Spacing & Layout:
+  • Page padding    : px-5, py-4 → py-6
+  • Card radius     : rounded-2xl (16px) for cards, rounded-3xl (24px) for hero elements
+  • Sheet radius    : rounded-t-[32px] for bottom sheets
+  • Touch targets   : Minimum h-10 (40px) for tappable elements
+
+Color Semantic Mapping:
+  • primary          — Brand action color (buttons, links, active tabs)
+  • destructive      — Delete/danger actions
+  • muted-foreground — Secondary text, labels
+  • border           — Subtle separators
+  • card             — Elevated surface background
+
+Micro-Interactions:
+  • active:scale-95  — Button press feedback
+  • active:scale-[0.98] — Card press feedback
+  • animate-in       — Sheet/dialog entry animations
+  • transition-all   — Universal smooth transitions
+
+
+10. DATABASE MIGRATION HISTORY
+────────────────────────────────────────────────────────────────────────────────
+
+  Version 2  — Initial: products, categories, transactions, transactionItems
+  Version 3  — Added: expenses, settings tables; cogsTotal field
+  Version 5  — Added: variantTemplates; originalAmount on transactions
+  Version 6  — Added: staff table
+  Version 8  — Updated staff indexes (roleId, email); added roles table
+  Version 9  — Added cogsModifier to variant options (non-indexed)
+  Version 10 — Added maxSelectable to variant groups (non-indexed)
+  Version 11 — Added: rawMaterialLibrary table
+
+  Note: Versions 4 and 7 were skipped during development.
+
+
+11. KNOWN LIMITATIONS & TECHNICAL DEBT
+────────────────────────────────────────────────────────────────────────────────
+
+  1. No Cloud Sync: Data lives only in browser's IndexedDB. Clearing browser
+     data destroys all records. Multi-device support requires future cloud layer.
+
+  2. No Service Worker: PWA capabilities (install prompt, offline caching of
+     app shell) not yet configured despite offline-first data architecture.
+
+  3. Stock Not Auto-Decremented: Sales do not reduce product.stock.
+     Stock management is still manual.
+
+  4. Permission Enforcement Partial: Role/permission system has CRUD UI but
+     enforcement is limited to a few UI guards. No server-side auth.
+
+  5. CartFloatingButton Monolith: At 768 LOC, this component handles cart
+     display, payment flow, QRIS display, platform adjustment, and receipt
+     generation. Should be decomposed.
+
+  6. Receipt Number Non-Persistent Counter: Receipt numbers generated from
+     in-memory counter per session, not globally unique.
+
+  7. Image Storage: Product and QRIS images stored as Base64 in IndexedDB.
+     Large images may impact performance. Should migrate to blob storage.
+
+  8. No Test Coverage: No unit, integration, or e2e tests exist.
+
+═══════════════════════════════════════════════════════════════════════════════
