@@ -68,44 +68,60 @@ export function QrCodePrintGrid(props: QrCodePrintGridProps) {
     <div class="print-container bg-white p-0 min-h-screen">
       <style>{`
         @media print {
-          body { margin: 0; padding: 0; background: white; }
-          .no-print { display: none !important; }
-          .print-container { 
-            display: block !important;
-            visibility: visible !important;
-            position: relative;
-            width: 210mm;
-            margin: 0 auto;
-          }
           @page { 
             size: A4; 
             margin: 10mm; 
           }
+          body { 
+            margin: 0; 
+            padding: 0; 
+            background: white; 
+            -webkit-print-color-adjust: exact;
+          }
+          .no-print { display: none !important; }
+          .print-container { 
+            display: block !important;
+            width: 190mm; /* A4 width (210) - 2x margin (10) */
+            margin: 0;
+            background: white;
+          }
           .qr-grid {
             display: grid !important;
             grid-template-columns: repeat(4, 1fr) !important;
-            gap: 5mm !important;
-            padding: 5mm !important;
+            gap: 2mm !important;
+            padding: 0 !important;
           }
           .qr-item {
+            width: 45mm !important;
+            height: 60mm !important;
+            border: 0.1mm dashed #e2e8f0 !important;
+            padding: 5mm !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: white !important;
             break-inside: avoid;
             page-break-inside: avoid;
           }
         }
+        
+        /* Non-print preview */
         .qr-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 16px;
           padding: 20px;
         }
         .qr-item {
           display: flex;
           flex-direction: column;
-          items-center;
-          border: 1px dashed #ccc;
-          padding: 15px;
+          align-items: center;
+          border: 1px dashed #cbd5e1;
+          padding: 12px;
           border-radius: 12px;
           background: white;
+          transition: all 0.2s;
         }
       `}</style>
       
@@ -115,7 +131,7 @@ export function QrCodePrintGrid(props: QrCodePrintGridProps) {
             <QrCodeGenerator 
               value={item.qrCode} 
               size={120} 
-              label={item.label || item.id.substring(0, 8)}
+              label={`ID: ${item.label || item.id.substring(0, 8)}`}
               subLabel="NGEPOS MEMBER"
             />
           </div>

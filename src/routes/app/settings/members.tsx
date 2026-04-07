@@ -1,4 +1,5 @@
-import { createSignal, createResource, For, Show, Suspense } from "solid-js";
+import { createSignal, createResource, For, Show, Suspense, createEffect } from "solid-js";
+import { Portal } from "solid-js/web";
 import {
 	Users,
 	Search,
@@ -11,17 +12,20 @@ import {
 	X,
 	SquareCheck,
 	ArrowLeft,
+	Zap,
 } from "lucide-solid";
 import { A, useNavigate } from "@solidjs/router";
 import { db, type Customer } from "~/db/db";
 import {
 	generateCustomerId,
 	formatQrCode,
-	getCustomerProgress,
+	getCustomerProgress as getProgressData,
 	getActiveProgram,
 } from "~/stores/loyalty";
-import { QrCodePrintGrid } from "~/components/QrCodeGenerator";
+import { QrCodeGenerator, QrCodePrintGrid } from "~/components/QrCodeGenerator";
 import { toast } from "solid-toast";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { ConfirmDialog } from "~/components/ConfirmDialog";
 
 type MemberTab = "ALL" | "ASSIGNED" | "UNASSIGNED";
 
@@ -38,6 +42,7 @@ export default function MembersPage() {
 		createSignal<Customer | null>(null);
 
 	// Selection State
+	const [sheetOpen, setSheetOpen] = createSignal(false);
 	const [selectedIds, setSelectedIds] = createSignal<Set<string>>(new Set());
 
 	// Resources
@@ -45,12 +50,16 @@ export default function MembersPage() {
 		return await db.customers.toArray();
 	});
 
+	const [activeLoyaltyProgram] = createResource(async () => {
+		return await getActiveProgram();
+	});
+
 	const [customerProgress] = createResource(
 		() => selectedCustomer()?.id,
 		async (id) => {
-			const lp = await getActiveProgram();
-			if (!lp) return null;
-			return await getCustomerProgress(id, lp.id);
+			const lp = activeLoyaltyProgram();
+			if (!id || !lp) return null;
+			return await getProgressData(id, lp.id);
 		},
 	);
 
@@ -94,9 +103,9 @@ export default function MembersPage() {
 	const toggleSelectAll = () => {
 		const visible = filteredCustomers();
 		if (selectedIds().size === visible.length) {
-			setSelectedIds(new Set());
+			setSelectedIds(new Set<string>());
 		} else {
-			setSelectedIds(new Set(visible.map((c) => c.id)));
+			setSelectedIds(new Set<string>(visible.map((c) => c.id)));
 		}
 	};
 
@@ -108,12 +117,22 @@ export default function MembersPage() {
 		setPrintingMembers(toPrint);
 	};
 
+	const handlePrint = () => {
+		window.print();
+	};
+
+	const closePrintOverlay = (e?: MouseEvent) => {
+		e?.preventDefault();
+		e?.stopPropagation();
+		setPrintingMembers(null);
+	};
+
 	const handleBulkDelete = async () => {
 		if (!confirm(`Hapus ${selectedIds().size} member terpilih?`)) return;
 		try {
 			await db.customers.bulkDelete(Array.from(selectedIds()));
 			toast.success(`${selectedIds().size} Member berhasil dihapus`);
-			setSelectedIds(new Set());
+			setSelectedIds(new Set<string>());
 			refetch();
 		} catch (err) {
 			toast.error("Gagal menghapus beberapa member");
@@ -121,10 +140,16 @@ export default function MembersPage() {
 	};
 
 	const handleGenerateBatch = async () => {
+		const count = batchCount();
+		if (count <= 0) {
+			toast.error("Jumlah harus lebih dari 0");
+			return;
+		}
+
 		try {
 			const newItems: Customer[] = [];
 			const now = Date.now();
-			for (let i = 0; i < batchCount(); i++) {
+			for (let i = 0; i < count; i++) {
 				const id = generateCustomerId();
 				newItems.push({
 					id,
@@ -134,12 +159,70 @@ export default function MembersPage() {
 				});
 			}
 			await db.customers.bulkAdd(newItems);
-			toast.success(`${batchCount()} QR Member berhasil dibuat!`);
+			toast.success(`${count} QR Member berhasil dibuat!`);
 			setGenerateDialogOpen(false);
 			setPrintingMembers(newItems);
 			refetch();
 		} catch (err) {
 			toast.error("Gagal membuat batch QR");
+		}
+	};
+
+	const [isEditing, setIsEditing] = createSignal(false);
+	const [editName, setEditName] = createSignal("");
+	const [editPhone, setEditPhone] = createSignal("");
+	const [editEmail, setEditEmail] = createSignal("");
+	const [deleteTargetId, setDeleteTargetId] = createSignal<string | null>(null);
+	const [isDeleting, setIsDeleting] = createSignal(false);
+
+	createEffect(() => {
+		const c = selectedCustomer();
+		if (c) {
+			setEditName(c.name || "");
+			setEditPhone(c.phone || "");
+			setEditEmail(c.email || "");
+			setIsEditing(false);
+		}
+	});
+
+	const handleDeleteMember = async () => {
+		const id = deleteTargetId();
+		if (!id) return;
+		setIsDeleting(true);
+		try {
+			await db.customers.delete(id);
+			toast.success("Member dihapus");
+			setDeleteTargetId(null);
+			setSheetOpen(false);
+			refetch();
+		} catch (err) {
+			toast.error("Gagal menghapus member");
+		} finally {
+			setIsDeleting(false);
+		}
+	};
+
+	const handleUpdateMember = async (e?: Event) => {
+		if (e) e.preventDefault();
+		const c = selectedCustomer();
+		if (!c) return;
+
+		try {
+			const isNowAssigned = !!(editName() || editPhone());
+			await db.customers.update(c.id, {
+				name: editName(),
+				phone: editPhone(),
+				email: editEmail(),
+				status: isNowAssigned ? "ASSIGNED" : "UNASSIGNED",
+				assignedAt: c.assignedAt || (isNowAssigned ? Date.now() : undefined)
+			});
+			toast.success("Profil member diperbarui");
+			setIsEditing(false);
+			refetch();
+			const updated = await db.customers.get(c.id);
+			if (updated) setSelectedCustomer(updated);
+		} catch (err) {
+			toast.error("Gagal memperbarui member");
 		}
 	};
 
@@ -240,18 +323,27 @@ export default function MembersPage() {
 					>
 						{(c) => (
 							<div
-								onClick={() => setSelectedCustomer(c)}
+								onClick={() => {
+									setSelectedCustomer(c);
+									setSheetOpen(true);
+								}}
 								class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all cursor-pointer group shadow-sm ${selectedIds().has(c.id) ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/60 hover:border-primary/30"}`}
 							>
 								<div
 									onClick={(e) => toggleSelect(c.id, e)}
-									class={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all ${selectedIds().has(c.id) ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-muted border-border/50 text-muted-foreground/30 hover:border-primary/40"}`}
+									class={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all relative overflow-hidden bg-white ${selectedIds().has(c.id) ? "border-primary ring-2 ring-primary/20 scale-105 shadow-lg shadow-primary/20" : "border-border/50 hover:border-primary/40 shadow-sm"}`}
 								>
 									<Show
 										when={selectedIds().has(c.id)}
-										fallback={<QrCode size={18} />}
+										fallback={
+											<div class="scale-[0.35] origin-center opacity-80 group-hover:opacity-100 transition-opacity">
+												<QrCodeGenerator value={c.qrCode} size={100} />
+											</div>
+										}
 									>
-										<SquareCheck size={18} stroke-width={3} />
+										<div class="absolute inset-0 bg-primary flex items-center justify-center text-white">
+											<SquareCheck size={22} stroke-width={3} />
+										</div>
 									</Show>
 								</div>
 
@@ -261,14 +353,14 @@ export default function MembersPage() {
 									</h3>
 									<div class="flex items-center gap-1.5 mt-1 flex-wrap">
 										<span
-											class={`text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${c.status === "ASSIGNED" ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}
+											class={`text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${c.status === "ASSIGNED" ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground/50"}`}
 										>
 											{c.status === "ASSIGNED"
-												? "Premium"
-												: "Empty QR"}
+												? "Member Aktif"
+												: "Belum Terdaftar"}
 										</span>
 										<span class="text-[10px] font-medium text-muted-foreground/60 font-mono">
-											ID: {c.id.substring(0, 8)}
+											#{c.id.substring(c.id.length - 6).toUpperCase()}
 										</span>
 									</div>
 								</div>
@@ -312,162 +404,228 @@ export default function MembersPage() {
 				</div>
 			</Show>
 
-			{/* Print Overlay */}
-			<Show when={printingMembers()}>
-				<div class="fixed inset-0 z-[200] bg-white overflow-y-auto">
-					<div class="fixed top-0 left-0 right-0 p-5 flex items-center justify-between bg-white border-b border-border/40 no-print z-50">
-						<div class="flex items-center gap-3">
-							<Printer size={18} class="text-primary" />
-							<h2 class="font-bold text-base">
-								Print {printingMembers()?.length} QR
-							</h2>
-						</div>
-						<div class="flex items-center gap-2">
-							<button
-								onClick={() => window.print()}
-								class="px-5 h-9 bg-primary text-white rounded-full font-bold text-xs"
-							>
-								Cetak Sekarang
-							</button>
-							<button
-								onClick={() => setPrintingMembers(null)}
-								class="px-4 h-9 bg-muted rounded-full font-bold text-xs uppercase tracking-widest text-[9px]"
-							>
-								Tutup
-							</button>
-						</div>
-					</div>
-					<div class="pt-20 pb-10">
-						<QrCodePrintGrid
-							items={printingMembers()!.map((m) => ({
-								id: m.id,
-								qrCode: m.qrCode,
-								label: m.id.substring(0, 8),
-							}))}
-						/>
-					</div>
-					<style>{`@media print { .no-print { display: none !important; } }`}</style>
-				</div>
-			</Show>
 
 			{/* Member Profile Sheet Aligned with flow */}
-			<Show when={selectedCustomer()}>
-				<div class="fixed inset-0 z-[110] flex justify-end bg-black/40 backdrop-blur-[2px] p-4">
-					<div class="h-full w-full max-w-sm bg-background rounded-[28px] shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto flex flex-col border border-border/20">
-						<div class="p-6 flex items-center justify-between border-b border-border/10 sticky top-0 bg-background/80 backdrop-blur-md z-10">
-							<h2 class="font-bold text-base">Profil Member</h2>
-							<button
-								onClick={() => setSelectedCustomer(null)}
-								class="p-2 hover:bg-muted rounded-full"
-							>
-								<X size={18} />
-							</button>
-						</div>
+			<Sheet open={sheetOpen()} onOpenChange={setSheetOpen}>
+				<SheetContent
+					position="bottom"
+					class="h-[96vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
+				>
+					<SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
+						<SheetTitle class="font-black text-xl tracking-tight">
+							{isEditing() ? "Edit Profil Member" : "Profil Member"}
+						</SheetTitle>
+					</SheetHeader>
 
-						<div class="p-6 space-y-6">
-							<div class="p-6 bg-card rounded-2xl border border-border/60 shadow-sm relative overflow-hidden">
-								<div class="absolute -right-4 -top-4 opacity-5 rotate-12">
-									<QrCode size={120} />
+					<div class="flex-1 overflow-y-auto">
+						<div class="p-5 space-y-6">
+							{/* Profile Card / QR Section */}
+							<div class="p-8 bg-card rounded-[32px] border border-border/60 shadow-sm relative overflow-hidden text-center">
+								<div class="absolute -right-6 -top-6 text-primary opacity-[0.04] rotate-12 -z-0">
+									<QrCode size={200} />
 								</div>
-								<div class="relative flex flex-col gap-6">
-									<div class="flex items-center justify-between">
-										<div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-lg font-black text-primary">
-											{selectedCustomer()
-												?.name?.charAt(0)
-												.toUpperCase() || <Users size={20} />}
-										</div>
-										<button
-											onClick={() =>
-												setPrintingMembers([selectedCustomer()!])
-											}
-											class="h-9 px-3 rounded-lg border border-border/60 text-muted-foreground flex items-center gap-1.5 text-[10px] font-bold uppercase"
-										>
-											<Printer size={14} /> Cetak
-										</button>
+								<div class="relative z-10 flex flex-col items-center">
+									<div class="w-36 h-36 bg-white rounded-[24px] border border-border/50 p-3 shadow-xl shadow-black/[0.02] flex items-center justify-center mb-6">
+										<QrCodeGenerator value={selectedCustomer()?.qrCode || ""} size={120} />
 									</div>
-									<div>
-										<h3 class="text-xl font-bold tracking-tight">
-											{selectedCustomer()?.name || "UNREGISTERED"}
+									<div class="space-y-1.5">
+										<h3 class="text-2xl font-black tracking-tight uppercase leading-none text-foreground">
+											{selectedCustomer()?.name || "Member Baru"}
 										</h3>
-										<p class="text-[10px] font-black uppercase text-emerald-600 mt-1">
-											{selectedCustomer()?.status === "ASSIGNED"
-												? "Member Aktif"
-												: "QR Kosong"}
-										</p>
-									</div>
-									<div class="pt-4 border-t border-border/10 flex flex-col">
-										<span class="text-[8px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] mb-1">
-											MEMBER IDENTIFICATION
-										</span>
-										<span class="text-xs font-mono font-bold text-foreground/80">
-											{selectedCustomer()?.id.toUpperCase()}
-										</span>
+										<div class="flex items-center justify-center gap-2 pt-1">
+											<span class={`text-[10px] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full ${selectedCustomer()?.status === "ASSIGNED" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-muted text-muted-foreground/60"}`}>
+												{selectedCustomer()?.status === "ASSIGNED" ? "Member Aktif" : "Belum Terdaftar"}
+											</span>
+											<span class="text-[10px] font-black text-muted-foreground/30 font-mono tracking-widest">
+												#{selectedCustomer()?.id.substring(selectedCustomer()!.id.length - 6).toUpperCase()}
+											</span>
+										</div>
 									</div>
 								</div>
 							</div>
 
-							{/* Progress Tracker */}
-							<Show when={customerProgress()}>
-								<div class="bg-muted/20 p-5 rounded-2xl border border-border/10">
-									<div class="flex items-center justify-between mb-3">
-										<h4 class="font-bold text-xs uppercase text-muted-foreground tracking-wider">
-											Stamp Keliling
-										</h4>
-										<span class="text-xs font-bold text-primary">
-											{customerProgress()!.currentStamps} /{" "}
-											{customerProgress()!.targetStamps}
-										</span>
-									</div>
-									<div class="w-full h-2.5 bg-muted rounded-full overflow-hidden mb-2 shadow-inner">
-										<div
-											class="h-full bg-primary transition-all duration-1000"
-											style={{
-												width: `${Math.min(100, (customerProgress()!.currentStamps / customerProgress()!.targetStamps) * 100)}%`,
-											}}
-										/>
-									</div>
-									<p class="text-[9px] font-bold text-muted-foreground/60">
-										Klaim reward setelah{" "}
-										{customerProgress()!.targetStamps} stamp.
+							<div class="grid grid-cols-2 gap-3">
+								<div class="bg-muted/30 p-4 rounded-2xl border border-border/40">
+									<p class="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Mulai Member</p>
+									<p class="text-xs font-bold font-mono">
+										{selectedCustomer()?.assignedAt ? new Date(selectedCustomer()!.assignedAt!).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
 									</p>
 								</div>
-							</Show>
-
-							<div class="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/60">
-								<Phone size={16} class="text-muted-foreground/60" />
-								<div class="flex-1">
-									<p class="text-[10px] font-bold text-muted-foreground/40 uppercase">
-										WhatsApp
-									</p>
-									<p class="text-sm font-bold">
-										{selectedCustomer()?.phone || "-"}
+								<div class="bg-muted/30 p-4 rounded-2xl border border-border/40">
+									<p class="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Terakhir Scan</p>
+									<p class="text-xs font-bold text-primary font-mono lowercase">
+										<Show when={customerStamps()?.length} fallback="-">
+											{new Date(customerStamps()!.sort((a,b) => b.stampedAt - a.stampedAt)[0].stampedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+										</Show>
 									</p>
 								</div>
 							</div>
 
-							<div class="pt-4">
-								<button
-									onClick={async () => {
-										if (confirm("Hapus member permanen?")) {
-											await db.customers.delete(
-												selectedCustomer()!.id,
-											);
-											toast.success("Member dihapus");
-											setSelectedCustomer(null);
-											refetch();
+							<form id="member-form" onSubmit={handleUpdateMember} class="space-y-5">
+								<div class="flex flex-col gap-4">
+									<Show 
+										when={isEditing()} 
+										fallback={
+											<div class="space-y-3">
+												<div class="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/60">
+													<div class="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shrink-0 font-bold text-sm">
+														Aa
+													</div>
+													<div class="flex-1 min-w-0 text-left">
+														<p class="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Nama Lengkap</p>
+														<p class="text-sm font-bold truncate uppercase">{selectedCustomer()?.name || "-"}</p>
+													</div>
+												</div>
+												<div class="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/60">
+													<div class="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shrink-0">
+														<Phone size={18} />
+													</div>
+													<div class="flex-1 min-w-0 text-left">
+														<p class="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">WhatsApp</p>
+														<p class="text-sm font-bold truncate">{selectedCustomer()?.phone || "-"}</p>
+													</div>
+												</div>
+												<div class="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/60">
+													<div class="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shrink-0">
+														<Users size={18} />
+													</div>
+													<div class="flex-1 min-w-0 text-left">
+														<p class="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Email</p>
+														<p class="text-sm font-bold truncate">{selectedCustomer()?.email || "-"}</p>
+													</div>
+												</div>
+
+												{/* Stamp Progress Section - Compact Vertical Grid */}
+												<div class="pt-2 pb-2">
+													<div class="flex items-center justify-between px-1 mb-4">
+														<h4 class="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Progress Loyalty</h4>
+														<span class="text-[10px] font-black text-primary px-2.5 py-1 bg-primary/10 rounded-lg border border-primary/10">
+															{customerStamps()?.length || 0} / {activeLoyaltyProgram()?.targetStamps || 10} STAMP
+														</span>
+													</div>
+													
+													<div class="bg-muted/10 rounded-[24px] border border-border/40 p-5">
+														<div class="grid grid-cols-5 gap-3">
+															<For each={Array.from({length: activeLoyaltyProgram()?.targetStamps || 10})}>
+																{(_, i) => (
+																	<div class={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all duration-500 ${i() < (customerStamps()?.length || 0) ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-100" : "bg-background border-border/40 text-muted-foreground/10 scale-95"}`}>
+																		<SquareCheck size={i() < (customerStamps()?.length || 0) ? 18 : 14} stroke-width={3} />
+																	</div>
+																)}
+															</For>
+														</div>
+														<div class="mt-4 pt-4 border-t border-border/40 text-center">
+															<p class="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wide">
+																{customerStamps()?.length === (activeLoyaltyProgram()?.targetStamps || 10) 
+																	? "🎉 Reward Siap Diklaim!"
+																	: `Kurang ${(activeLoyaltyProgram()?.targetStamps || 10) - (customerStamps()?.length || 0)} stamp lagi`}
+															</p>
+														</div>
+													</div>
+												</div>
+
+												<div class="flex gap-2.5 pt-4">
+													<button 
+														type="button"
+														onClick={() => setIsEditing(true)}
+														class="flex-1 h-12 bg-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all"
+													>
+														Edit Profil
+													</button>
+													<button 
+														type="button"
+														onClick={() => setPrintingMembers([selectedCustomer()!])}
+														class="w-12 h-12 bg-card border border-border/60 text-muted-foreground rounded-2xl flex items-center justify-center hover:bg-muted transition-all"
+													>
+														<Printer size={18} />
+													</button>
+												</div>
+												<button 
+													type="button"
+													onClick={() => setDeleteTargetId(selectedCustomer()!.id)}
+													class="w-full py-4 text-[10px] font-black text-red-400 uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-red-500 transition-colors mt-4"
+												>
+													<Trash2 size={14} /> Hapus Selamanya
+												</button>
+											</div>
 										}
-									}}
-									class="w-full h-11 flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
-								>
-									<Trash2 size={16} /> Hapus Member
-								</button>
-							</div>
+									>
+										<div class="space-y-4">
+											<div class="flex flex-col gap-1.5 text-left">
+												<label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Nama Member</label>
+												<input 
+													type="text" 
+													required
+													placeholder="Masukkan nama member..."
+													value={editName()} 
+													onInput={e => setEditName(e.currentTarget.value)}
+													class="w-full h-12 px-4 rounded-xl border border-border/70 bg-muted/30 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+												/>
+											</div>
+											<div class="flex flex-col gap-1.5 text-left">
+												<label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">WhatsApp</label>
+												<input 
+													type="tel" 
+													placeholder="08xxxxxxxxxx"
+													value={editPhone()} 
+													onInput={e => setEditPhone(e.currentTarget.value)}
+													class="w-full h-12 px-4 rounded-xl border border-border/70 bg-muted/30 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+												/>
+											</div>
+											<div class="flex flex-col gap-1.5 text-left">
+												<label class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Email</label>
+												<input 
+													type="email" 
+													placeholder="email@member.com"
+													value={editEmail()} 
+													onInput={e => setEditEmail(e.currentTarget.value)}
+													class="w-full h-12 px-4 rounded-xl border border-border/70 bg-muted/30 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+												/>
+											</div>
+											<div class="flex gap-3 pt-3">
+												<button 
+													type="button"
+													onClick={() => setIsEditing(false)}
+													class="flex-1 h-12 bg-muted text-muted-foreground rounded-xl font-black text-[11px] uppercase tracking-widest hover:text-foreground transition-all"
+												>
+													Batal
+												</button>
+											</div>
+										</div>
+									</Show>
+								</div>
+							</form>
 						</div>
 					</div>
-				</div>
-			</Show>
 
-			{/* Generate Batch Dialog */}
+					{/* Sticky Footer for Edit Mode */}
+					<Show when={isEditing()}>
+						<div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0 animate-in slide-in-from-bottom-2 duration-300">
+							<button 
+								type="submit"
+								form="member-form"
+								class="w-full h-12 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+							>
+								<Zap size={16} /> Simpan Perubahan
+							</button>
+						</div>
+					</Show>
+				</SheetContent>
+			</Sheet>
+
+			{/* Confirm Delete Member */}
+			<ConfirmDialog
+				open={deleteTargetId() !== null}
+				onOpenChange={(v) => !v && setDeleteTargetId(null)}
+				title="Hapus Member?"
+				description="Member ini akan dihapus secara permanen dari database."
+				confirmLabel="Ya, Hapus"
+				variant="danger"
+				loading={isDeleting()}
+				onConfirm={handleDeleteMember}
+			/>
+
+			{/* QR Batch Print Dialog */}
 			<Show when={generateDialogOpen()}>
 				<div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
 					<div class="bg-card w-full max-w-[280px] rounded-[24px] shadow-2xl p-6 space-y-6 animate-in zoom-in-95">
@@ -479,32 +637,131 @@ export default function MembersPage() {
 								Pilih jumlah kartu member kosong
 							</p>
 						</div>
-						<div class="grid grid-cols-2 gap-2">
-							<For each={[12, 24, 48, 96]}>
+						<div class="grid grid-cols-3 gap-2">
+							<For each={[5, 10, 15, 25, 50]}>
 								{(num) => (
 									<button
 										onClick={() => setBatchCount(num)}
-										class={`h-10 rounded-xl border font-bold text-xs transition-all ${batchCount() === num ? "border-primary bg-primary/5 text-primary" : "border-border/60 text-muted-foreground"}`}
+										class={`h-10 rounded-xl border-2 font-black text-[10px] transition-all ${batchCount() === num ? "border-primary bg-primary/5 text-primary" : "border-border/40 text-muted-foreground hover:bg-muted"}`}
 									>
 										{num} PCS
 									</button>
 								)}
 							</For>
+							<div class="relative group h-10">
+								<input 
+									type="number"
+									placeholder="CSTM"
+									class={`w-full h-full rounded-xl border-2 px-2 text-center font-black text-[10px] outline-none transition-all ${[5, 10, 15, 25, 50].includes(batchCount()) ? "border-border/40 bg-background" : "border-primary bg-primary/5 text-primary"}`}
+									onInput={e => setBatchCount(Number(e.currentTarget.value))}
+								/>
+							</div>
 						</div>
-						<button
-							onClick={handleGenerateBatch}
-							class="w-full h-11 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20"
-						>
-							Generate & Print
-						</button>
-						<button
-							onClick={() => setGenerateDialogOpen(false)}
-							class="w-full text-[10px] font-black text-muted-foreground uppercase"
-						>
-							Batal
-						</button>
+						<div class="pt-2">
+							<button
+								onClick={handleGenerateBatch}
+								class="w-full h-12 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+							>
+								Generate & Print
+							</button>
+							<button
+								onClick={() => setGenerateDialogOpen(false)}
+								class="w-full h-10 mt-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors"
+							>
+								Batal
+							</button>
+						</div>
 					</div>
 				</div>
+			</Show>
+
+			{/* Member Print Overlay with Portal - Final fix for interactivity & blank page */}
+			<Show when={printingMembers()}>
+				<Portal>
+					<div 
+						id="member-print-portal"
+						class="fixed inset-0 z-[9999] bg-white overflow-y-auto pointer-events-auto"
+					>
+						{/* Floating Header - Only for preview, hidden on print */}
+						<div class="fixed top-0 left-0 right-0 p-4 flex items-center justify-between bg-white/90 backdrop-blur-xl border-b border-border/40 no-print z-[10000]">
+							<div class="flex items-center gap-3 ml-2">
+								<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+									<Printer size={20} />
+								</div>
+								<div>
+									<h2 class="font-black text-sm uppercase tracking-tight leading-none">Pratinjau Cetak</h2>
+									<p class="text-[10px] font-bold text-muted-foreground mt-1">{printingMembers()?.length} Kartu Member</p>
+								</div>
+							</div>
+							
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => window.print()}
+									class="px-6 h-11 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+								>
+									<Zap size={14} /> Cetak Sekarang
+								</button>
+								<button
+									type="button"
+									onClick={() => setPrintingMembers(null)}
+									class="px-5 h-11 bg-muted text-muted-foreground rounded-xl font-black text-[10px] uppercase tracking-widest hover:text-foreground active:scale-95 transition-all"
+								>
+									Tutup
+								</button>
+							</div>
+						</div>
+
+						{/* Content Area - Using visibility pattern for reliable print */}
+						<div class="pt-24 pb-12 px-4 flex justify-center bg-muted/5 min-h-screen member-print-container">
+							<div class="max-w-[794px] w-full bg-white shadow-2xl print:shadow-none min-h-[1123px]">
+								<QrCodePrintGrid
+									items={printingMembers()!.map((m) => ({
+										id: m.id,
+										qrCode: m.qrCode,
+										label: m.id.substring(m.id.length - 8).toUpperCase(),
+									}))}
+								/>
+							</div>
+						</div>
+
+						<style>{`
+							@media print { 
+								.no-print { display: none !important; }
+								
+								/* Hide everything on the page */
+								html, body { visibility: hidden !important; background: white !important; }
+								
+								/* Only show the print portal and its contents */
+								#member-print-portal, 
+								#member-print-portal .member-print-container,
+								#member-print-portal .member-print-container * { 
+									visibility: visible !important; 
+								}
+								
+								/* Reset positioning for print layout */
+								#member-print-portal { 
+									position: absolute !important; 
+									left: 0 !important; 
+									top: 0 !important; 
+									width: 100% !important; 
+									overflow: visible !important;
+								}
+								
+								.member-print-container { 
+									padding: 0 !important; 
+									margin: 0 !important;
+									display: block !important;
+								}
+
+								@page { 
+									margin: 0; 
+									size: A4 portrait; 
+								}
+							}
+						`}</style>
+					</div>
+				</Portal>
 			</Show>
 		</div>
 	);
