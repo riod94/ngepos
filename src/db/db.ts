@@ -78,6 +78,7 @@ export interface Transaction {
   isAdjustment?: boolean;
   discountTotal?: number;  // Total discount applied
   discountNote?: string;   // Description of applied discount
+  customerId?: string;     // FK to customers.id (Member)
 }
 
 export interface TransactionItem {
@@ -198,6 +199,56 @@ export interface CampaignReward {
   value: number; // Discount amount or free qty
 }
 
+// ─── Membership & Loyalty Types ──────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  qrCode: string;        // "NGEPOS-MBR-<id>"
+  status: 'UNASSIGNED' | 'ASSIGNED';
+  name?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  createdAt: number;
+  assignedAt?: number;
+}
+
+export interface LoyaltyProgram {
+  id: string;
+  name: string;
+  targetStamps: number;
+  minTransaction: number;
+  rewardType: 'FREE_PRODUCT' | 'PERCENT_DISCOUNT' | 'FIXED_DISCOUNT';
+  rewardValue: number;
+  rewardProductId?: string;
+  expiryMonths: number;        
+  rewardClaimDays: number;     
+  afterClaim: 'RESET' | 'COMPLETE';
+  excludedProductIds: string[];
+  allowWithPromo: boolean;
+  isActive: boolean;
+  createdAt: number;
+}
+
+export interface CustomerStamp {
+  id: string;
+  customerId: string;
+  programId: string;
+  transactionId: string;
+  stampedAt: number;
+}
+
+export interface CustomerReward {
+  id: string;
+  customerId: string;
+  programId: string;
+  status: 'AVAILABLE' | 'CLAIMED' | 'EXPIRED';
+  availableAt: number;
+  claimedAt?: number;
+  claimedTransactionId?: string;
+  expiresAt: number;
+}
+
 // ─── Database ─────────────────────────────────────────────────────────────────
 
 export class PosDatabase extends Dexie {
@@ -216,6 +267,10 @@ export class PosDatabase extends Dexie {
   campaigns!: EntityTable<Campaign, 'id'>;
   campaignItems!: EntityTable<CampaignItem, 'id'>;
   campaignRewards!: EntityTable<CampaignReward, 'id'>;
+  customers!: EntityTable<Customer, 'id'>;
+  loyaltyPrograms!: EntityTable<LoyaltyProgram, 'id'>;
+  customerStamps!: EntityTable<CustomerStamp, 'id'>;
+  customerRewards!: EntityTable<CustomerReward, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -331,6 +386,12 @@ export class PosDatabase extends Dexie {
     
     // Version 13: add campaigns, campaignItems, campaignRewards
     this.version(13).stores({
+      campaignItems: 'id, campaignId, productId, type',
+      campaignRewards: 'id, campaignId, rewardType',
+    });
+
+    // Version 14: add membership & loyalty tables
+    this.version(14).stores({
       products: 'id, name, category, stock',
       categories: 'id, orderIndex',
       transactions: 'id, receiptNumber, timestamp, status',
@@ -346,6 +407,10 @@ export class PosDatabase extends Dexie {
       campaigns: 'id, name, type, isActive',
       campaignItems: 'id, campaignId, productId, type',
       campaignRewards: 'id, campaignId, rewardType',
+      customers: 'id, qrCode, status, phone',
+      loyaltyPrograms: 'id, isActive',
+      customerStamps: 'id, customerId, programId, transactionId, stampedAt',
+      customerRewards: 'id, customerId, programId, status',
     });
 
     this.products = this.table('products');
@@ -363,6 +428,10 @@ export class PosDatabase extends Dexie {
     this.campaigns = this.table('campaigns');
     this.campaignItems = this.table('campaignItems');
     this.campaignRewards = this.table('campaignRewards');
+    this.customers = this.table('customers');
+    this.loyaltyPrograms = this.table('loyaltyPrograms');
+    this.customerStamps = this.table('customerStamps');
+    this.customerRewards = this.table('customerRewards');
   }
 }
 

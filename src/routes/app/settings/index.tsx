@@ -9,6 +9,7 @@ import {
 	Store,
 	ShieldCheck,
 	Megaphone,
+	Trophy,
 } from "lucide-solid";
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -33,6 +34,22 @@ const MENU_ITEMS: MenuItem[] = [
 		title: "Informasi Outlet",
 		subtitle: "Profil & kustomisasi identitas toko",
 	},
+  {
+    href: "/app/settings/members",
+    icon: Users,
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+    title: "Members & QR Code",
+    subtitle: "Daftar pelanggan & cetak kartu QR",
+  },
+  {
+    href: "/app/settings/loyalty",
+    icon: Trophy,
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
+    title: "Program Loyalty",
+    subtitle: "Atur target stamp & hadiah member",
+  },
 	{
 		href: "/app/settings/campaigns",
 		icon: Megaphone,

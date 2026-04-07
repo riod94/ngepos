@@ -14,6 +14,9 @@ import {
 	Truck,
 	ShoppingBag,
 	PencilLine,
+	UserPlus,
+	UserCheck,
+	Gift,
 } from "lucide-solid";
 import { useNavigate } from "@solidjs/router";
 import {
@@ -25,7 +28,21 @@ import {
 	updateQuantity,
 	updateCartItemVariants,
 	clearCart,
+	linkedCustomerId,
+	setLinkedCustomerId,
+	appliedRewardId,
+	setAppliedRewardId,
 } from "~/stores/cart";
+import { QrCodeScanner } from "~/components/QrCodeScanner";
+import { LoyaltyBanner } from "~/components/LoyaltyBanner";
+import { 
+	isStampEligible, 
+	getActiveProgram, 
+	addStamp, 
+	getCustomerProgress, 
+	checkAndCreateReward,
+	claimReward
+} from "~/stores/loyalty";
 import { VariantSelector } from "~/components/VariantSelector";
 import { Button } from "~/components/ui/button";
 import {
@@ -96,6 +113,36 @@ export function CartFloatingButton() {
 
 	const [adjustedAmount, setAdjustedAmount] = createSignal(0);
 	const [selectedPlatform, setSelectedPlatform] = createSignal<string>("");
+
+	const [scannerOpen, setScannerOpen] = createSignal(false);
+	const [rewardProduct] = createResource(async () => {
+		const rid = appliedRewardId();
+		if (!rid) return null;
+		const rw = await db.customerRewards.get(rid);
+		if (!rw) return null;
+		const lp = await db.loyaltyPrograms.get(rw.programId);
+		if (!lp || lp.rewardType !== 'FREE_PRODUCT') return null;
+		return await db.products.get(lp.rewardProductId!);
+	});
+
+	// Helper to calculate final discount inclusive of loyalty reward
+	const getLoyaltyRewardAmount = () => {
+		const rid = appliedRewardId();
+		if (!rid) return 0;
+		// Since we only handle FREE_PRODUCT as auto-add style logic for now, 
+		// but let's calculate the discount value here
+		const p = rewardProduct();
+		if (p) return p.price;
+		// For decimal/fixed (future, implement if needed)
+		return 0;
+	};
+
+	const finalTotalAmount = () => {
+		const subtotal = getCartSubtotal();
+		const appDisc = calculateDiscounts().total;
+		const loyaltyDisc = getLoyaltyRewardAmount();
+		return Math.max(0, subtotal - appDisc - loyaltyDisc);
+	};
 
 	const hasQris = () => !!qrisImage();
 
@@ -172,10 +219,31 @@ export function CartFloatingButton() {
 						});
 
 						// Update stock inside the same transaction
+						// Update stock inside the same transaction
 						if (product) {
 							await db.products.update(item.id, {
 								stock: Math.max(0, product.stock - item.quantity),
 							});
+						}
+					}
+
+					// C. Handle Reward Product Line Item if applied
+					const rid = appliedRewardId();
+					if (rid) {
+						const rwProd = rewardProduct();
+						if (rwProd) {
+							const transactionId = `txn_${Date.now()}`; // context fix if needed
+							itemsToSave.push({
+								id: `ti_reward_${Date.now()}`,
+								transactionId,
+								productId: rwProd.id,
+								productName: `[GIFT] ${rwProd.name}`,
+								quantity: 1,
+								priceAtTime: 0,
+								cogsAtTime: rwProd.cogs || rwProd.price * 0.45,
+								selectedVariants: []
+							});
+							cogsTotal += (rwProd.cogs || rwProd.price * 0.45);
 						}
 					}
 
@@ -187,14 +255,16 @@ export function CartFloatingButton() {
 						receiptNumber: `INV-${Date.now()}`,
 						totalAmount: finalAmount,
 						originalAmount: originalTotal,
+						totalDiscount: originalTotal - finalAmount, // Simplification
 						cogsTotal,
 						paymentMethod: method,
 						timestamp: ts,
 						status: "PENDING",
 						isBackdated: isBackdated(),
-						isAdjustment: finalAmount !== (originalTotal - discountInfo.total),
-						discountTotal: discountInfo.total,
-						discountNote: discountInfo.note,
+						isAdjustment: finalAmount !== finalTotalAmount(),
+						discountTotal: calculateDiscounts().total + getLoyaltyRewardAmount(),
+						discountNote: calculateDiscounts().note + (rid ? ", Loyalty Reward" : ""),
+						customerId: linkedCustomerId() || undefined,
 					} as any);
 
 					// B. Add All Items
@@ -203,6 +273,34 @@ export function CartFloatingButton() {
 					return transactionId;
 				}
 			);
+
+			// Post-checkout: Update Loyalty (outside transaction for side effects)
+			if (resultTransactionId && linkedCustomerId()) {
+				const cid = linkedCustomerId()!;
+				const lp = await getActiveProgram();
+				if (lp) {
+					const cartProductIds = cartSnapshot.map(it => String(it.id));
+					const eligible = isStampEligible(originalTotal, calculateDiscounts().total > 0, cartProductIds, lp);
+					
+					if (eligible) {
+						await addStamp(cid, lp.id, resultTransactionId);
+						const progress = await getCustomerProgress(cid, lp.id);
+						
+						if (progress.isEligibleForReward) {
+							await checkAndCreateReward(cid, lp.id);
+							toast.success("🎉 Target Stamp Tercapai! Reward baru tersedia.");
+						} else {
+							toast.success(`Stamp +1 (${progress.currentStamps}/${progress.targetStamps}) ✓`);
+						}
+					}
+				}
+
+				// If reward was applied, mark it as claimed
+				const rid = appliedRewardId();
+				if (rid) {
+					await claimReward(rid, resultTransactionId);
+				}
+			}
 
 			return resultTransactionId;
 		} catch (err: any) {
@@ -215,7 +313,7 @@ export function CartFloatingButton() {
 	}
 
 	async function handleCash() {
-		const id = await submitTransaction("TUNAI", getCartTotal());
+		const id = await submitTransaction("TUNAI", finalTotalAmount());
 		if (!id) return;
 		finishPayment(id);
 	}
@@ -225,7 +323,7 @@ export function CartFloatingButton() {
 			setPayStep("done_fail");
 			return;
 		}
-		const id = await submitTransaction("QRIS", getCartTotal());
+		const id = await submitTransaction("QRIS", finalTotalAmount());
 		if (!id) return;
 		finishPayment(id);
 	}
@@ -250,7 +348,7 @@ export function CartFloatingButton() {
 
 	function startPlatformPayment(platform: string) {
 		setSelectedPlatform(platform);
-		setAdjustedAmount(getCartTotal());
+		setAdjustedAmount(finalTotalAmount());
 		setPayStep("adjustment");
 	}
 
@@ -300,13 +398,39 @@ export function CartFloatingButton() {
 
 					<SheetContent
 						position="bottom"
-						class="h-[88vh] rounded-t-[32px] md:max-w-lg md:mx-auto flex flex-col p-0 border-none bg-background shadow-[0_-15px_50px_rgba(0,0,0,0.1)]"
+						class="h-[88vh] rounded-t-[32px] md:max-w-lg md:mx-auto flex flex-col p-0 border-none bg-background shadow-[0_-15px_50px_rgba(0,0,0,0.1)] overflow-hidden"
 					>
+						<Show when={scannerOpen()}>
+							<QrCodeScanner 
+								onScan={(id) => {
+									setLinkedCustomerId(id);
+									setScannerOpen(false);
+									toast.success("Member berhasil dihubungkan!");
+								}} 
+								onClose={() => setScannerOpen(false)} 
+							/>
+						</Show>
+
 						<SheetHeader class="px-6 pt-7 pb-4 border-b border-border/50 shrink-0">
 							<SheetTitle class="font-black text-xl tracking-tight leading-none">
 								Pesanan Anda
 							</SheetTitle>
 						</SheetHeader>
+
+						{/* Loyalty Section */}
+						<div class="px-5 pt-4 shrink-0 space-y-3">
+							<Show when={linkedCustomerId()} fallback={
+								<button 
+									onClick={() => setScannerOpen(true)}
+									class="w-full h-12 rounded-2xl bg-primary/5 hover:bg-primary/10 border-2 border-primary/20 border-dashed flex items-center justify-center gap-3 text-primary transition-all group"
+								>
+									<UserPlus size={18} class="group-hover:scale-110 transition-transform" />
+									<span class="text-xs font-black uppercase tracking-widest">Hubungkan Member QR</span>
+								</button>
+							}>
+								<LoyaltyBanner customerId={linkedCustomerId()!} />
+							</Show>
+						</div>
 
 						{/* Backdate Toggle */}
 						<div class="px-5 pt-4 shrink-0">
@@ -446,6 +570,24 @@ export function CartFloatingButton() {
 									</div>
 								)}
 							</For>
+
+							{/* Reward Product Placeholder in Cart */}
+							<Show when={rewardProduct()}>
+								<div class="flex items-center gap-3 bg-amber-50 px-4 py-4 rounded-3xl border-2 border-amber-200 border-dashed animate-in zoom-in-95 duration-300">
+									<div class="flex-1 min-w-0">
+										<p class="text-[9px] font-black uppercase tracking-widest text-amber-600">🎉 Bonus Loyalty</p>
+										<h4 class="font-black text-sm leading-tight truncate text-amber-900">
+											{rewardProduct()?.name}
+										</h4>
+										<p class="text-emerald-600 font-black text-sm mt-1">
+											GRATIS REWARD
+										</p>
+									</div>
+									<div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm border border-amber-200">
+										<Gift size={24} />
+									</div>
+								</div>
+							</Show>
 						</div>
 
 						{/* Edit Variant Dialog */}
@@ -486,12 +628,28 @@ export function CartFloatingButton() {
 									</div>
 								</Show>
 
+								<Show when={appliedRewardId()}>
+									<div class="flex items-center justify-between text-amber-600">
+										<div class="flex flex-col">
+											<span class="font-bold text-xs uppercase tracking-widest flex items-center gap-1">
+												<Gift size={10} /> Loyalty Reward
+											</span>
+											<span class="text-[10px] font-medium opacity-80 leading-none">
+												{rewardProduct()?.name || "Free Product"}
+											</span>
+										</div>
+										<span class="font-bold text-sm">
+											- Rp {getLoyaltyRewardAmount().toLocaleString("id-ID")}
+										</span>
+									</div>
+								</Show>
+
 								<div class="flex items-center justify-between pt-2 border-t border-border/40">
 									<span class="font-black text-sm uppercase tracking-widest text-foreground">
 										Total Bayar
 									</span>
 									<span class="font-black text-2xl tracking-tighter text-primary">
-										Rp {getCartTotal().toLocaleString("id-ID")}
+										Rp {finalTotalAmount().toLocaleString("id-ID")}
 									</span>
 								</div>
 							</div>
@@ -527,7 +685,7 @@ export function CartFloatingButton() {
 							<DialogDescription class="text-sm font-semibold text-muted-foreground mt-1">
 								Tagihan:{" "}
 								<span class="text-foreground font-black text-lg ml-1">
-									Rp {getCartTotal().toLocaleString("id-ID")}
+									Rp {finalTotalAmount().toLocaleString("id-ID")}
 								</span>
 								<Show when={backdateOpen()}>
 									<span class="ml-2 text-xs font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded uppercase tracking-widest">

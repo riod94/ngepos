@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store";
-import { createResource } from "solid-js";
+import { createResource, createSignal } from "solid-js";
 import { db, type Product } from "~/db/db";
 
 export type CartItem = Product & { 
@@ -10,6 +10,8 @@ export type CartItem = Product & {
 };
 
 const [cart, setCart] = createStore<CartItem[]>([]);
+const [linkedCustomerId, setLinkedCustomerId] = createSignal<string | null>(null);
+const [appliedRewardId, setAppliedRewardId] = createSignal<string | null>(null);
 
 export function addToCart(product: Product, selectedVariants?: CartItem['selectedVariants']) {
   setCart(items => {
@@ -247,6 +249,8 @@ export { refetchCampaigns };
 
 export function clearCart() {
   setCart([]);
+  setLinkedCustomerId(null);
+  setAppliedRewardId(null);
 }
 
-export { cart, setCart };
+export { cart, setCart, linkedCustomerId, setLinkedCustomerId, appliedRewardId, setAppliedRewardId };
