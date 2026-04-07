@@ -107,22 +107,37 @@ export default function Receipt() {
 
               <div class="w-full border-b border-dashed border-border/60 my-5" />
 
-              <Show when={transaction()?.originalAmount && transaction()!.originalAmount !== transaction()!.totalAmount}>
-                <div class="w-full flex flex-col gap-1 mb-5 leading-tight">
-                  <div class="w-full flex justify-between text-xs font-bold text-muted-foreground font-sans italic">
-                    <span>Subtotal Produk</span>
-                    <span>Rp {transaction()!.originalAmount.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div class="w-full flex justify-between text-xs font-bold font-sans italic">
-                    <span class={transaction()!.totalAmount > transaction()!.originalAmount ? "text-emerald-600" : "text-red-500"}>
-                      {transaction()!.totalAmount > transaction()!.originalAmount ? "Markup/Fee Platform" : "Potongan/Diskon"}
-                    </span>
-                    <span class={transaction()!.totalAmount > transaction()!.originalAmount ? "text-emerald-600" : "text-red-500"}>
-                      {transaction()!.totalAmount > transaction()!.originalAmount ? "+" : "-"} Rp {Math.abs(transaction()!.totalAmount - transaction()!.originalAmount).toLocaleString('id-ID')}
-                    </span>
-                  </div>
+              <div class="w-full flex flex-col gap-1.5 mb-5 leading-tight font-sans text-left">
+                <div class="w-full flex justify-between text-xs font-bold text-muted-foreground italic">
+                  <span>Subtotal Produk</span>
+                  <span>Rp {(transaction()?.originalAmount ?? 0).toLocaleString('id-ID')}</span>
                 </div>
-              </Show>
+
+                <Show when={(transaction()?.discountTotal ?? 0) > 0}>
+                  <div class="w-full flex justify-between text-xs font-bold text-emerald-600 italic">
+                    <span class="truncate max-w-[150px]">Promo ({transaction()?.discountNote ?? 'Diskon'})</span>
+                    <span>- Rp {(transaction()?.discountTotal ?? 0).toLocaleString('id-ID')}</span>
+                  </div>
+                </Show>
+
+                <Show when={transaction()?.isAdjustment}>
+                  {(() => {
+                    const baseAfterPromo = (transaction()?.originalAmount || 0) - (transaction()?.discountTotal || 0);
+                    const diff = (transaction()?.totalAmount || 0) - baseAfterPromo;
+                    if (Math.abs(diff) < 1) return null;
+                    return (
+                      <div class="w-full flex justify-between text-xs font-bold italic">
+                        <span class={diff > 0 ? "text-blue-600" : "text-red-500"}>
+                          {diff > 0 ? "Fee Platform/Markup" : "Penyesuaian"}
+                        </span>
+                        <span class={diff > 0 ? "text-blue-600" : "text-red-500"}>
+                          {diff > 0 ? "+" : "-"} Rp {Math.abs(diff).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </Show>
+              </div>
 
               <div class="w-full flex justify-between text-lg font-black font-sans leading-none">
                 <span>Total Bayar</span>

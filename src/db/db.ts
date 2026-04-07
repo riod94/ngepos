@@ -76,6 +76,8 @@ export interface Transaction {
   isBackdated: boolean;
   backdatedNote?: string;
   isAdjustment?: boolean;
+  discountTotal?: number;  // Total discount applied
+  discountNote?: string;   // Description of applied discount
 }
 
 export interface TransactionItem {
@@ -140,6 +142,62 @@ export interface AppSetting {
   value: string;
 }
 
+export interface Discount {
+  id: string;
+  name: string;
+  type: 'PERCENT' | 'FIXED' | 'QUANTITY';
+  value: number; // For PERCENT or FIXED
+  buyQty?: number; // For QUANTITY
+  getQty?: number; // For QUANTITY
+  isActive: boolean;
+  productId?: string; // If specific to one product
+}
+
+export interface BundleItem {
+  productId: string;
+  quantity: number;
+  variantHash: string; // Combined option names
+}
+
+export interface Bundle {
+  id: string;
+  name: string;
+  price: number;
+  cogs: number;
+  image?: string;
+  isActive: boolean;
+  items: BundleItem[];
+}
+
+// ─── Campaign / Promo V2 Types ───────────────────────────────────────────────
+
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'BUNDLE' | 'BUY_X_GET_Y' | 'BULK_DISCOUNT';
+  isActive: boolean;
+  priority: number;
+  startDate?: number;
+  endDate?: number;
+}
+
+export interface CampaignItem {
+  id: string;
+  campaignId: string;
+  productId: string;
+  type: 'REQUIREMENT' | 'TARGET_DISCOUNT';
+  quantity: number;
+}
+
+export interface CampaignReward {
+  id: string;
+  campaignId: string;
+  rewardType: 'FREE_PRODUCT' | 'FIXED_DISCOUNT' | 'PERCENT_DISCOUNT';
+  productId?: string; // If FREE_PRODUCT
+  value: number; // Discount amount or free qty
+}
+
 // ─── Database ─────────────────────────────────────────────────────────────────
 
 export class PosDatabase extends Dexie {
@@ -153,6 +211,11 @@ export class PosDatabase extends Dexie {
   staff!: EntityTable<Staff, 'id'>;
   roles!: EntityTable<Role, 'id'>;
   rawMaterialLibrary!: EntityTable<RawMaterialLibrary, 'id'>;
+  discounts!: EntityTable<Discount, 'id'>;
+  bundles!: EntityTable<Bundle, 'id'>;
+  campaigns!: EntityTable<Campaign, 'id'>;
+  campaignItems!: EntityTable<CampaignItem, 'id'>;
+  campaignRewards!: EntityTable<CampaignReward, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -260,6 +323,31 @@ export class PosDatabase extends Dexie {
       rawMaterialLibrary: 'id, name',
     });
 
+    // Version 12: add discounts & bundles tables
+    this.version(12).stores({
+      discounts: 'id, productId, isActive',
+      bundles: 'id, name, isActive',
+    });
+    
+    // Version 13: add campaigns, campaignItems, campaignRewards
+    this.version(13).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
+      rawMaterialLibrary: 'id, name',
+      discounts: 'id, productId, isActive',
+      bundles: 'id, name, isActive',
+      campaigns: 'id, name, type, isActive',
+      campaignItems: 'id, campaignId, productId, type',
+      campaignRewards: 'id, campaignId, rewardType',
+    });
+
     this.products = this.table('products');
     this.categories = this.table('categories');
     this.transactions = this.table('transactions');
@@ -270,6 +358,11 @@ export class PosDatabase extends Dexie {
     this.staff = this.table('staff');
     this.roles = this.table('roles');
     this.rawMaterialLibrary = this.table('rawMaterialLibrary');
+    this.discounts = this.table('discounts');
+    this.bundles = this.table('bundles');
+    this.campaigns = this.table('campaigns');
+    this.campaignItems = this.table('campaignItems');
+    this.campaignRewards = this.table('campaignRewards');
   }
 }
 

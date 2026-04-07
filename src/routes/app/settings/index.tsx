@@ -8,6 +8,7 @@ import {
 	QrCode,
 	Store,
 	ShieldCheck,
+	Megaphone,
 } from "lucide-solid";
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -31,6 +32,14 @@ const MENU_ITEMS: MenuItem[] = [
 		iconColor: "text-orange-600",
 		title: "Informasi Outlet",
 		subtitle: "Profil & kustomisasi identitas toko",
+	},
+	{
+		href: "/app/settings/campaigns",
+		icon: Megaphone,
+		iconBg: "bg-pink-100",
+		iconColor: "text-pink-600",
+		title: "Kampanye & Promosi",
+		subtitle: "Atur bundling, diskon & event",
 	},
 	{
 		href: "/app/products",

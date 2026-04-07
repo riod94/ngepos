@@ -19,6 +19,8 @@ import { useNavigate } from "@solidjs/router";
 import {
 	cart,
 	getCartTotal,
+	getCartSubtotal,
+	calculateDiscounts,
 	getCartCount,
 	updateQuantity,
 	updateCartItemVariants,
@@ -121,7 +123,8 @@ export function CartFloatingButton() {
 		// Proxy objects can cause issues during async/await or cloning
 		const rawCart = unwrap(cart);
 		const cartSnapshot = structuredClone(rawCart);
-		const originalTotal = getCartTotal();
+		const originalTotal = getCartSubtotal();
+		const discountInfo = calculateDiscounts();
 
 		if (!cartSnapshot || cartSnapshot.length === 0) {
 			toast.error("Gagal: Keranjang belanja kosong.");
@@ -189,7 +192,9 @@ export function CartFloatingButton() {
 						timestamp: ts,
 						status: "PENDING",
 						isBackdated: isBackdated(),
-						isAdjustment: finalAmount !== originalTotal,
+						isAdjustment: finalAmount !== (originalTotal - discountInfo.total),
+						discountTotal: discountInfo.total,
+						discountNote: discountInfo.note,
 					} as any);
 
 					// B. Add All Items
@@ -455,13 +460,40 @@ export function CartFloatingButton() {
 
 						{/* Footer */}
 						<div class="px-5 pb-8 pt-4 border-t border-border/40 bg-background shrink-0">
-							<div class="flex items-center justify-between mb-4">
-								<span class="font-bold text-sm uppercase tracking-widest text-muted-foreground">
-									Total
-								</span>
-								<span class="font-black text-2xl tracking-tighter">
-									Rp {getCartTotal().toLocaleString("id-ID")}
-								</span>
+							<div class="flex flex-col gap-2 mb-4">
+								<div class="flex items-center justify-between">
+									<span class="font-bold text-xs uppercase tracking-widest text-muted-foreground">
+										Subtotal
+									</span>
+									<span class="font-bold text-sm">
+										Rp {getCartSubtotal().toLocaleString("id-ID")}
+									</span>
+								</div>
+								
+								<Show when={calculateDiscounts().total > 0}>
+									<div class="flex items-center justify-between text-emerald-600">
+										<div class="flex flex-col">
+											<span class="font-bold text-xs uppercase tracking-widest">
+												Promo
+											</span>
+											<span class="text-[10px] font-medium opacity-80 leading-none">
+												{calculateDiscounts().note}
+											</span>
+										</div>
+										<span class="font-bold text-sm">
+											- Rp {calculateDiscounts().total.toLocaleString("id-ID")}
+										</span>
+									</div>
+								</Show>
+
+								<div class="flex items-center justify-between pt-2 border-t border-border/40">
+									<span class="font-black text-sm uppercase tracking-widest text-foreground">
+										Total Bayar
+									</span>
+									<span class="font-black text-2xl tracking-tighter text-primary">
+										Rp {getCartTotal().toLocaleString("id-ID")}
+									</span>
+								</div>
 							</div>
 							<Button
 								class="w-full h-14 rounded-2xl font-black text-base shadow-lg border-none hover:bg-primary/95 active:scale-[0.98] transition-all"

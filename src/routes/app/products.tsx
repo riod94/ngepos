@@ -26,6 +26,8 @@ import {
 	type VariantGroup,
 	type VariantOption,
 	type VariantTemplate,
+	type Discount,
+	type Bundle,
 } from "~/db/db";
 import { Button } from "~/components/ui/button";
 import { ProductImage } from "~/components/ProductImage";
@@ -87,6 +89,12 @@ export default function ProductsManager() {
 	const [materialsLibrary, { refetch: refetchMaterials }] = createResource(
 		async () => await db.rawMaterialLibrary.orderBy("name").toArray(),
 	);
+	const [allDiscounts, { refetch: refetchDiscounts }] = createResource(
+		async () => await db.discounts.toArray(),
+	);
+	const [allBundles, { refetch: refetchBundles }] = createResource(
+		async () => await db.bundles.toArray(),
+	);
 
 	const [sheetOpen, setSheetOpen] = createSignal(false);
 	const [isEditing, setIsEditing] = createSignal(false);
@@ -105,6 +113,14 @@ export default function ProductsManager() {
 	const [formImage, setFormImage] = createSignal("");
 	const [formRaw, setFormRaw] = createSignal<RawMaterialCost[]>([]);
 	const [formVariants, setFormVariants] = createSignal<VariantGroup[]>([]);
+	const [formDiscount, setFormDiscount] = createSignal<Partial<Discount>>({
+		name: "",
+		type: "PERCENT",
+		value: 0,
+		buyQty: 1,
+		getQty: 1,
+		isActive: false,
+	});
 
 	// Variant & Material template manager
 	const [showTemplateLib, setShowTemplateLib] = createSignal(false);
@@ -135,6 +151,14 @@ export default function ProductsManager() {
 		setFormImage("");
 		setFormRaw([]);
 		setFormVariants([]);
+		setFormDiscount({
+			name: "",
+			type: "PERCENT",
+			value: 0,
+			buyQty: 1,
+			getQty: 1,
+			isActive: false,
+		});
 		setActiveTab("info");
 		setSheetOpen(true);
 	}
@@ -149,6 +173,22 @@ export default function ProductsManager() {
 		setFormImage(p.image || "");
 		setFormRaw(structuredClone(p.rawMaterials ?? []));
 		setFormVariants(structuredClone(p.variants ?? []));
+
+		const existingDisc = allDiscounts()?.find((d) => d.productId === p.id);
+		if (existingDisc) {
+			setFormDiscount(structuredClone(existingDisc));
+		} else {
+			setFormDiscount({
+				name: "",
+				type: "PERCENT",
+				value: 0,
+				buyQty: 1,
+				getQty: 1,
+				isActive: false,
+				productId: p.id,
+			});
+		}
+
 		setActiveTab("info");
 		setSheetOpen(true);
 	}
@@ -175,8 +215,22 @@ export default function ProductsManager() {
 			const { id: _id, ...updateData } = product;
 			if (isEditing()) await db.products.update(formId(), updateData);
 			else await db.products.add(product);
+
+			// Save Discount
+			const disc = formDiscount();
+			if (disc.isActive && disc.name) {
+				await db.discounts.put({
+					...(disc as Discount),
+					id: disc.id || `disc_${Date.now()}`,
+					productId: formId(),
+				});
+			} else if (disc.id) {
+				await db.discounts.update(disc.id, { isActive: false });
+			}
+
 			setSheetOpen(false);
 			refetch();
+			refetchDiscounts();
 		} finally {
 			setIsSaving(false);
 		}
