@@ -13,6 +13,7 @@ import {
 	SquareCheck,
 	ArrowLeft,
 	Zap,
+	IdCard,
 } from "lucide-solid";
 import { A, useNavigate } from "@solidjs/router";
 import { db, type Customer } from "~/db/db";
@@ -26,6 +27,7 @@ import { QrCodeGenerator, QrCodePrintGrid } from "~/components/QrCodeGenerator";
 import { toast } from "solid-toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
+import { getSetting } from "~/db/db";
 
 type MemberTab = "ALL" | "ASSIGNED" | "UNASSIGNED";
 
@@ -41,11 +43,18 @@ export default function MembersPage() {
 	const [selectedCustomer, setSelectedCustomer] =
 		createSignal<Customer | null>(null);
 
+	// Print Customization State (Loaded from Settings)
+	const [printTheme] = createResource(async () => (await getSetting("member_card_theme")) ?? "gradient");
+	const [printLayout] = createResource(async () => (await getSetting("member_card_layout")) ?? "horizontal");
+	const [printShowStamps] = createResource(async () => (await getSetting("member_card_show_stamps")) !== "false");
+	const [printCustomBg] = createResource(async () => (await getSetting("member_card_custom_bg")) ?? "#4f46e5");
+
 	// Selection State
 	const [sheetOpen, setSheetOpen] = createSignal(false);
 	const [selectedIds, setSelectedIds] = createSignal<Set<string>>(new Set());
 
 	// Resources
+	const [outletName] = createResource(async () => (await getSetting("outlet_name")) ?? "Ngepos Coffee");
 	const [customers, { refetch }] = createResource(async () => {
 		return await db.customers.toArray();
 	});
@@ -232,7 +241,7 @@ export default function MembersPage() {
 			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3">
 					<A
-						href="/app/settings"
+						href="/app/marketing"
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
@@ -247,6 +256,13 @@ export default function MembersPage() {
 					</div>
 				</div>
 				<div class="flex items-center gap-2">
+					<A
+						href="/app/marketing/member-card"
+						class="h-10 w-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 text-primary"
+						title="Desain Kartu Member"
+					>
+						<IdCard size={18} stroke-width={2.5} />
+					</A>
 					<button
 						onClick={() => setGenerateDialogOpen(true)}
 						class="h-10 px-4 rounded-full bg-primary text-white font-bold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5"
@@ -683,14 +699,14 @@ export default function MembersPage() {
 						class="fixed inset-0 z-[9999] bg-white overflow-y-auto pointer-events-auto"
 					>
 						{/* Floating Header - Only for preview, hidden on print */}
-						<div class="fixed top-0 left-0 right-0 p-4 flex items-center justify-between bg-white/90 backdrop-blur-xl border-b border-border/40 no-print z-[10000]">
-							<div class="flex items-center gap-3 ml-2">
+						<div class="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-xl border-b border-border/40 no-print z-[10000] shadow-sm flex items-center px-4 justify-between">
+							<div class="flex items-center gap-3">
 								<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
 									<Printer size={20} />
 								</div>
 								<div>
 									<h2 class="font-black text-sm uppercase tracking-tight leading-none">Pratinjau Cetak</h2>
-									<p class="text-[10px] font-bold text-muted-foreground mt-1">{printingMembers()?.length} Kartu Member</p>
+									<p class="text-[10px] font-bold text-muted-foreground mt-0.5">{printingMembers()?.length} Kartu Member</p>
 								</div>
 							</div>
 							
@@ -698,29 +714,35 @@ export default function MembersPage() {
 								<button
 									type="button"
 									onClick={() => window.print()}
-									class="px-6 h-11 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+									class="px-5 h-10 bg-primary text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-md shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
 								>
-									<Zap size={14} /> Cetak Sekarang
+									<Zap size={14} /> Cetak
 								</button>
+								<div class="w-px h-6 bg-border/50 mx-1" />
 								<button
 									type="button"
 									onClick={() => setPrintingMembers(null)}
-									class="px-5 h-11 bg-muted text-muted-foreground rounded-xl font-black text-[10px] uppercase tracking-widest hover:text-foreground active:scale-95 transition-all"
+									class="w-10 h-10 flex items-center justify-center bg-muted text-muted-foreground rounded-full hover:bg-muted/80 hover:text-foreground active:scale-95 transition-all"
 								>
-									Tutup
+									<X size={20} />
 								</button>
 							</div>
 						</div>
 
-						{/* Content Area - Using visibility pattern for reliable print */}
+						{/* Content Area */}
 						<div class="pt-24 pb-12 px-4 flex justify-center bg-muted/5 min-h-screen member-print-container">
-							<div class="max-w-[794px] w-full bg-white shadow-2xl print:shadow-none min-h-[1123px]">
+							<div class="max-w-[794px] w-full bg-transparent print:bg-white min-h-[1123px]">
 								<QrCodePrintGrid
 									items={printingMembers()!.map((m) => ({
 										id: m.id,
 										qrCode: m.qrCode,
 										label: m.id.substring(m.id.length - 8).toUpperCase(),
 									}))}
+									theme={printTheme() as any}
+									layout={printLayout() as any}
+									showStamps={printShowStamps()}
+									outletName={outletName()}
+									customColor={printCustomBg()}
 								/>
 							</div>
 						</div>

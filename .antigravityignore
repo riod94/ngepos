@@ -1,0 +1,56 @@
+# Antigravity Indexing Ignore File
+# Mencegah pengindeksan file yang besar atau tidak relevan untuk menghemat token.
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel Core & Cache
+/storage/
+/bootstrap/cache/
+/public/storage/
+/public/build/
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Git & IDEs
+/.git/
+/.vscode/
+/.idea/
+/.windsurf/
+.DS_Store
+Thumbs.db
+
+# Documentation & Reports
+/docs/
+/coverage/
+TEST*.xml
+phpunit-report.xml
+clover.xml
+.scannerwork/
+
+# Env Files (Prevent sensitive data indexing)
+.env
+.env.*
+!.env.example
+
+# Multimedia & Binary
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.webp
+*.ico
+*.pdf
+*.zip
+*.tar.gz
+*.rar
+*.exe
+*.dll
+*.so
+*.dylib
+*.sql
+
+# Logs
+*.log

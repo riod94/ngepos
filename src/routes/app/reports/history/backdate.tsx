@@ -44,7 +44,7 @@ export default function BackdateTransaction() {
         cogsAtTime: 0
       });
 
-      setTimeout(() => navigate('/app/history'), 400);
+      setTimeout(() => navigate("/app/reports/history"), 400);
     } catch {
       alert("Pastikan total diisi dengan angka yang benar.");
     } finally {

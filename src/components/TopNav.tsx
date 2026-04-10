@@ -19,7 +19,7 @@ export function TopNav() {
   });
 
   return (
-    <header class="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header class="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
       {isOffline() && (
         <div class="px-4 py-1 bg-orange-500 text-white text-xs font-semibold text-center w-full shadow-sm">
           Menjalankan Mode Offline

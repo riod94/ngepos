@@ -1,7 +1,9 @@
-import { createSignal, Show, For } from "solid-js";
-import { Calendar, ChevronRight, X } from "lucide-solid";
+import { createSignal, Show, For, createMemo } from "solid-js";
+import { Calendar as CalendarIcon, ChevronRight, X, ArrowRight } from "lucide-solid";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Calendar } from "~/components/ui/calendar";
 
 export type DateFilterType = "HARI_INI" | "BULAN_INI" | "CUSTOM" | "SEMUA";
 
@@ -18,11 +20,14 @@ interface DateFilterProps {
 
 export function DateFilter(props: DateFilterProps) {
 	const [isSheetOpen, setIsSheetOpen] = createSignal(false);
+	const [isCalendarOpen, setIsCalendarOpen] = createSignal(false);
+	const [pickingMode, setPickingMode] = createSignal<"FROM" | "TO">("FROM");
+	
 	const [tempFrom, setTempFrom] = createSignal(
-		new Date().toISOString().split("T")[0],
+		props.customRange?.from || new Date().setHours(0, 0, 0, 0),
 	);
 	const [tempTo, setTempTo] = createSignal(
-		new Date().toISOString().split("T")[0],
+		props.customRange?.to || new Date().setHours(23, 59, 59, 999),
 	);
 
 	const FILTERS: { key: DateFilterType; label: string }[] = [
@@ -41,9 +46,7 @@ export function DateFilter(props: DateFilterProps) {
 	};
 
 	const applyCustomRange = () => {
-		const fromDate = new Date(`${tempFrom()}T00:00:00`).getTime();
-		const toDate = new Date(`${tempTo()}T23:59:59.999`).getTime();
-		props.onFilterChange("CUSTOM", { from: fromDate, to: toDate });
+		props.onFilterChange("CUSTOM", { from: tempFrom(), to: tempTo() });
 		setIsSheetOpen(false);
 	};
 
@@ -58,6 +61,28 @@ export function DateFilter(props: DateFilterProps) {
 			month: "short",
 		});
 		return `${f} - ${t}`;
+	};
+
+	const formatDateShort = (ts: number) => {
+		return new Date(ts).toLocaleDateString("id-ID", {
+			day: "numeric",
+			month: "short",
+		});
+	};
+
+	const setQuickRange = (days: number) => {
+		const end = new Date();
+		end.setHours(23, 59, 59, 999);
+		const start = new Date();
+		start.setDate(start.getDate() - days);
+		start.setHours(0, 0, 0, 0);
+		setTempFrom(start.getTime());
+		setTempTo(end.getTime());
+	};
+
+	const openPicker = (mode: "FROM" | "TO") => {
+		setPickingMode(mode);
+		setIsCalendarOpen(true);
 	};
 
 	return (
@@ -83,7 +108,7 @@ export function DateFilter(props: DateFilterProps) {
 			<Show when={getRangeLabel()}>
 				<div class="flex items-center justify-between px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-1">
 					<div class="flex items-center gap-2 text-primary">
-						<Calendar size={14} stroke-width={2.5} />
+						<CalendarIcon size={14} stroke-width={2.5} />
 						<span class="text-[10px] font-black uppercase tracking-widest leading-none">
 							{getRangeLabel()}
 						</span>
@@ -100,49 +125,112 @@ export function DateFilter(props: DateFilterProps) {
 			<Sheet open={isSheetOpen()} onOpenChange={setIsSheetOpen}>
 				<SheetContent
 					position="bottom"
-					class="h-auto rounded-t-[32px] p-0 border-none shadow-[0_-20px_50px_rgba(0,0,0,0.15)] bg-background"
+					class="h-auto rounded-t-[32px] p-0 border-none shadow-[0_-20px_80px_rgba(0,0,0,0.15)] bg-background max-h-[80vh]"
 				>
-					<SheetHeader class="px-6 pt-6 pb-4 border-b border-border/50">
-						<SheetTitle class="font-black text-xl tracking-tight text-left">
-							Pilih Rentang Tanggal
-						</SheetTitle>
-					</SheetHeader>
-					<div class="p-6 flex flex-col gap-5">
-						<div class="grid grid-cols-2 gap-4">
-							<div class="flex flex-col gap-2">
-								<label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">
-									Mulai Dari
-								</label>
-								<input
-									type="date"
-									class="h-14 w-full rounded-2xl border-2 border-border/70 bg-muted/20 px-4 font-black text-sm focus:outline-none focus:border-primary/50 transition-all"
-									value={tempFrom()}
-									onInput={(e) => setTempFrom(e.currentTarget.value)}
-								/>
-							</div>
-							<div class="flex flex-col gap-2">
-								<label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">
-									Sampai Dengan
-								</label>
-								<input
-									type="date"
-									class="h-14 w-full rounded-2xl border-2 border-border/70 bg-muted/20 px-4 font-black text-sm focus:outline-none focus:border-primary/50 transition-all"
-									value={tempTo()}
-									onInput={(e) => setTempTo(e.currentTarget.value)}
-								/>
+					<div class="w-10 h-1 bg-border rounded-full mx-auto mt-3 opacity-30" />
+					
+					<div class="p-6 flex flex-col gap-6">
+						<div class="flex items-center justify-between">
+							<SheetTitle class="font-black text-xl tracking-tighter text-left">
+								Custom Range
+							</SheetTitle>
+							<div class="flex gap-1.5">
+								<button 
+									onClick={() => setQuickRange(7)}
+									class="px-2.5 py-1.5 rounded-full bg-muted/60 text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"
+								>
+									7 Hari
+								</button>
+								<button 
+									onClick={() => setQuickRange(14)}
+									class="px-2.5 py-1.5 rounded-full bg-muted/60 text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"
+								>
+									14 Hari
+								</button>
+								<button 
+									onClick={() => setQuickRange(30)}
+									class="px-2.5 py-1.5 rounded-full bg-muted/60 text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"
+								>
+									30 Hari
+								</button>
 							</div>
 						</div>
 
-						<Button
-							class="w-full h-14 rounded-2xl font-black text-base uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center justify-between px-6"
-							onClick={applyCustomRange}
-						>
-							<span>Terapkan Filter</span>
-							<ChevronRight size={20} stroke-width={3} />
-						</Button>
+						{/* Selector Cards */}
+						<div class="flex items-center gap-3">
+							<button
+								onClick={() => openPicker("FROM")}
+								class="flex-1 flex flex-col items-center py-4 rounded-[24px] bg-muted/30 border border-border/40 hover:border-primary/50 transition-all active:scale-95"
+							>
+								<span class="text-[9px] font-black uppercase tracking-widest mb-1 text-primary/60">Mulai</span>
+								<span class="text-sm font-black tracking-tight">{formatDateShort(tempFrom())}</span>
+							</button>
+
+							<div class="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground shrink-0 overflow-hidden">
+								<ArrowRight size={14} stroke-width={3} />
+							</div>
+
+							<button
+								onClick={() => openPicker("TO")}
+								class="flex-1 flex flex-col items-center py-4 rounded-[24px] bg-muted/30 border border-border/40 hover:border-primary/50 transition-all active:scale-95"
+							>
+								<span class="text-[9px] font-black uppercase tracking-widest mb-1 text-primary/60">Sampai</span>
+								<span class="text-sm font-black tracking-tight">{formatDateShort(tempTo())}</span>
+							</button>
+						</div>
+
+						<div class="flex flex-col gap-3 mt-2">
+							<Button
+								class="w-full h-12 rounded-[22px] font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+								onClick={applyCustomRange}
+							>
+								Terapkan Filter
+							</Button>
+						</div>
 					</div>
 				</SheetContent>
 			</Sheet>
+
+			{/* Modal Calendar */}
+			<Dialog open={isCalendarOpen()} onOpenChange={setIsCalendarOpen}>
+				<DialogContent class="max-w-[360px] p-6 rounded-[32px]">
+					<DialogHeader class="mb-2">
+						<DialogTitle class="text-[10px] font-black uppercase tracking-widest text-primary">
+							Pilih Tanggal {pickingMode() === "FROM" ? "Mulai" : "Selesai"}
+						</DialogTitle>
+					</DialogHeader>
+					
+					<Calendar 
+						value={pickingMode() === "FROM" ? tempFrom() : tempTo()}
+						from={tempFrom()}
+						to={tempTo()}
+						onChange={(ts) => {
+							if (pickingMode() === "FROM") {
+								const d = new Date(ts);
+								d.setHours(0, 0, 0, 0);
+								setTempFrom(d.getTime());
+								if (tempTo() < d.getTime()) {
+									const nextDay = new Date(d);
+									nextDay.setHours(23, 59, 59, 999);
+									setTempTo(nextDay.getTime());
+								}
+							} else {
+								const d = new Date(ts);
+								d.setHours(23, 59, 59, 999);
+								if (d.getTime() < tempFrom()) {
+									const prevDay = new Date(d);
+									prevDay.setHours(0, 0, 0, 0);
+									setTempFrom(prevDay.getTime());
+								} else {
+									setTempTo(d.getTime());
+								}
+							}
+							// ALWAYS HIDE AGAIN AFTER SELECT
+							setIsCalendarOpen(false);
+						}}
+					/>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

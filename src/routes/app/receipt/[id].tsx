@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 export default function Receipt() {
   const params = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const [transaction] = createResource(params.id, async (id) => {
     const tx = await db.transactions.get(id);
@@ -18,12 +19,14 @@ export default function Receipt() {
   const [outletName] = createResource(async () => (await getSetting("outlet_name")) ?? "Ngepos Coffee");
   const [outletAddress] = createResource(async () => (await getSetting("outlet_address")) ?? "Jl. Kopi No. 123");
   const [outletLogo] = createResource(async () => await getSetting("outlet_logo"));
+  const [showLogo] = createResource(async () => (await getSetting("receipt_show_logo")) !== "false");
+  const [footerText] = createResource(async () => (await getSetting("receipt_footer_text")) ?? "— TERIMA KASIH —");
   const [cashierName] = createResource(async () => (await getSetting("user_name")) ?? "Admin");
 
   return (
-    <div class="flex flex-col min-h-screen bg-muted/20 pb-24">
+    <div class="flex flex-col min-h-screen bg-muted/20 pb-24 print:pb-0 print:bg-white print:min-h-0">
       {/* App Bar */}
-      <div class="flex items-center justify-between p-5 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
+      <div class="flex items-center justify-between p-5 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl print:hidden">
         <div class="flex items-center gap-3">
           <button 
             type="button"
@@ -53,11 +56,13 @@ export default function Receipt() {
             <div class="h-2 w-full bg-gradient-to-r from-transparent via-border/40 to-transparent border-t border-dashed border-border/40" />
 
             <div class="p-6 flex flex-col items-center font-mono">
-              <div class="w-16 h-16 bg-muted/30 rounded-2xl flex items-center justify-center text-primary mb-3 overflow-hidden border border-border/40 shrink-0 print:hidden">
-                <Show when={outletLogo()} fallback={<Store size={32} stroke-width={2} class="text-muted-foreground/60" />}>
-                  <img src={outletLogo()!} alt="Logo" class="w-full h-full object-cover" />
-                </Show>
-              </div>
+              <Show when={showLogo() ?? true}>
+                <div class="w-16 h-16 bg-muted/30 rounded-2xl flex items-center justify-center text-primary mb-3 overflow-hidden border border-border/40 shrink-0">
+                  <Show when={outletLogo()} fallback={<Store size={32} stroke-width={2} class="text-muted-foreground/60" />}>
+                    <img src={outletLogo()!} alt="Logo" class="w-full h-full object-cover" />
+                  </Show>
+                </div>
+              </Show>
               <h2 class="font-black text-xl tracking-tight text-foreground uppercase font-sans text-center">
                 {outletName()}
               </h2>
@@ -150,9 +155,11 @@ export default function Receipt() {
                 </span>
               </div>
 
-              <p class="text-xs font-black text-muted-foreground/50 tracking-widest uppercase font-sans mt-8">
-                — Terima Kasih —
-              </p>
+              <div class="pt-8 pb-4 text-center">
+                <p class="text-xs font-bold text-muted-foreground opacity-60 tracking-widest uppercase">
+                  {footerText() || "— TERIMA KASIH —"}
+                </p>
+              </div>
             </div>
 
             <div class="h-2 w-full border-b border-dashed border-border/40" />

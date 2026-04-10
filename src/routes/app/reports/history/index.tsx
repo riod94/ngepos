@@ -1,5 +1,5 @@
-import { createSignal, createResource, Show } from "solid-js";
-import { History, Clock, TriangleAlert } from "lucide-solid";
+import { createSignal, createResource, Show, batch } from "solid-js";
+import { History, Clock, TriangleAlert, ArrowLeft } from "lucide-solid";
 import { A, useSearchParams } from "@solidjs/router";
 import { db, getSetting } from "~/db/db";
 import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
@@ -30,11 +30,13 @@ export default function HistoryPage() {
 					.toArray();
 			}
 			if (f === "BULAN_INI") {
-				const start = new Date();
-				start.setDate(1);
-				start.setHours(0, 0, 0, 0);
+				const d = new Date();
+				const y = d.getFullYear();
+				const m = d.getMonth();
+				const start = new Date(y, m, 1, 0, 0, 0, 0);
+				const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
 				return await query
-					.filter((tx) => tx.timestamp >= start.getTime())
+					.filter((tx) => tx.timestamp >= start.getTime() && tx.timestamp <= end.getTime())
 					.toArray();
 			}
 			if (f === "CUSTOM" && r) {
@@ -61,11 +63,13 @@ export default function HistoryPage() {
 		transactions()?.reduce((acc, tx) => acc + tx.totalAmount, 0) ?? 0;
 
 	const handleFilterChange = (f: DateFilterType, r?: DateRange) => {
-		if (f === "CUSTOM" && r) {
-			setSearchParams({ f, from: r.from, to: r.to });
-		} else {
-			setSearchParams({ f, from: undefined, to: undefined });
-		}
+		batch(() => {
+			if (f === "CUSTOM" && r) {
+				setSearchParams({ f, from: r.from, to: r.to });
+			} else {
+				setSearchParams({ f, from: undefined, to: undefined });
+			}
+		});
 	};
 
 	async function handleDeleteTransaction() {
@@ -90,12 +94,22 @@ export default function HistoryPage() {
 	return (
 		<div class="flex flex-col min-h-screen bg-background pb-24">
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-				<h1 class="font-black text-xl tracking-tight leading-none">
-					Riwayat
-				</h1>
-				<p class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1.5 leading-none">
-					Penjualan · {filter().replace("_", " ")}
-				</p>
+				<div class="flex items-center gap-3 mb-5">
+					<A
+						href="/app/reports"
+						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
+					>
+						<ArrowLeft size={18} />
+					</A>
+					<div>
+						<h1 class="font-black text-xl tracking-tight leading-none">
+							Riwayat
+						</h1>
+						<p class="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1.5 leading-none">
+							Penjualan · {filter().replace("_", " ")}
+						</p>
+					</div>
+				</div>
 
 				<div class="mt-5">
 					<DateFilter
@@ -128,7 +142,7 @@ export default function HistoryPage() {
 						Daftar Transaksi
 					</h3>
 					<A
-						href="/app/history/backdate"
+						href="/app/reports/history/backdate"
 						class="text-xs font-black text-primary flex items-center bg-primary/10 px-3.5 py-2 rounded-full hover:bg-primary/20 transition-all active:scale-95 uppercase tracking-widest"
 					>
 						<Clock size={12} class="mr-1.5" stroke-width={3} />

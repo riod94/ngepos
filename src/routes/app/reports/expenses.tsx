@@ -1,5 +1,6 @@
-import { createSignal, createResource, Show, For } from "solid-js";
-import { Plus, Trash2, Receipt } from "lucide-solid";
+import { createSignal, createResource, Show, For, batch } from "solid-js";
+import { Plus, Trash2, Receipt, ArrowLeft } from "lucide-solid";
+import { A } from "@solidjs/router";
 
 import {
 	db,
@@ -44,9 +45,11 @@ export default function Expenses() {
 			}
 			if (p === "BULAN_INI") {
 				const d = new Date();
-				d.setDate(1);
-				d.setHours(0, 0, 0, 0);
-				return query.filter((e) => e.timestamp >= d.getTime()).toArray();
+				const y = d.getFullYear();
+				const m = d.getMonth();
+				const s = new Date(y, m, 1, 0, 0, 0, 0);
+				const e = new Date(y, m + 1, 0, 23, 59, 59, 999);
+				return query.filter((ex) => ex.timestamp >= s.getTime() && ex.timestamp <= e.getTime()).toArray();
 			}
 			if (p === "CUSTOM" && r) {
 				return query
@@ -155,8 +158,10 @@ export default function Expenses() {
 		expenses()?.reduce((s, e) => s + e.amount, 0) ?? 0;
 
 	const handleFilterChange = (f: DateFilterType, r?: DateRange) => {
-		setPeriod(f);
-		setCustomRange(r);
+		batch(() => {
+			setPeriod(f);
+			setCustomRange(r);
+		});
 	};
 
 	return (
@@ -187,7 +192,13 @@ export default function Expenses() {
 
 			{/* Header */}
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-				<div class="flex items-center justify-between mb-5">
+				<div class="flex items-center gap-3 mb-5">
+					<A
+						href="/app/reports"
+						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
+					>
+						<ArrowLeft size={18} />
+					</A>
 					<div>
 						<h1 class="font-black text-xl tracking-tight leading-none">
 							Pengeluaran
@@ -198,7 +209,7 @@ export default function Expenses() {
 					</div>
 					<Button
 						onClick={openAdd}
-						class="h-10 px-4 rounded-full font-black text-xs bg-red-500 text-white uppercase tracking-wider shadow-md active:scale-95 transition-all"
+						class="h-10 px-4 rounded-full font-black text-xs bg-red-500 text-white uppercase tracking-wider shadow-md active:scale-95 transition-all ml-auto"
 					>
 						<Plus size={16} class="mr-1.5" stroke-width={3} /> Catat
 					</Button>

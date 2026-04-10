@@ -61,6 +61,7 @@ import {
 } from "~/components/ui/dialog";
 import { db, getSetting } from "~/db/db";
 import { toast } from "solid-toast";
+import { useCheckout } from "~/hooks/useCheckout";
 
 type PayStep = "select" | "adjustment" | "qris_pending" | "done_ok" | "done_fail";
 
@@ -93,10 +94,10 @@ export function CartFloatingButton() {
 	const [editVariantOpen, setEditVariantOpen] = createSignal(false);
 	const [editingItem, setEditingItem] = createSignal<any>(null);
 
-	// Payment dialog
 	const [payOpen, setPayOpen] = createSignal(false);
 	const [payStep, setPayStep] = createSignal<PayStep>("select");
-	const [processing, setProcessing] = createSignal(false);
+
+	const { submitTransaction, processing, setProcessing } = useCheckout();
 
 	// Backdate state
 	const [backdateOpen, setBackdateOpen] = createSignal(false);
@@ -162,158 +163,17 @@ export function CartFloatingButton() {
 		return ts < todayStart.getTime();
 	};
 
-	// ── Save transaction to DB with ATOMICITY ────────────────────────────────────
-	async function submitTransaction(method: string, finalAmount: number) {
-		if (processing()) return null;
-		
-		// 1. Capture snapshot with deep clone after UNWRAPPING Solid Store
-		// Proxy objects can cause issues during async/await or cloning
-		const rawCart = unwrap(cart);
-		const cartSnapshot = structuredClone(rawCart);
-		const originalTotal = getCartSubtotal();
-		const discountInfo = calculateDiscounts();
-
-		if (!cartSnapshot || cartSnapshot.length === 0) {
-			toast.error("Gagal: Keranjang belanja kosong.");
-			return null;
-		}
-		
-		setProcessing(true);
-		try {
-			// Using string table names for maximum Dexie stability
-			const resultTransactionId = await db.transaction(
-				"rw",
-				["transactions", "transactionItems", "products"],
-				async () => {
-					// We'll calculate COGS inside the transaction context for consistency
-					let cogsTotal = 0;
-					const transactionId = `txn_${Date.now()}`;
-					const ts = transactionTimestamp();
-
-					// Prepare line items and calculate total COGS
-					const itemsToSave = [];
-					for (const [idx, item] of cartSnapshot.entries()) {
-						// Fetch latest product info to get real-time stock/cogs
-						const product = await db.products.get(item.id);
-						let unitCogs = product?.cogs ?? item.price * 0.45;
-
-						if (item.selectedVariants) {
-							for (const sv of item.selectedVariants) {
-								const group = product?.variants?.find((g) => g.name === sv.groupName);
-								const option = group?.options.find((o) => o.name === sv.optionName);
-								unitCogs += option?.cogsModifier ?? 0;
-							}
-						}
-
-						cogsTotal += unitCogs * item.quantity;
-
-						itemsToSave.push({
-							id: `ti_${transactionId}_${idx}`,
-							transactionId,
-							productId: item.id,
-							productName: item.name,
-							quantity: item.quantity,
-							priceAtTime: item.price,
-							cogsAtTime: unitCogs,
-							selectedVariants: item.selectedVariants,
-						});
-
-						// Update stock inside the same transaction
-						// Update stock inside the same transaction
-						if (product) {
-							await db.products.update(item.id, {
-								stock: Math.max(0, product.stock - item.quantity),
-							});
-						}
-					}
-
-					// C. Handle Reward Product Line Item if applied
-					const rid = appliedRewardId();
-					if (rid) {
-						const rwProd = rewardProduct();
-						if (rwProd) {
-							const transactionId = `txn_${Date.now()}`; // context fix if needed
-							itemsToSave.push({
-								id: `ti_reward_${Date.now()}`,
-								transactionId,
-								productId: rwProd.id,
-								productName: `[GIFT] ${rwProd.name}`,
-								quantity: 1,
-								priceAtTime: 0,
-								cogsAtTime: rwProd.cogs || rwProd.price * 0.45,
-								selectedVariants: []
-							});
-							cogsTotal += (rwProd.cogs || rwProd.price * 0.45);
-						}
-					}
-
-					if (itemsToSave.length === 0) throw new Error("Item tidak terdeteksi");
-
-					// A. Add Transaction Header
-					await db.transactions.add({
-						id: transactionId,
-						receiptNumber: `INV-${Date.now()}`,
-						totalAmount: finalAmount,
-						originalAmount: originalTotal,
-						totalDiscount: originalTotal - finalAmount, // Simplification
-						cogsTotal,
-						paymentMethod: method,
-						timestamp: ts,
-						status: "PENDING",
-						isBackdated: isBackdated(),
-						isAdjustment: finalAmount !== finalTotalAmount(),
-						discountTotal: calculateDiscounts().total + getLoyaltyRewardAmount(),
-						discountNote: calculateDiscounts().note + (rid ? ", Loyalty Reward" : ""),
-						customerId: linkedCustomerId() || undefined,
-					} as any);
-
-					// B. Add All Items
-					await db.transactionItems.bulkAdd(itemsToSave);
-					
-					return transactionId;
-				}
-			);
-
-			// Post-checkout: Update Loyalty (outside transaction for side effects)
-			if (resultTransactionId && linkedCustomerId()) {
-				const cid = linkedCustomerId()!;
-				const lp = await getActiveProgram();
-				if (lp) {
-					const cartProductIds = cartSnapshot.map(it => String(it.id));
-					const eligible = isStampEligible(originalTotal, calculateDiscounts().total > 0, cartProductIds, lp);
-					
-					if (eligible) {
-						await addStamp(cid, lp.id, resultTransactionId);
-						const progress = await getCustomerProgress(cid, lp.id);
-						
-						if (progress.isEligibleForReward) {
-							await checkAndCreateReward(cid, lp.id);
-							toast.success("🎉 Target Stamp Tercapai! Reward baru tersedia.");
-						} else {
-							toast.success(`Stamp +1 (${progress.currentStamps}/${progress.targetStamps}) ✓`);
-						}
-					}
-				}
-
-				// If reward was applied, mark it as claimed
-				const rid = appliedRewardId();
-				if (rid) {
-					await claimReward(rid, resultTransactionId);
-				}
-			}
-
-			return resultTransactionId;
-		} catch (err: any) {
-			console.error("CRITICAL CHECKOUT ERROR:", err);
-			toast.error(`Kegagalan Checkout: ${err?.message || "Kesalahan Database"}`);
-			return null;
-		} finally {
-			setProcessing(false);
-		}
-	}
+	// ── Save transaction to DB is now handled by useCheckout ──────────────────
 
 	async function handleCash() {
-		const id = await submitTransaction("TUNAI", finalTotalAmount());
+		const id = await submitTransaction({
+			method: "TUNAI",
+			finalAmount: finalTotalAmount(),
+			transactionTimestamp: transactionTimestamp(),
+			isBackdated: isBackdated(),
+			rewardProduct: rewardProduct(),
+			finalTotalAmountFunc: finalTotalAmount
+		});
 		if (!id) return;
 		finishPayment(id);
 	}
@@ -323,13 +183,27 @@ export function CartFloatingButton() {
 			setPayStep("done_fail");
 			return;
 		}
-		const id = await submitTransaction("QRIS", finalTotalAmount());
+		const id = await submitTransaction({
+			method: "QRIS",
+			finalAmount: finalTotalAmount(),
+			transactionTimestamp: transactionTimestamp(),
+			isBackdated: isBackdated(),
+			rewardProduct: rewardProduct(),
+			finalTotalAmountFunc: finalTotalAmount
+		});
 		if (!id) return;
 		finishPayment(id);
 	}
 
 	async function handlePlatformConfirm() {
-		const id = await submitTransaction(selectedPlatform(), adjustedAmount());
+		const id = await submitTransaction({
+			method: selectedPlatform(),
+			finalAmount: adjustedAmount(),
+			transactionTimestamp: transactionTimestamp(),
+			isBackdated: isBackdated(),
+			rewardProduct: rewardProduct(),
+			finalTotalAmountFunc: finalTotalAmount
+		});
 		if (!id) return;
 		finishPayment(id);
 	}

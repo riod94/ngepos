@@ -14,12 +14,12 @@ export function formatQrCode(customerId: string): string {
   return `NGEPOS-MBR-${customerId}`;
 }
 
-/**
- * Extract customer ID from QR Code string
- */
 export function parseQrCode(qrString: string): string | null {
-  if (!qrString.startsWith("NGEPOS-MBR-")) return null;
-  return qrString.replace("NGEPOS-MBR-", "");
+  if (qrString.includes("/m/NGEPOS-MBR-")) {
+    return qrString.split("/m/NGEPOS-MBR-")[1]?.split("/")?.[0] || null;
+  }
+  if (!qrString.includes("NGEPOS-MBR-")) return null;
+  return qrString.split("NGEPOS-MBR-")[1] || null;
 }
 
 /**
