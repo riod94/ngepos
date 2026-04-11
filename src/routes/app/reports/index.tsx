@@ -9,11 +9,25 @@ import {
 	ShoppingBag,
 	ArrowUpRight,
 	ArrowDownRight,
+	FileDown,
+	FileSpreadsheet,
+	FileText,
+	ChevronDown,
 } from "lucide-solid";
 import { A } from "@solidjs/router";
-import { db } from "~/db/db";
+import { db, getSetting } from "~/db/db";
 import { Button } from "~/components/ui/button";
 import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
+import { exportService } from "~/lib/exportService";
+import { FinancialCharts } from "~/components/FinancialCharts";
+import { toast } from "solid-toast";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuPortal,
+	DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 type Period = DateFilterType;
 
@@ -28,6 +42,8 @@ interface ReportData {
 	trueProfit: number; // Net Profit setelah dikurang modal kembali
 	txCount: number;
 	expenseCount: number;
+	trend: { label: string; omset: number; cogs: number }[];
+	paymentMethods: { method: string; total: number }[];
 }
 
 export default function Reports() {
@@ -35,6 +51,95 @@ export default function Reports() {
 	const [customRange, setCustomRange] = createSignal<DateRange | undefined>(
 		undefined,
 	);
+	const [exporting, setExporting] = createSignal(false);
+
+	const handleExport = async (format: "EXCEL" | "PDF") => {
+		if (report.loading || !report()) return;
+		setExporting(true);
+
+		try {
+			// 1. Fetch data detail sesuai periode aktif
+			const now = new Date();
+			let startTs = 0;
+			let endTs = 8640000000000000;
+
+			const p = period();
+			const r = customRange();
+
+			const safe = (v: any) => {
+				if (typeof v === "number") return isNaN(v) ? 0 : v;
+				if (!v) return 0;
+				const n = parseFloat(String(v).replace(/[^0-9.-]+/g, ""));
+				return isNaN(n) ? 0 : n;
+			};
+
+			if (p === "HARI_INI") {
+				startTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+				endTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+			} else if (p === "BULAN_INI") {
+				startTs = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+				endTs = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+			} else if (p === "CUSTOM" && r) {
+				startTs = r.from;
+				endTs = r.to;
+			} else if (p === "SEMUA") {
+				startTs = 0;
+				endTs = 8640000000000000;
+			}
+
+			const [allTx, allExp, allItems] = await Promise.all([
+				db.transactions.toArray(),
+				db.expenses.toArray(),
+				db.transactionItems.toArray(),
+			]);
+
+			const txList = allTx.filter(t => {
+				const ts = safe(t.timestamp);
+				return ts >= startTs && ts <= endTs;
+			});
+			const expList = allExp.filter(e => {
+				const ts = safe(e.timestamp);
+				return ts >= startTs && ts <= endTs;
+			});
+			const txIds = new Set(txList.map(t => t.id));
+			const itemList = allItems.filter(item => txIds.has(item.transactionId));
+
+			// 2. Fetch Info Outlet (Settings)
+			const [name, addr, phone, logo] = await Promise.all([
+				getSetting("outlet_name"),
+				getSetting("outlet_address"),
+				getSetting("outlet_phone"),
+				getSetting("outlet_logo"),
+			]);
+
+			const outletInfo = {
+				name: name || "NGEPOS",
+				address: addr || "-",
+				phone: phone || "-",
+				logo: logo || undefined,
+			};
+
+			const summary = {
+				...report()!,
+				periodLabel: p === "CUSTOM" && r 
+					? `${new Date(r.from).toLocaleDateString()} - ${new Date(r.to).toLocaleDateString()}`
+					: p,
+			};
+
+			if (format === "EXCEL") {
+				await exportService.exportToExcel(summary, txList, itemList, expList);
+			} else {
+				await exportService.exportToPDF(summary, txList, itemList, expList, outletInfo);
+			}
+
+			toast.success(`Laporan ${format} berhasil diunduh`);
+		} catch (err) {
+			console.error("Export Error:", err);
+			toast.error("Gagal mengekspor laporan");
+		} finally {
+			setExporting(false);
+		}
+	};
 
 	const [report] = createResource(
 		() => ({ p: period(), r: customRange() }),
@@ -89,6 +194,51 @@ export default function Reports() {
 			const modalReturn = cogsTotal;
 			const trueProfit = netProfit - modalReturn;
 
+			// --- AGGREGATION FOR CHARTS ---
+			
+			// 1. Trend Data (Hourly for Today, Daily for others)
+			const trendMap = new Map<string, { omset: number; cogs: number }>();
+			
+			if (p === "HARI_INI") {
+				// Initialize all 24 hours
+				for (let i = 0; i < 24; i++) {
+					const label = `${String(i).padStart(2, "0")}:00`;
+					trendMap.set(label, { omset: 0, cogs: 0 });
+				}
+				txList.forEach(t => {
+					const hour = new Date(safe(t.timestamp)).getHours();
+					const label = `${String(hour).padStart(2, "0")}:00`;
+					const entry = trendMap.get(label)!;
+					entry.omset += safe(t.totalAmount);
+					entry.cogs += safe(t.cogsTotal);
+				});
+			} else {
+				txList.forEach(t => {
+					const date = new Date(safe(t.timestamp)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+					if (!trendMap.has(date)) trendMap.set(date, { omset: 0, cogs: 0 });
+					const entry = trendMap.get(date)!;
+					entry.omset += safe(t.totalAmount);
+					entry.cogs += safe(t.cogsTotal);
+				});
+			}
+
+			const trend = Array.from(trendMap.entries()).map(([label, data]) => ({
+				label,
+				omset: data.omset,
+				cogs: data.cogs
+			}));
+
+			// 2. Payment Method Distribution
+			const paymentMap = new Map<string, number>();
+			txList.forEach(t => {
+				const method = t.paymentMethod || "Tunai";
+				paymentMap.set(method, (paymentMap.get(method) || 0) + safe(t.totalAmount));
+			});
+			const paymentMethods = Array.from(paymentMap.entries()).map(([method, total]) => ({
+				method,
+				total
+			})).sort((a, b) => b.total - a.total);
+
 			const result = {
 				omset,
 				platformAdjustment,
@@ -100,6 +250,8 @@ export default function Reports() {
 				trueProfit,
 				txCount: txList.length,
 				expenseCount: expList.length,
+				trend,
+				paymentMethods,
 			};
 
 			return result;
@@ -120,12 +272,58 @@ export default function Reports() {
 		<div class="flex flex-col min-h-screen bg-muted/10 pb-24 text-left">
 			{/* Header Hub */}
 			<div class="px-5 pt-8 pb-6 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-				<h1 class="font-black text-2xl tracking-tighter leading-none text-primary">
-					Laporan & Analisis
-				</h1>
-				<p class="text-xs font-black text-muted-foreground uppercase tracking-[0.12em] mt-1.5 mb-5">
-					Ringkasan Performa & Navigasi Data
-				</p>
+				<div class="flex justify-between items-start mb-5">
+					<div>
+						<h1 class="font-black text-2xl tracking-tighter leading-none text-primary">
+							Laporan & Analisis
+						</h1>
+						<p class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-2 mb-0">
+							Ringkasan Performa & Navigasi Data
+						</p>
+					</div>
+
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							as={Button}
+							variant="outline"
+							class="h-10 rounded-xl font-bold text-xs flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:border-primary/40 shrink-0 bg-background/50 backdrop-blur-sm"
+						>
+							<Show when={exporting()} fallback={<FileDown size={14} />}>
+								<RefreshCw size={14} class="animate-spin" />
+							</Show>
+							<span>Ekspor</span>
+							<ChevronDown size={12} class="opacity-50" />
+						</DropdownMenuTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuContent class="min-w-[180px] p-2 rounded-2xl bg-background/95 backdrop-blur-xl border border-border/60 shadow-2xl">
+								<DropdownMenuItem
+									onClick={() => handleExport("EXCEL")}
+									class="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 text-emerald-700 font-bold text-xs transition-colors cursor-pointer"
+								>
+									<div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+										<FileSpreadsheet size={16} />
+									</div>
+									<div class="flex flex-col">
+										<span>Excel Spreadsheet</span>
+										<span class="text-[9px] opacity-60 font-medium lowercase">Laporan .xlsx</span>
+									</div>
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => handleExport("PDF")}
+									class="flex items-center gap-3 p-3 rounded-xl hover:bg-rose-50 text-rose-700 font-bold text-xs transition-colors cursor-pointer"
+								>
+									<div class="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+										<FileText size={16} />
+									</div>
+									<div class="flex flex-col">
+										<span>Dokumen PDF</span>
+										<span class="text-[9px] opacity-60 font-medium lowercase">Cetak & Bagikan</span>
+									</div>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenuPortal>
+					</DropdownMenu>
+				</div>
 
 				<DateFilter
 					activeFilter={period()}
@@ -144,6 +342,12 @@ export default function Reports() {
 				}
 			>
 				<div class="p-5 flex flex-col gap-4">
+					{/* Charts Section */}
+					<FinancialCharts 
+						trendData={report()!.trend} 
+						paymentData={report()!.paymentMethods} 
+					/>
+
 					{/* Hero: Net Profit */}
 					<div
 						class={`p-6 rounded-3xl relative overflow-hidden shadow-xl text-white ${isPositive(report()!.netProfit) ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20" : "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/20"}`}
