@@ -7,6 +7,7 @@ import { addToCart } from "~/stores/cart";
 import { CartFloatingButton } from "~/components/CartFloatingButton";
 import { ProductImage } from "~/components/ProductImage";
 import { VariantSelector } from "~/components/VariantSelector";
+import { getProductAvailability } from "~/lib/availability";
 
 const ProductSkeleton = () => (
   <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2 w-full animate-pulse">
@@ -27,6 +28,7 @@ export default function Home() {
 
   const [products] = createResource(async () => await db.products.toArray());
   const [categories] = createResource(async () => await db.categories.orderBy('orderIndex').toArray());
+  const [materials] = createResource(async () => await db.rawMaterialLibrary.toArray());
 
   const filteredProducts = () => {
     const rawProducts = products() || [];
@@ -105,36 +107,58 @@ export default function Home() {
       {/* Dense Product Grid (3 or 4 cols) */}
       <Suspense fallback={<ProductSkeleton />}>
         <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2">
-          {filteredProducts().map(product => (
-            <Card 
-              class="overflow-hidden border-border/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-2xl active:scale-[0.96] transition-transform duration-200 cursor-pointer pointer-events-auto group bg-card flex flex-col" 
-              role="button"
-              tabIndex={0}
-              onClick={() => handleProductClick(product)}
-              onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleProductClick(product); } }}
-            >
-              <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
-                <ProductImage src={product.image} name={product.name} />
-                <Show when={product.stock < 10}>
-                  <div class="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm">
-                    Sisa {product.stock}
-                  </div>
-                </Show>
-                <Show when={product.variants && product.variants.length > 0}>
-                  <div class="absolute top-2 right-2 bg-background/90 backdrop-blur-sm text-foreground text-xs uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm border border-border/50">
-                    Kustom
-                  </div>
-                </Show>
-                <Button size="icon" class="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-md bg-white/95 text-primary group-hover:bg-primary group-hover:text-white backdrop-blur border-none flex-shrink-0">
-                  <Plus size={18} stroke-width={3} />
-                </Button>
-              </div>
-              <CardContent class="p-3.5 flex flex-col justify-between flex-1">
-                <h3 class="font-black text-sm leading-tight line-clamp-2 text-foreground/90">{product.name}</h3>
-                <p class="text-primary font-black text-sm mt-2 tracking-tighter italic">Rp {(product.price / 1000).toFixed(0)}k</p>
-              </CardContent>
-            </Card>
-          ))}
+          {filteredProducts().map(product => {
+            const availability = getProductAvailability(product, materials() || []);
+            const isAvailable = availability.available;
+
+            return (
+              <Card 
+                class={`overflow-hidden border-border/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-2xl transition-all duration-200 cursor-pointer pointer-events-auto group bg-card flex flex-col ${
+                   !isAvailable ? 'opacity-50 grayscale select-none pointer-events-none' : 'active:scale-[0.96]'
+                }`} 
+                role="button"
+                tabIndex={isAvailable ? 0 : -1}
+                onClick={() => handleProductClick(product)}
+                onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleProductClick(product); } }}
+              >
+                <div class="aspect-square w-full relative bg-muted/30 overflow-hidden rounded-t-[18px]">
+                  <ProductImage src={product.image} name={product.name} />
+                  
+                  <Show when={!isAvailable}>
+                     <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-2 text-center">
+                        <div class="bg-white/95 rounded-lg px-2 py-1 shadow-lg border border-slate-200">
+                           <p class="text-[9px] font-black text-slate-900 uppercase tracking-tighter leading-none italic">
+                              {availability.reason || "Kosong"}
+                           </p>
+                        </div>
+                     </div>
+                  </Show>
+
+                  <Show when={isAvailable && product.stock > 0 && product.stock < 10}>
+                    <div class="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm">
+                      Sisa {product.stock}
+                    </div>
+                  </Show>
+                  
+                  <Show when={isAvailable && product.variants && product.variants.length > 0}>
+                    <div class="absolute top-2 right-2 bg-background/90 backdrop-blur-sm text-foreground text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-full font-black shadow-sm border border-border/50">
+                      Kustom
+                    </div>
+                  </Show>
+
+                  <Show when={isAvailable}>
+                    <Button size="icon" class="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-md bg-white/95 text-primary group-hover:bg-primary group-hover:text-white backdrop-blur border-none flex-shrink-0">
+                        <Plus size={18} stroke-width={3} />
+                    </Button>
+                  </Show>
+                </div>
+                <CardContent class="p-3.5 flex flex-col justify-between flex-1">
+                  <h3 class={`font-black text-sm leading-tight line-clamp-2 ${isAvailable ? 'text-foreground/90' : 'text-slate-400'}`}>{product.name}</h3>
+                  <p class={`${isAvailable ? 'text-primary' : 'text-slate-300'} font-black text-sm mt-2 tracking-tighter italic`}>Rp {(product.price / 1000).toFixed(0)}k</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </Suspense>
        <VariantSelector

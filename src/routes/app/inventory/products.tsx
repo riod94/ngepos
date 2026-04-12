@@ -208,6 +208,7 @@ export default function ProductsManager() {
 				cogs,
 				category: formCategoryId(),
 				stock: Number.parseInt(formStock()) || 0,
+				isActive: formIsActive(),
 				image: formImage(),
 				rawMaterials: formRaw().length > 0 ? formRaw() : undefined,
 				variants: formVariants().length > 0 ? formVariants() : undefined,
@@ -286,27 +287,46 @@ export default function ProductsManager() {
 			return next;
 		});
 	}
+
+	function syncAllPrices() {
+		const lib = materialsLibrary();
+		if (!lib) return;
+
+		let updated = false;
+		const newRaw = formRaw().map((r) => {
+			if (!r.id) return r;
+			const match = lib.find((m) => m.id === r.id);
+			if (match && match.costPerUnit !== r.costPerUnit) {
+				updated = true;
+				return { ...r, costPerUnit: match.costPerUnit, cost: match.costPerUnit };
+			}
+			return r;
+		});
+
+		if (updated) {
+			setFormRaw(newRaw);
+			toast.success("Harga bahan telah disinkronkan dengan Library");
+		} else {
+			toast.info("Semua harga sudah sesuai dengan Library");
+		}
+	}
+
 	function removeRaw(i: number) {
 		setFormRaw(formRaw().filter((_, idx) => idx !== i));
 	}
 
-	async function saveMaterialToLibrary(raw: RawMaterialCost) {
-		if (!raw.name) return;
-		await db.rawMaterialLibrary.put({
-			id: `mat_${Date.now()}`,
-			name: raw.name,
-			unit: raw.unit,
-			costPerUnit: raw.costPerUnit || raw.cost || 0,
-		});
-		setAlertMessage(`Bahan "${raw.name}" disimpan ke library.`);
-		refetchMaterials();
-	}
-
 	function addFromMaterialLibrary(lib: any) {
+		// Prevent duplicate assigning
+		if (formRaw().some((r) => r.id === lib.id)) {
+			setAlertMessage(`Bahan "${lib.name}" sudah ada di resep.`);
+			setShowMaterialLib(false);
+			return;
+		}
+
 		setFormRaw([
 			...formRaw(),
 			{
-				id: `raw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+				id: lib.id, // Linked strictly to rawMaterialLibrary
 				name: lib.name,
 				costPerUnit: lib.costPerUnit,
 				cost: lib.costPerUnit,
@@ -491,8 +511,9 @@ export default function ProductsManager() {
 				>
 					<For each={products()}>
 						{(p) => (
-							<button
-								type="button"
+							<div
+								role="button"
+								tabIndex={0}
 								class="flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
 								onClick={() => openEdit(p)}
 							>
@@ -553,7 +574,7 @@ export default function ProductsManager() {
 								>
 									<Trash2 size={13} />
 								</Button>
-							</button>
+							</div>
 						)}
 					</For>
 				</Show>
@@ -642,7 +663,9 @@ export default function ProductsManager() {
 											}
 										/>
 									</div>
-									<div class="flex flex-col gap-1.5">
+									<div
+										class={`flex flex-col gap-1.5 transition-all ${formRaw().length > 0 ? "opacity-30 pointer-events-none" : ""}`}
+									>
 										<label
 											for="prod-stock"
 											class="text-xs font-bold uppercase tracking-widest text-muted-foreground"
@@ -651,14 +674,22 @@ export default function ProductsManager() {
 										</label>
 										<input
 											id="prod-stock"
-											required
+											required={formRaw().length === 0}
+											disabled={formRaw().length > 0}
 											type="number"
 											class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
-											value={formStock()}
+											value={
+												formRaw().length > 0 ? "0" : formStock()
+											}
 											onInput={(e) =>
 												setFormStock(e.currentTarget.value)
 											}
 										/>
+										<Show when={formRaw().length > 0}>
+											<p class="text-[9px] font-bold text-emerald-600 mt-1 italic">
+												Dihitung otomatis via Resep
+											</p>
+										</Show>
 									</div>
 								</div>
 
@@ -844,72 +875,23 @@ export default function ProductsManager() {
 									</Show>
 								</div>
 
-								<p class="text-sm font-bold text-muted-foreground">
-									Masukkan bahan baku dan biayanya agar margin
-									keuntungan terhitung otomatis.
-								</p>
+								<div class="flex items-center justify-between mt-2">
+									<p class="text-xs font-bold text-muted-foreground">
+										Daftar Bahan & HPP
+									</p>
+									<Show when={formRaw().some(r => r.id)}>
+										<button 
+											type="button"
+											onClick={syncAllPrices}
+											class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-wider"
+										>
+											<Zap size={10} class="fill-current" />
+											Sync Library
+										</button>
+									</Show>
+								</div>
 
 								<div class="flex flex-col gap-4 mt-2">
-									{/* Library Picker Section */}
-									<Show when={showMaterialLib()}>
-										<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
-											<div class="flex items-center justify-between">
-												<p class="text-xs font-bold uppercase tracking-widest text-primary">
-													Pilih dari Library Bahan
-												</p>
-												<button
-													type="button"
-													onClick={() => setShowMaterialLib(false)}
-													class="text-muted-foreground hover:text-foreground"
-												>
-													<X size={15} />
-												</button>
-											</div>
-											<Show
-												when={
-													materialsLibrary() &&
-													materialsLibrary()!.length > 0
-												}
-												fallback={
-													<p class="text-xs text-muted-foreground py-2">
-														Belum ada bahan di library.
-													</p>
-												}
-											>
-												<div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
-													<For each={materialsLibrary()}>
-														{(lib) => (
-															<button
-																type="button"
-																onClick={() =>
-																	addFromMaterialLibrary(lib)
-																}
-																class="flex items-center justify-between px-4 py-3 bg-card rounded-xl border border-border/60 hover:border-primary/40 text-left transition-all active:scale-[0.98]"
-															>
-																<div>
-																	<p class="font-bold text-sm">
-																		{lib.name}
-																	</p>
-																	<p class="text-[10px] font-black text-muted-foreground uppercase opacity-70 mt-0.5">
-																		Rp{" "}
-																		{lib.costPerUnit.toLocaleString(
-																			"id-ID",
-																		)}
-																		/{lib.unit}
-																	</p>
-																</div>
-																<Plus
-																	size={16}
-																	class="text-primary shrink-0"
-																/>
-															</button>
-														)}
-													</For>
-												</div>
-											</Show>
-										</div>
-									</Show>
-
 									<Index each={formRaw()}>
 										{(raw: Accessor<RawMaterialCost>, i: number) => {
 											const lineTotal = createMemo(
@@ -921,20 +903,17 @@ export default function ProductsManager() {
 											return (
 												<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/60 shadow-sm hover:border-primary/20 transition-all text-left">
 													<div class="flex items-center justify-between">
-														<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 opacity-60">
-															Bahan #{i + 1}
-														</span>
+														<div class="flex items-center gap-2">
+															<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 opacity-60">
+																Bahan #{i + 1}
+															</span>
+															<Show when={raw().id}>
+																<span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+																	🔗 Terhubung
+																</span>
+															</Show>
+														</div>
 														<div class="flex items-center gap-1">
-															<button
-																type="button"
-																onClick={() =>
-																	saveMaterialToLibrary(raw())
-																}
-																class="text-[10px] font-black uppercase tracking-wider text-primary hover:bg-primary/10 px-2 py-1.5 rounded-lg transition-colors"
-																title="Simpan ke library"
-															>
-																Simpan Library
-															</button>
 															<Button
 																type="button"
 																variant="ghost"
@@ -1050,6 +1029,66 @@ export default function ProductsManager() {
 										}}
 									</Index>
 
+									{/* Library Picker Section */}
+									<Show when={showMaterialLib()}>
+										<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
+											<div class="flex items-center justify-between">
+												<p class="text-xs font-bold uppercase tracking-widest text-primary">
+													Pilih dari Library Bahan
+												</p>
+												<button
+													type="button"
+													onClick={() => setShowMaterialLib(false)}
+													class="text-muted-foreground hover:text-foreground"
+												>
+													<X size={15} />
+												</button>
+											</div>
+											<Show
+												when={
+													materialsLibrary() &&
+													materialsLibrary()!.length > 0
+												}
+												fallback={
+													<p class="text-xs text-muted-foreground py-2">
+														Belum ada bahan di library.
+													</p>
+												}
+											>
+												<div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+													<For each={materialsLibrary()}>
+														{(lib) => (
+															<button
+																type="button"
+																onClick={() =>
+																	addFromMaterialLibrary(lib)
+																}
+																class="flex items-center justify-between px-4 py-3 bg-card rounded-xl border border-border/60 hover:border-primary/40 text-left transition-all active:scale-[0.98]"
+															>
+																<div>
+																	<p class="font-bold text-sm">
+																		{lib.name}
+																	</p>
+																	<p class="text-[10px] font-black text-muted-foreground uppercase opacity-70 mt-0.5">
+																		Rp{" "}
+																		{lib.costPerUnit.toLocaleString(
+																			"id-ID",
+																		)}
+																		/{lib.unit}
+																	</p>
+																</div>
+																<Plus
+																	size={16}
+																	class="text-primary shrink-0"
+																/>
+															</button>
+														)}
+													</For>
+												</div>
+											</Show>
+										</div>
+									</Show>
+
 									<div class="flex gap-2">
 										<button
 											type="button"
@@ -1073,66 +1112,6 @@ export default function ProductsManager() {
 						{/* ── Tab 3: Varian ── */}
 						<Show when={activeTab() === "variants"}>
 							<div class="flex flex-col gap-4 p-4 text-left">
-								{/* Library picker */}
-								<Show when={showTemplateLib()}>
-									<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
-										<div class="flex items-center justify-between">
-											<p class="text-xs font-bold uppercase tracking-widest text-primary">
-												Pilih dari Library Varian
-											</p>
-											<button
-												type="button"
-												onClick={() => setShowTemplateLib(false)}
-												class="text-muted-foreground hover:text-foreground"
-											>
-												<X size={15} />
-											</button>
-										</div>
-										<Show
-											when={
-												variantTemplates() &&
-												variantTemplates()!.length > 0
-											}
-											fallback={
-												<p class="text-xs text-muted-foreground py-2">
-													Belum ada template tersimpan. Buat grup
-													varian baru lalu simpan sebagai template.
-												</p>
-											}
-										>
-											<div class="flex flex-col gap-2">
-												<For each={variantTemplates()}>
-													{(tpl) => (
-														<button
-															type="button"
-															onClick={() =>
-																assignFromTemplate(tpl)
-															}
-															class="flex items-center justify-between px-4 py-3 bg-card rounded-xl border border-border/60 hover:border-primary/40 text-left transition-all active:scale-[0.98]"
-														>
-															<div>
-																<p class="font-bold text-sm">
-																	{tpl.name}
-																</p>
-																<p class="text-xs text-muted-foreground mt-0.5">
-																	{tpl.type === "SINGLE"
-																		? "Satu pilihan"
-																		: "Multi pilihan"}{" "}
-																	· {tpl.options.length} opsi
-																</p>
-															</div>
-															<Plus
-																size={16}
-																class="text-primary shrink-0"
-															/>
-														</button>
-													)}
-												</For>
-											</div>
-										</Show>
-									</div>
-								</Show>
-
 								{/* Active variant groups */}
 								<For each={formVariants()}>
 									{(vg, gi) => (
@@ -1377,6 +1356,65 @@ export default function ProductsManager() {
 									)}
 								</For>
 
+								{/* Library picker */}
+								<Show when={showTemplateLib()}>
+									<div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3 animate-in zoom-in-95 duration-200">
+										<div class="flex items-center justify-between">
+											<p class="text-xs font-bold uppercase tracking-widest text-primary">
+												Pilih dari Library Varian
+											</p>
+											<button
+												type="button"
+												onClick={() => setShowTemplateLib(false)}
+												class="text-muted-foreground hover:text-foreground"
+											>
+												<X size={15} />
+											</button>
+										</div>
+										<Show
+											when={
+												variantTemplates() &&
+												variantTemplates()!.length > 0
+											}
+											fallback={
+												<p class="text-xs text-muted-foreground py-2">
+													Belum ada template tersimpan. Buat grup
+													varian baru lalu simpan sebagai template.
+												</p>
+											}
+										>
+											<div class="flex flex-col gap-2">
+												<For each={variantTemplates()}>
+													{(tpl) => (
+														<button
+															type="button"
+															onClick={() =>
+																assignFromTemplate(tpl)
+															}
+															class="flex items-center justify-between px-4 py-3 bg-card rounded-xl border border-border/60 hover:border-primary/40 text-left transition-all active:scale-[0.98]"
+														>
+															<div>
+																<p class="font-bold text-sm">
+																	{tpl.name}
+																</p>
+																<p class="text-xs text-muted-foreground mt-0.5">
+																	{tpl.type === "SINGLE"
+																		? "Satu pilihan"
+																		: "Multi pilihan"}{" "}
+																	· {tpl.options.length} opsi
+																</p>
+															</div>
+															<Plus
+																size={16}
+																class="text-primary shrink-0"
+															/>
+														</button>
+													)}
+												</For>
+											</div>
+										</Show>
+									</div>
+								</Show>
 								{/* Action buttons */}
 								<div class="flex gap-2">
 									<button

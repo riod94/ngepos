@@ -1,8 +1,5 @@
 import { A } from "@solidjs/router";
-import {
-	Package,
-	Tags,
-} from "lucide-solid";
+import { Package, Tags, LayoutGrid, Package2 } from "lucide-solid";
 
 interface MenuItem {
 	href: string;
@@ -15,12 +12,28 @@ interface MenuItem {
 
 const INVENTORY_ITEMS: MenuItem[] = [
 	{
+		href: "/app/inventory/materials",
+		icon: Package2,
+		iconBg: "bg-emerald-100",
+		iconColor: "text-emerald-600",
+		title: "Bahan Baku (Resep)",
+		subtitle: "Atur semua bahan baku",
+	},
+	{
+		href: "/app/inventory/variations",
+		icon: LayoutGrid,
+		iconBg: "bg-indigo-100",
+		iconColor: "text-indigo-600",
+		title: "Daftar Variasi",
+		subtitle: "Toping, Level & Modifiers",
+	},
+	{
 		href: "/app/inventory/products",
 		icon: Package,
 		iconBg: "bg-blue-100",
 		iconColor: "text-blue-600",
 		title: "Katalog Produk",
-		subtitle: "Atur menu, stok, HPP & varian",
+		subtitle: "Atur menu & harga jual",
 	},
 	{
 		href: "/app/inventory/categories",
@@ -28,7 +41,7 @@ const INVENTORY_ITEMS: MenuItem[] = [
 		iconBg: "bg-violet-100",
 		iconColor: "text-violet-600",
 		title: "Manajemen Kategori",
-		subtitle: "Tambah & atur kategori produk",
+		subtitle: "Atur kategori produk",
 	},
 ];
 
@@ -49,9 +62,7 @@ export default function InventoryHub() {
 					const Icon = item.icon;
 					return (
 						<A href={item.href} class="block">
-							<div
-								class="flex items-center gap-4 bg-background p-4 rounded-3xl border border-border/70 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/10 active:scale-[0.98]"
-							>
+							<div class="flex items-center gap-4 bg-background p-4 rounded-3xl border border-border/70 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/10 active:scale-[0.98]">
 								<div
 									class={`w-12 h-12 rounded-2xl ${item.iconBg} ${item.iconColor} flex items-center justify-center shadow-inner shrink-0`}
 								>
@@ -66,28 +77,25 @@ export default function InventoryHub() {
 									</p>
 								</div>
 								<div class="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center text-muted-foreground">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="3"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="m9 18 6-6-6-6" />
+									</svg>
 								</div>
 							</div>
 						</A>
 					);
 				})}
 			</div>
-
-            <div class="px-5 py-4">
-                <div class="p-6 rounded-[2.5rem] bg-indigo-600 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
-                    <div class="absolute -right-4 -bottom-4 opacity-10">
-                        <Package size={120} />
-                    </div>
-                    <h4 class="font-black text-lg leading-tight mb-1">Optimalkan Stok</h4>
-                    <p class="text-sm font-medium opacity-90 leading-relaxed mb-4">
-                        Pastikan semua produk memiliki HPP yang akurat untuk laporan profit yang presisi.
-                    </p>
-                    <A href="/app/products" class="inline-block bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
-                        Cek Katalog
-                    </A>
-                </div>
-            </div>
 		</div>
 	);
 }

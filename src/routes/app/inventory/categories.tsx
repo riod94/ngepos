@@ -1,9 +1,9 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { ArrowLeft, Plus, Trash2, Tag } from "lucide-solid";
+import { ArrowLeft, Plus, Trash2, Tag, Zap } from "lucide-solid";
 import { A } from "@solidjs/router";
 import { db, type Category } from "~/db/db";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 
 const CAT_ICONS = [
@@ -88,8 +88,8 @@ export default function Categories() {
   };
 
   return (
-    <div class="flex flex-col min-h-screen bg-muted/10 pb-24">
-      {/* Header */}
+    <div class="flex flex-col min-h-screen bg-muted/10 pb-24 font-jakarta text-left">
+      {/* Header — 100% Match with products.tsx */}
       <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
           <A
@@ -99,7 +99,7 @@ export default function Categories() {
             <ArrowLeft size={18} />
           </A>
           <div>
-            <h1 class="font-bold text-lg tracking-tight leading-none">Kategori</h1>
+            <h1 class="font-bold text-lg tracking-tight leading-none text-foreground">Kategori</h1>
             <span class="text-xs font-semibold text-muted-foreground mt-0.5 block">
               Manajemen Kategori Produk
             </span>
@@ -113,24 +113,25 @@ export default function Categories() {
         </Button>
       </div>
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={isOpen()} onOpenChange={setIsOpen}>
-        <DialogContent class="w-[90vw] max-w-sm rounded-3xl p-6">
-          <DialogHeader>
-            <DialogTitle class="text-lg font-bold tracking-tight">
-              {isEditing() ? "Edit Kategori" : "Kategori Baru"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSave} class="flex flex-col gap-6 mt-4">
-            <div class="flex flex-col gap-2">
-              <label for="cat-name" class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+      {/* Edit/Add Sheet — 100% Match with products.tsx style */}
+      <Sheet open={isOpen()} onOpenChange={setIsOpen}>
+        <SheetContent position="bottom" class="h-auto max-h-[92vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden font-jakarta pb-safe">
+          <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
+            <SheetTitle class="font-black text-xl tracking-tight text-left">
+              {isEditing() ? "Edit Kategori" : "Tambah Kategori"}
+            </SheetTitle>
+          </SheetHeader>
+
+          <form id="category-form" onSubmit={handleSave} class="flex-1 overflow-y-auto p-5 flex flex-col gap-5 text-left bg-background">
+            <div class="flex flex-col gap-1.5">
+              <label for="cat-name" class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                 Nama Kategori
               </label>
               <input
                 id="cat-name"
                 required
                 type="text"
-                class="h-14 w-full rounded-2xl border-2 border-border/80 bg-muted/20 px-5 font-black text-base focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
                 value={formName()}
                 onInput={(e) => setFormName((e.target as HTMLInputElement).value)}
                 placeholder="Misal: Minuman Dingin"
@@ -138,13 +139,13 @@ export default function Categories() {
             </div>
 
             <div class="flex flex-col gap-3">
-              <label class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1 flex items-center justify-between">
-                Pilih Icon
-                <span class="text-primary font-black text-[14px] bg-primary/10 w-8 h-8 rounded-lg flex items-center justify-center">
-                  {formIcon()}
-                </span>
-              </label>
-              <div class="grid grid-cols-8 gap-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+               <div class="flex items-center justify-between px-1">
+                  <label class="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pilih Icon</label>
+                  <span class="text-primary font-bold text-xs bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                    Visual: {formIcon()}
+                  </span>
+               </div>
+               <div class="grid grid-cols-7 gap-2 max-h-[160px] overflow-y-auto p-3 bg-muted/20 border border-border/40 rounded-2xl shadow-inner">
                 <For each={CAT_ICONS}>
                   {(icon) => (
                     <button
@@ -152,8 +153,8 @@ export default function Categories() {
                       onClick={() => setFormIcon(icon)}
                       class={`aspect-square rounded-xl flex items-center justify-center text-xl transition-all border-2 ${
                         formIcon() === icon 
-                        ? "bg-primary border-primary shadow-md shadow-primary/20 scale-110 z-10" 
-                        : "bg-muted/30 border-transparent hover:bg-muted/50"
+                        ? "bg-primary border-primary shadow-lg shadow-primary/20 scale-105 z-10" 
+                        : "bg-background border-transparent hover:border-border/60"
                       }`}
                     >
                       {icon}
@@ -162,18 +163,23 @@ export default function Categories() {
                 </For>
               </div>
             </div>
+          </form>
+          
+          <div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0">
             <Button
               type="submit"
+              form="category-form"
               disabled={isSaving()}
-              class="w-full h-12 rounded-xl font-bold text-sm mt-1"
+              class="w-full h-12 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all gap-2"
             >
-              {isSaving() ? "Menyimpan..." : isEditing() ? "Perbarui" : "Simpan Kategori"}
+              <Zap size={16} class="fill-current" />
+              {isSaving() ? "Menyimpan..." : isEditing() ? "Perbarui Kategori" : "Simpan Kategori"}
             </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Confirm Delete */}
+      {/* Dialogs for Critical Actions */}
       <ConfirmDialog
         open={deleteTarget() !== null}
         onOpenChange={(v) => !v && setDeleteTarget(null)}
@@ -185,7 +191,6 @@ export default function Categories() {
         onConfirm={handleDelete}
       />
 
-      {/* Error Dialog — kategori masih punya produk */}
       <ConfirmDialog
         open={deleteError() !== null}
         onOpenChange={(v) => !v && setDeleteError(null)}
@@ -197,43 +202,42 @@ export default function Categories() {
         onConfirm={() => setDeleteError(null)}
       />
 
-      {/* List */}
-      <div class="p-4 flex flex-col gap-2.5">
+      {/* Category List — Match product list structure */}
+      <div class="flex flex-col gap-2.5 p-4">
         <Show
           when={categories() && categories()!.length > 0}
           fallback={
             <div class="flex flex-col items-center py-20 text-muted-foreground gap-4">
-              <div class="w-14 h-14 rounded-full bg-muted flex items-center justify-center border border-border/50">
-                <Tag size={22} class="opacity-40" />
-              </div>
-              <div class="text-center">
-                <p class="font-bold text-sm">Belum ada kategori</p>
-                <p class="text-xs mt-1 text-muted-foreground">Tambahkan kategori untuk mengorganisir produk.</p>
-              </div>
+                <div class="w-14 h-14 rounded-full bg-muted flex items-center justify-center border border-border/50">
+                   <Tag size={22} class="opacity-40" />
+                </div>
+                <div class="text-center">
+                   <p class="font-bold text-sm">Belum ada kategori</p>
+                   <p class="text-xs mt-1">Tambahkan kategori untuk produk Anda.</p>
+                </div>
             </div>
           }
         >
           <For each={categories()}>
             {(cat) => (
               <div
-                class="flex items-center gap-3 bg-card px-4 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
                 role="button"
                 tabIndex={0}
                 onClick={() => openEdit(cat)}
-                onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(cat); } }}
+                class="flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
               >
-                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl overflow-hidden">
+                <div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50 flex items-center justify-center text-2xl">
                   {cat.icon ?? "📦"}
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-sm tracking-tight truncate">{cat.name}</h3>
-                  <p class="text-xs text-muted-foreground mt-0.5">Urutan #{cat.orderIndex + 1}</p>
+                  <h3 class="font-bold text-sm leading-tight truncate text-foreground">{cat.name}</h3>
+                  <p class="text-xs font-medium text-muted-foreground mt-0.5">Urutan #{cat.orderIndex + 1}</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-                  onClick={(e) => requestDelete(cat, e)}
+                  class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors ml-auto"
+                  onClick={(e) => { e.stopPropagation(); requestDelete(cat, e); }}
                 >
                   <Trash2 size={13} />
                 </Button>

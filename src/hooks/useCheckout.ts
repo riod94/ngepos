@@ -56,7 +56,7 @@ export function useCheckout() {
     try {
       resultTransactionId = await db.transaction(
         "rw",
-        ["transactions", "transactionItems", "products"],
+        ["transactions", "transactionItems", "products", "rawMaterialLibrary", "inventoryLogs"],
         async () => {
           let cogsTotal = 0;
           const transactionId = `txn_${Date.now()}`;
@@ -66,6 +66,39 @@ export function useCheckout() {
             const product = await db.products.get(item.id);
             let unitCogs = product?.cogs ?? item.price * 0.45;
 
+            // 1. Process Recipe (Raw Materials) & Calculate dynamic unitCogs
+            if (product?.rawMaterials && product.rawMaterials.length > 0) {
+              let recipeCogs = 0;
+              for (const recipeItem of product.rawMaterials) {
+                const libraryMaterial = await db.rawMaterialLibrary.get(recipeItem.id);
+                if (libraryMaterial) {
+                  // Reduce stock
+                  const consumedQty = recipeItem.quantity * item.quantity;
+                  const newStock = Math.max(0, libraryMaterial.stock - consumedQty);
+                  await db.rawMaterialLibrary.update(libraryMaterial.id, { stock: newStock });
+                  
+                  // Log Inventory
+                  await db.inventoryLogs.add({
+                    id: `log_out_${transactionId}_${recipeItem.id}_${idx}`,
+                    materialId: libraryMaterial.id,
+                    type: "OUT",
+                    quantity: consumedQty,
+                    unitCost: libraryMaterial.costPerUnit,
+                    notes: `Used for ${item.name} (${transactionId})`,
+                    timestamp: ts,
+                  });
+
+                  recipeCogs += libraryMaterial.costPerUnit * recipeItem.quantity;
+                } else {
+                  recipeCogs += recipeItem.cost; // Fallback
+                }
+              }
+              unitCogs = recipeCogs;
+              // Sync the product's base HPP to the new calculated one
+              await db.products.update(item.id, { cogs: unitCogs });
+            }
+
+            // 2. Add Variant Modifiers
             if (item.selectedVariants) {
               for (const sv of item.selectedVariants) {
                 const group = product?.variants?.find((g: any) => g.name === sv.groupName);

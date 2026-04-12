@@ -70,3 +70,64 @@ export const expenses = pgTable("expenses", {
 	isBackdated: boolean("is_backdated").default(false),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ─── PRODUCTS ───────────────────────────────────────────────────────────────
+export const products = pgTable("products", {
+	id: text("id").primaryKey(), // dexie id
+	name: text("name").notNull(),
+	category: text("category").notNull(),
+	price: decimal("price", { precision: 20, scale: 2 }).notNull(),
+	cogs: decimal("cogs", { precision: 20, scale: 2 }).default("0"),
+	stock: real("stock").default(0),
+	isActive: boolean("is_active").default(true).notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── INVENTORY & RAW MATERIALS ──────────────────────────────────────────────
+export const rawMaterials = pgTable("raw_materials", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	name: text("name").notNull(),
+	unit: text("unit").notNull(), // Smallest unit (e.g., 'gram', 'ml', 'pcs')
+	stock: real("stock").default(0).notNull(),
+	averageCost: decimal("average_cost", { precision: 20, scale: 2 }).default("0").notNull(),
+	isActive: boolean("is_active").default(true).notNull(), // ADDED
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── MODIFIERS / VARIATIONS ──────────────────────────────────────────────────
+export const modifierGroups = pgTable("modifier_groups", {
+	id: text("id").primaryKey(), // dexie id
+	name: text("name").notNull(),
+	isRequired: boolean("is_required").default(false).notNull(),
+	type: text("type", { enum: ["SINGLE", "MULTIPLE"] }).default("SINGLE").notNull(),
+	maxSelectable: integer("max_selectable"),
+	isActive: boolean("is_active").default(true).notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const modifierOptions = pgTable("modifier_options", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	groupId: text("group_id").references(() => modifierGroups.id, { onDelete: "cascade" }),
+	name: text("name").notNull(),
+	priceModifier: decimal("price_modifier", { precision: 20, scale: 2 }).default("0").notNull(),
+	cogsModifier: decimal("cogs_modifier", { precision: 20, scale: 2 }).default("0").notNull(),
+});
+
+export const productIngredients = pgTable("product_ingredients", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	productId: text("product_id").notNull(), // External product ID from Dexie
+	materialId: uuid("material_id").references(() => rawMaterials.id, { onDelete: "cascade" }),
+	quantity: real("quantity").notNull(), // Quantity needed for 1 portion
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const inventoryLogs = pgTable("inventory_logs", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	materialId: uuid("material_id").references(() => rawMaterials.id, { onDelete: "cascade" }),
+	type: text("type", { enum: ["IN", "OUT", "ADJUSTMENT"] }).notNull(),
+	quantity: real("quantity").notNull(), // Positive amount changed
+	unitCost: decimal("unit_cost", { precision: 20, scale: 2 }).default("0"), // Cost per unit during purchase
+	notes: text("notes"),
+	timestamp: timestamp("timestamp").defaultNow().notNull(),
+});

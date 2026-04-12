@@ -97,7 +97,7 @@ export function VariantSelector(props: VariantSelectorProps) {
     if (!prod) return;
 
     // Validate REQUIRED groups
-    const missing = prod.variants?.filter(g => 
+    const missing = activeGroups().filter(g => 
       g.isRequired && !selectedVariants().some(sv => sv.groupName === g.name)
     );
 
@@ -122,7 +122,7 @@ export function VariantSelector(props: VariantSelectorProps) {
         </SheetHeader>
 
         <div class="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide flex flex-col gap-6 mt-4">
-          <For each={props.product?.variants}>
+          <For each={activeGroups()}>
             {(group) => (
               <div class="flex flex-col">
                 <div class={`flex items-center justify-between mb-3 p-3 rounded-2xl border transition-all ${

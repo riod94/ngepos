@@ -17,7 +17,19 @@ export interface RawMaterialLibrary {
   id: string;
   name: string;
   unit: string;
-  costPerUnit: number;
+  stock: number;         // ADDED: Current available stock
+  costPerUnit: number;   // Moving average cost (HPP per unit)
+  isActive: boolean;     // ADDED: General availability toggle
+}
+
+export interface InventoryLog {
+  id: string;
+  materialId: string;
+  type: 'IN' | 'OUT' | 'ADJUSTMENT';
+  quantity: number;
+  unitCost: number;      // Cost per unit during purchase
+  notes?: string;
+  timestamp: number;
 }
 
 export interface VariantOption {
@@ -43,6 +55,7 @@ export interface VariantTemplate {
   type: 'SINGLE' | 'MULTIPLE';
   maxSelectable?: number;
   options: VariantOption[];
+  isActive: boolean;     // ADDED: Global toggle
 }
 
 export interface Product {
@@ -53,6 +66,7 @@ export interface Product {
   category: string;
   stock: number;
   image: string;
+  isActive: boolean;     // ADDED: General availability toggle
   rawMaterials?: RawMaterialCost[];
   variants?: VariantGroup[];
 }
@@ -412,6 +426,47 @@ export class PosDatabase extends Dexie {
       customerStamps: 'id, customerId, programId, transactionId, stampedAt',
       customerRewards: 'id, customerId, programId, status',
     });
+    
+    // Version 15: add inventoryLogs
+    this.version(15).stores({
+      products: 'id, name, category, stock',
+      categories: 'id, orderIndex',
+      transactions: 'id, receiptNumber, timestamp, status',
+      transactionItems: 'id, transactionId, productId',
+      expenses: 'id, category, timestamp',
+      settings: 'key',
+      variantTemplates: 'id, name',
+      staff: 'id, name, roleId, email, isActive',
+      roles: 'id, name',
+      rawMaterialLibrary: 'id, name',
+      inventoryLogs: 'id, materialId, timestamp',
+      discounts: 'id, productId, isActive',
+      bundles: 'id, name, isActive',
+      campaigns: 'id, name, type, isActive',
+      campaignItems: 'id, campaignId, productId, type',
+      campaignRewards: 'id, campaignId, rewardType',
+      customers: 'id, qrCode, status, phone',
+      loyaltyPrograms: 'id, isActive',
+      customerStamps: 'id, customerId, programId, transactionId, stampedAt',
+      customerRewards: 'id, customerId, programId, status',
+    }).upgrade(tx => {
+      // Initialize new fields
+      return tx.table('rawMaterialLibrary').toCollection().modify(m => {
+        m.stock ??= 0;
+      });
+    });
+
+    // Version 16: add isActive to products, materials, and templates
+    this.version(16).stores({
+      products: 'id, name, category, stock, isActive',
+      rawMaterialLibrary: 'id, name, isActive',
+      variantTemplates: 'id, name, isActive',
+    }).upgrade(tx => {
+      // Default all existing data to active
+      tx.table('products').toCollection().modify(p => { p.isActive ??= true; });
+      tx.table('rawMaterialLibrary').toCollection().modify(m => { m.isActive ??= true; });
+      tx.table('variantTemplates').toCollection().modify(t => { t.isActive ??= true; });
+    });
 
     this.products = this.table('products');
     this.categories = this.table('categories');
@@ -423,6 +478,7 @@ export class PosDatabase extends Dexie {
     this.staff = this.table('staff');
     this.roles = this.table('roles');
     this.rawMaterialLibrary = this.table('rawMaterialLibrary');
+    this.inventoryLogs = this.table('inventoryLogs');
     this.discounts = this.table('discounts');
     this.bundles = this.table('bundles');
     this.campaigns = this.table('campaigns');
