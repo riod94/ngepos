@@ -164,6 +164,11 @@ export function useCheckout() {
           await claimReward(rid, resultTransactionId);
         }
       }
+
+      // Trigger Background Sync
+      const { syncService } = await import("~/lib/syncService");
+      syncService.triggerSync();
+
       return resultTransactionId;
     } catch (err: any) {
       console.error("CRITICAL CHECKOUT ERROR:", err);
