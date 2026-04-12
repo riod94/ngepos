@@ -192,7 +192,7 @@ export default function Reports() {
 			const expenses = expList.reduce((s, e) => s + safe(e.amount), 0);
 			const netProfit = grossProfit - expenses;
 			const modalReturn = cogsTotal;
-			const trueProfit = netProfit - modalReturn;
+			const trueProfit = netProfit; // Memperbaiki pengurangan ganda HPP
 
 			// --- AGGREGATION FOR CHARTS ---
 			
@@ -458,10 +458,10 @@ export default function Reports() {
 						</h3>
 
 						<MetricRow
-							label="Modal Harus Kembali (HPP)"
-							value={`−${fmt(report()!.modalReturn)}`}
+							label="Alokasi Modal (HPP)"
+							value={`${fmt(report()!.modalReturn)}`}
 							color="text-orange-600"
-							sub="Dialokasikan untuk restok bahan baku"
+							sub="Uang untuk diputar kembali (restok)"
 						/>
 						<div class="h-px bg-border/40" />
 						<div
@@ -475,8 +475,8 @@ export default function Reports() {
 							<p
 								class={`text-xl font-black tracking-tighter leading-none mt-1 ${isPositive(report()!.trueProfit) ? "text-emerald-700" : "text-red-700"}`}
 							>
-								{isPositive(report()!.trueProfit) ? "" : "−"}
-								{fmt(report()!.trueProfit)}
+								{isPositive(report()!.trueProfit) ? "Rp " : "−Rp "}
+								{Math.abs(report()!.trueProfit).toLocaleString("id-ID")}
 							</p>
 							<p class="text-xs font-semibold opacity-60 mt-1">
 								{isPositive(report()!.trueProfit)

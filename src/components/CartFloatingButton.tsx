@@ -9,7 +9,7 @@ import {
 	CircleCheck,
 	CircleX,
 	Clock,
-	Calendar,
+	Calendar as CalendarIcon,
 	Bike,
 	Truck,
 	ShoppingBag,
@@ -62,6 +62,7 @@ import {
 import { db, getSetting } from "~/db/db";
 import { toast } from "solid-toast";
 import { useCheckout } from "~/hooks/useCheckout";
+import { Calendar } from "~/components/ui/calendar";
 
 type PayStep = "select" | "adjustment" | "qris_pending" | "done_ok" | "done_fail";
 
@@ -101,9 +102,8 @@ export function CartFloatingButton() {
 
 	// Backdate state
 	const [backdateOpen, setBackdateOpen] = createSignal(false);
-	const [backdateDate, setBackdateDate] = createSignal(
-		new Date().toISOString().split("T")[0],
-	);
+	const [isCalendarOpen, setIsCalendarOpen] = createSignal(false);
+	const [backdateDate, setBackdateDate] = createSignal(Date.now());
 	const [backdateTime, setBackdateTime] = createSignal("12:00");
 
 	// QRIS image (lazy loaded when dialog opens)
@@ -150,7 +150,10 @@ export function CartFloatingButton() {
 	// Timestamp to use for transaction (either now or backdated)
 	const transactionTimestamp = () => {
 		if (backdateOpen()) {
-			return new Date(`${backdateDate()}T${backdateTime()}:00`).getTime();
+			const d = new Date(backdateDate());
+			const [h, min] = backdateTime().split(":");
+			d.setHours(Number(h), Number(min), 0, 0);
+			return d.getTime();
 		}
 		return Date.now();
 	};
@@ -333,23 +336,47 @@ export function CartFloatingButton() {
 
 							<Show when={backdateOpen()}>
 								<div class="mt-2 grid grid-cols-2 gap-2">
-									<div class="flex flex-col gap-1">
+									<div class="flex flex-col gap-2">
 										<label
-											for="bd-date-cart"
-											class="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1"
+											class="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5"
 										>
-											<Calendar size={11} /> Tanggal
+											<CalendarIcon size={12} stroke-width={3} /> Tanggal
 										</label>
-										<input
-											id="bd-date-cart"
-											type="date"
-											class="h-11 rounded-xl border border-amber-300 bg-amber-50 px-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
-											value={backdateDate()}
-											onInput={(e) =>
-												setBackdateDate(e.currentTarget.value)
-											}
-										/>
+										<button
+											type="button"
+											onClick={() => setIsCalendarOpen(true)}
+											class="h-12 w-full rounded-xl border border-primary/20 bg-primary/5 px-3 flex flex-col justify-center text-left hover:bg-primary/10 transition-all"
+										>
+											<span class="text-xs font-black text-primary">
+												{new Date(backdateDate()).toLocaleDateString("id-ID", {
+													day: "numeric",
+													month: "short",
+													year: "numeric",
+												})}
+											</span>
+											<span class="text-[8px] font-black uppercase tracking-widest text-primary/40 mt-0.5">
+												Ganti Tanggal
+											</span>
+										</button>
 									</div>
+
+									<Dialog open={isCalendarOpen()} onOpenChange={setIsCalendarOpen}>
+										<DialogContent class="max-w-[360px] p-6 rounded-[32px]">
+											<DialogHeader class="mb-2">
+												<DialogTitle class="text-[10px] font-black uppercase tracking-widest text-primary">
+													Pilih Tanggal Transaksi
+												</DialogTitle>
+											</DialogHeader>
+
+											<Calendar
+												value={backdateDate()}
+												onChange={(ts) => {
+													setBackdateDate(ts);
+													setIsCalendarOpen(false);
+												}}
+											/>
+										</DialogContent>
+									</Dialog>
 									<div class="flex flex-col gap-1">
 										<label
 											for="bd-time-cart"

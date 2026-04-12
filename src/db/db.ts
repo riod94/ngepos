@@ -93,6 +93,7 @@ export interface Transaction {
   discountTotal?: number;  // Total discount applied
   discountNote?: string;   // Description of applied discount
   customerId?: string;     // FK to customers.id (Member)
+  cashierName?: string;    // Name of the staff/cashier
 }
 
 export interface TransactionItem {
@@ -285,6 +286,7 @@ export class PosDatabase extends Dexie {
   loyaltyPrograms!: EntityTable<LoyaltyProgram, 'id'>;
   customerStamps!: EntityTable<CustomerStamp, 'id'>;
   customerRewards!: EntityTable<CustomerReward, 'id'>;
+  inventoryLogs!: EntityTable<InventoryLog, 'id'>;
 
   constructor() {
     super('ngepos_db');
@@ -461,6 +463,7 @@ export class PosDatabase extends Dexie {
       products: 'id, name, category, stock, isActive',
       rawMaterialLibrary: 'id, name, isActive',
       variantTemplates: 'id, name, isActive',
+      inventoryLogs: 'id, materialId, timestamp',
     }).upgrade(tx => {
       // Default all existing data to active
       tx.table('products').toCollection().modify(p => { p.isActive ??= true; });
@@ -508,7 +511,7 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 export async function seedDatabase() {
   const productCount = await db.products.count();
-  if (productCount === 0 || (MOCK_PRODUCTS[0] as any).variants) {
+  if (productCount === 0) {
     try {
       console.log('Seeding Database Ngepos...');
       await db.categories.clear();

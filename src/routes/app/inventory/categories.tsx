@@ -1,6 +1,6 @@
 import { createSignal, createResource, Show, For } from "solid-js";
 import { ArrowLeft, Plus, Trash2, Tag, Zap } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { db, type Category } from "~/db/db";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
@@ -14,6 +14,7 @@ const CAT_ICONS = [
 ];
 
 export default function Categories() {
+  const navigate = useNavigate();
   const [categories, { refetch }] = createResource(async () =>
     await db.categories.orderBy("orderIndex").toArray()
   );
@@ -92,12 +93,12 @@ export default function Categories() {
       {/* Header — 100% Match with products.tsx */}
       <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
         <div class="flex items-center gap-3">
-          <A
-            href="/app/inventory"
+          <button
+            onClick={() => navigate(-1)}
             class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
           >
             <ArrowLeft size={18} />
-          </A>
+          </button>
           <div>
             <h1 class="font-bold text-lg tracking-tight leading-none text-foreground">Kategori</h1>
             <span class="text-xs font-semibold text-muted-foreground mt-0.5 block">

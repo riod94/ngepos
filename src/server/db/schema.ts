@@ -33,7 +33,7 @@ export const settings = pgTable("settings", {
 
 // ─── TRANSACTIONS ──────────────────────────────────────────────────────────
 export const transactions = pgTable("transactions", {
-	id: uuid("id").primaryKey(), // UUID from client
+	id: text("id").primaryKey(), // ID from client (flexible)
 	receiptNumber: text("receipt_number").notNull(),
 	totalAmount: decimal("total_amount", { precision: 20, scale: 2 }).notNull(),
 	originalAmount: decimal("original_amount", { precision: 20, scale: 2 }).notNull(),
@@ -50,8 +50,8 @@ export const transactions = pgTable("transactions", {
 
 // ─── TRANSACTION ITEMS ──────────────────────────────────────────────────────
 export const transactionItems = pgTable("transaction_items", {
-	id: uuid("id").primaryKey(),
-	transactionId: uuid("transaction_id").references(() => transactions.id, { onDelete: "cascade" }),
+	id: text("id").primaryKey(),
+	transactionId: text("transaction_id").references(() => transactions.id, { onDelete: "cascade" }),
 	productId: text("product_id").notNull(),
 	productName: text("product_name").notNull(),
 	quantity: real("quantity").notNull(),
@@ -62,7 +62,7 @@ export const transactionItems = pgTable("transaction_items", {
 
 // ─── EXPENSES ───────────────────────────────────────────────────────────────
 export const expenses = pgTable("expenses", {
-	id: uuid("id").primaryKey(),
+	id: text("id").primaryKey(),
 	amount: decimal("amount", { precision: 20, scale: 2 }).notNull(),
 	category: text("category").notNull(),
 	description: text("description").notNull(),

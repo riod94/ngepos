@@ -25,9 +25,19 @@ Fase ini fokus pada memberikan nilai tambah langsung kepada pengguna dan memperk
 *   **Status:** 📅 Direncanakan.
 
 ### 4. Sinkronisasi Cloud (Secure API)
-*   **Tujuan:** Keamanan data (backup) dan sinkronisasi antar-perangkat.
-*   **Cara:** Koneksi ke Backend (Node.js/Go/PHP) via REST API atau GraphQL dengan otentikasi JWT/OAuth.
-*   **Status:** 🏗️ Arsitektur Sedang Dirancang.
+*   **Tujuan:** Keamanan data (backup) dan sinkronisasi antar-perangkat secara menyeluruh.
+*   **Cara:** Koneksi ke Backend (Drizzle/Postgres) via REST API dengan otentikasi JWT.
+*   **Status Saat Ini (Tersinkronisasi):**
+    *   ✅ Transaksi & Item Transaksi (Sales Data)
+    *   ✅ Pengeluaran (Expenses)
+*   **Roadmap Entitas Belum Tersinkronisasi (Task Berikutnya):**
+    *   ⏳ Master Produk & Kategori (Products, Categories)
+    *   ⏳ Bahan Baku & Riwayat Stok (Raw Material Library, Inventory Logs)
+    *   ⏳ Variasi & Opsi (Variant Templates)
+    *   ⏳ Manajemen Karyawan & Hak Akses (Staff, Roles)
+    *   ⏳ Manajemen Pelanggan & Loyalitas (Customers, Stempel, Rewards, Loyalty Programs)
+    *   ⏳ Promosi & Diskon (Discounts, Bundles, Campaigns)
+    *   ⏳ Konfigurasi Sistem (Settings, Pajak, dsb)
 
 ### 5. Fitur PWA Penuh (Full App Experience)
 *   **Tujuan:** Membuat aplikasi dapat "diinstal" di homescreen HP dan berjalan lebih stabil secara offline dengan caching aset yang lebih baik.

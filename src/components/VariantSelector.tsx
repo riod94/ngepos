@@ -75,6 +75,10 @@ export function VariantSelector(props: VariantSelectorProps) {
     return selectedVariants().some(v => v.groupName === groupName && v.option.name === optionName);
   };
 
+  const activeGroups = createMemo(() => {
+    return props.product?.variants || [];
+  });
+
   const currentVariantPrice = () => {
     return selectedVariants().reduce((acc, curr) => acc + curr.option.priceModifier, 0);
   };

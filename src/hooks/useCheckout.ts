@@ -59,7 +59,7 @@ export function useCheckout() {
         ["transactions", "transactionItems", "products", "rawMaterialLibrary", "inventoryLogs"],
         async () => {
           let cogsTotal = 0;
-          const transactionId = `txn_${Date.now()}`;
+          const transactionId = crypto.randomUUID();
 
           const itemsToSave = [];
           for (const [idx, item] of cartSnapshot.entries()) {
@@ -79,7 +79,7 @@ export function useCheckout() {
                   
                   // Log Inventory
                   await db.inventoryLogs.add({
-                    id: `log_out_${transactionId}_${recipeItem.id}_${idx}`,
+                    id: crypto.randomUUID(),
                     materialId: libraryMaterial.id,
                     type: "OUT",
                     quantity: consumedQty,
@@ -110,7 +110,7 @@ export function useCheckout() {
             cogsTotal += unitCogs * item.quantity;
 
             itemsToSave.push({
-              id: `ti_${transactionId}_${idx}`,
+              id: crypto.randomUUID(),
               transactionId,
               productId: item.id,
               productName: item.name,
@@ -130,7 +130,7 @@ export function useCheckout() {
           const rid = appliedRewardId();
           if (rid && rwProd) {
             itemsToSave.push({
-              id: `ti_reward_${Date.now()}`,
+              id: crypto.randomUUID(),
               transactionId,
               productId: rwProd.id,
               productName: `[GIFT] ${rwProd.name}`,
@@ -160,9 +160,9 @@ export function useCheckout() {
             status: "PENDING",
             isBackdated,
             isAdjustment,
-            discountTotal: discountTotalVal,
             discountNote: discountNoteVal,
             customerId: linkedCustomerId() || undefined,
+            cashierName: useAuth().currentUser()?.name ?? "Admin",
           } as any);
 
           await db.transactionItems.bulkAdd(itemsToSave);

@@ -1,6 +1,6 @@
 import { createSignal, createResource, Show, For, batch } from "solid-js";
-import { Plus, Trash2, Receipt, ArrowLeft } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { Plus, Trash2, Receipt, ArrowLeft, Calendar as CalendarIcon } from "lucide-solid";
+import { A, useNavigate } from "@solidjs/router";
 
 import {
 	db,
@@ -17,6 +17,8 @@ import {
 } from "~/components/ui/sheet";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Calendar } from "~/components/ui/calendar";
 
 const CATEGORY_COLORS: Record<ExpenseCategory, { bg: string; text: string }> = {
 	bahan_baku: { bg: "bg-orange-100", text: "text-orange-700" },
@@ -29,6 +31,7 @@ const CATEGORY_COLORS: Record<ExpenseCategory, { bg: string; text: string }> = {
 };
 
 export default function Expenses() {
+	const navigate = useNavigate();
 	const [period, setPeriod] = createSignal<DateFilterType>("HARI_INI");
 	const [customRange, setCustomRange] = createSignal<DateRange | undefined>(
 		undefined,
@@ -63,6 +66,7 @@ export default function Expenses() {
 	const [sheetOpen, setSheetOpen] = createSignal(false);
 	const [isEditing, setIsEditing] = createSignal(false);
 	const [isSaving, setIsSaving] = createSignal(false);
+	const [isCalendarOpen, setIsCalendarOpen] = createSignal(false);
 
 	// Form
 	const [formId, setFormId] = createSignal("");
@@ -70,10 +74,7 @@ export default function Expenses() {
 	const [formCategory, setFormCategory] =
 		createSignal<ExpenseCategory>("operasional");
 	const [formDesc, setFormDesc] = createSignal("");
-	const [formDate, setFormDate] = createSignal(
-		new Date().toISOString().split("T")[0],
-	);
-	const [formIsBackdated, setFormIsBackdated] = createSignal(false);
+	const [formDate, setFormDate] = createSignal(Date.now());
 
 	// Confirm delete + validation alert state
 	const [deleteTargetId, setDeleteTargetId] = createSignal<string | null>(
@@ -90,8 +91,7 @@ export default function Expenses() {
 		setFormAmount("");
 		setFormCategory("operasional");
 		setFormDesc("");
-		setFormDate(new Date().toISOString().split("T")[0]);
-		setFormIsBackdated(false);
+		setFormDate(Date.now());
 		setSheetOpen(true);
 	}
 
@@ -101,8 +101,7 @@ export default function Expenses() {
 		setFormAmount(e.amount.toString());
 		setFormCategory(e.category);
 		setFormDesc(e.description);
-		setFormDate(new Date(e.timestamp).toISOString().split("T")[0]);
-		setFormIsBackdated(e.isBackdated);
+		setFormDate(e.timestamp);
 		setSheetOpen(true);
 	}
 
@@ -116,14 +115,20 @@ export default function Expenses() {
 				setValidationError("Jumlah pengeluaran harus diisi dengan benar.");
 				return;
 			}
-			const date = new Date(`${formDate()}T12:00:00`);
+			const date = new Date(formDate());
+			
+			// Detect backdated automatically (if date is before today 00:00)
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			const isBackdated = date.getTime() < today.getTime();
+
 			const expense: Expense = {
 				id: formId(),
 				amount,
 				category: formCategory(),
 				description: formDesc(),
 				timestamp: date.getTime(),
-				isBackdated: formIsBackdated(),
+				isBackdated,
 			};
 			if (isEditing()) await db.expenses.update(formId(), expense);
 			else await db.expenses.add(expense);
@@ -193,12 +198,12 @@ export default function Expenses() {
 			{/* Header */}
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3 mb-5">
-					<A
-						href="/app/reports"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-black text-xl tracking-tight leading-none">
 							Pengeluaran
@@ -407,40 +412,49 @@ export default function Expenses() {
 						{/* Date */}
 						<div class="flex flex-col gap-2">
 							<label
-								for="exp-date"
 								class="text-xs font-black uppercase tracking-widest text-muted-foreground"
 							>
 								Tanggal
 							</label>
-							<input
-								id="exp-date"
-								type="date"
-								class="h-12 w-full rounded-xl border border-border/70 bg-card px-4 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-								value={formDate()}
-								onInput={(e) => setFormDate(e.currentTarget.value)}
-							/>
-						</div>
-
-						{/* Backdated toggle */}
-						<div class="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-200">
-							<div>
-								<p class="font-black text-sm text-amber-900">
-									Tandai sebagai Lampau
-								</p>
-								<p class="text-xs text-amber-700 font-semibold mt-0.5">
-									Pengeluaran dari hari/waktu sebelumnya
-								</p>
-							</div>
 							<button
 								type="button"
-								onClick={() => setFormIsBackdated(!formIsBackdated())}
-								class={`w-12 h-7 rounded-full transition-all ${formIsBackdated() ? "bg-amber-500" : "bg-muted"} relative`}
+								onClick={() => setIsCalendarOpen(true)}
+								class="h-14 w-full rounded-2xl border-2 border-border/70 bg-card px-4 flex items-center justify-between hover:border-primary/50 transition-all text-left group"
 							>
-								<div
-									class={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow-sm ${formIsBackdated() ? "left-6" : "left-1"}`}
-								/>
+								<div class="flex flex-col">
+									<span class="text-xs font-black text-foreground">
+										{new Date(formDate()).toLocaleDateString("id-ID", {
+											day: "numeric",
+											month: "long",
+											year: "numeric",
+										})}
+									</span>
+									<span class="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">
+										Klik untuk ubah
+									</span>
+								</div>
+								<CalendarIcon size={18} class="text-muted-foreground group-hover:text-primary transition-colors" />
 							</button>
 						</div>
+
+						{/* Modal Calendar */}
+						<Dialog open={isCalendarOpen()} onOpenChange={setIsCalendarOpen}>
+							<DialogContent class="max-w-[360px] p-6 rounded-[32px]">
+								<DialogHeader class="mb-2">
+									<DialogTitle class="text-[10px] font-black uppercase tracking-widest text-primary">
+										Pilih Tanggal Pengeluaran
+									</DialogTitle>
+								</DialogHeader>
+
+								<Calendar
+									value={formDate()}
+									onChange={(ts) => {
+										setFormDate(ts);
+										setIsCalendarOpen(false);
+									}}
+								/>
+							</DialogContent>
+						</Dialog>
 
 						<Button
 							type="submit"

@@ -1,11 +1,12 @@
 import { createSignal, createResource, Show } from "solid-js";
 import { ArrowLeft, Save, IdCard, Layout, Palette, Stamp } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { getSetting, setSetting } from "~/db/db";
 import { QrCodePrintGrid } from "~/components/QrCodeGenerator";
 import { toast } from "solid-toast";
 
 export default function MemberCardSettings() {
+	const navigate = useNavigate();
 	// State for Settings
 	const [theme, setTheme] = createSignal<"light" | "dark" | "gradient" | "lines" | "custom">("light");
 	const [layout, setLayout] = createSignal<"portrait" | "horizontal">("horizontal");
@@ -80,12 +81,12 @@ export default function MemberCardSettings() {
 		<div class="flex flex-col min-h-screen bg-muted/10 pb-24">
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-[100] backdrop-blur-xl flex items-center justify-between">
 				<div class="flex items-center gap-3">
-					<A
-						href="/app/marketing/members"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-black text-lg tracking-tight leading-none">
 							Desain Kartu Member

@@ -3,6 +3,7 @@ import { createResource, Show, For } from "solid-js";
 import { ArrowLeft, Printer, Store } from "lucide-solid";
 import { db, getSetting } from "~/db/db";
 import { Button } from "~/components/ui/button";
+import { useAuth } from "~/stores/auth";
 
 export default function Receipt() {
   const params = useParams();
@@ -21,7 +22,7 @@ export default function Receipt() {
   const [outletLogo] = createResource(async () => await getSetting("outlet_logo"));
   const [showLogo] = createResource(async () => (await getSetting("receipt_show_logo")) !== "false");
   const [footerText] = createResource(async () => (await getSetting("receipt_footer_text")) ?? "— TERIMA KASIH —");
-  const [cashierName] = createResource(async () => (await getSetting("user_name")) ?? "Admin");
+  const cashierName = () => transaction()?.cashierName ?? currentUser()?.name ?? "Admin";
 
   return (
     <div class="flex flex-col min-h-screen bg-muted/20 pb-24 print:pb-0 print:bg-white print:min-h-0">

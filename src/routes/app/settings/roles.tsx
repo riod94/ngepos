@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show, onMount } from "solid-js";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import {
 	ArrowLeft,
 	ShieldCheck,
@@ -37,6 +37,7 @@ const ALL_PERMISSIONS = [
 ];
 
 export default function RoleManagement() {
+	const navigate = useNavigate();
 	const [isModalOpen, setIsModalOpen] = createSignal(false);
 	const [editingRole, setEditingRole] = createSignal<Role | null>(null);
 	const [roleName, setRoleName] = createSignal("");
@@ -144,12 +145,12 @@ export default function RoleManagement() {
 			{/* Header */}
 			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-30 backdrop-blur-xl">
 				<div class="flex items-center gap-3">
-					<A
-						href="/app/settings"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-bold text-lg tracking-tight leading-none">
 							Hak Akses & Peran

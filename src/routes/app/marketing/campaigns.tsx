@@ -325,7 +325,7 @@ export default function CampaignsPage() {
 				<div class="flex items-center gap-3">
 					<button
 						type="button"
-						onClick={() => navigate("/app/marketing")}
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />

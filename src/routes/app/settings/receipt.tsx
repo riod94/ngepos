@@ -1,9 +1,10 @@
 import { createSignal, createResource, Show } from "solid-js";
 import { ArrowLeft, Printer, Check, AlignCenter, Image as ImageIcon, MessageSquare } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { getSetting, setSetting } from "~/db/db";
 
 export default function ReceiptSettingsPage() {
+	const navigate = useNavigate();
 	const [showLogo, { refetch: refetchLogo }] = createResource(
 		async () => (await getSetting("receipt_show_logo")) !== "false",
 	);
@@ -29,12 +30,12 @@ export default function ReceiptSettingsPage() {
 	return (
 		<div class="flex flex-col min-h-screen bg-muted/10 pb-24">
 			<div class="flex items-center gap-3 px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-				<A
-					href="/app/settings"
+				<button
+					onClick={() => navigate(-1)}
 					class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 				>
 					<ArrowLeft size={18} />
-				</A>
+				</button>
 				<div>
 					<h1 class="font-black text-lg tracking-tight leading-none">
 						Pengaturan Struk

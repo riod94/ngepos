@@ -8,7 +8,7 @@ import {
 	ArrowLeft,
 	Zap,
 } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { db, type LoyaltyProgram } from "~/db/db";
 import { toast } from "solid-toast";
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,7 @@ import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { ProductSelector } from "~/components/ui/product-selector";
 
 export default function LoyaltySettingsPage() {
+	const navigate = useNavigate();
 	const [formOpen, setFormOpen] = createSignal(false);
 	const [editingProgram, setEditingProgram] =
 		createSignal<Partial<LoyaltyProgram> | null>(null);
@@ -121,12 +122,12 @@ export default function LoyaltySettingsPage() {
 			{/* Header */}
 			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3">
-					<A
-						href="/app/marketing"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-bold text-lg tracking-tight leading-none">
 							Loyalty Program

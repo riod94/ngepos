@@ -14,7 +14,8 @@ export function getProductAvailability(
   materials: RawMaterialLibrary[]
 ): { available: boolean; reason?: string } {
   // 1. Basic product toggle
-  if (!product.isActive) {
+  const baseIsActive = product.isActive ?? true;
+  if (!baseIsActive) {
     return { available: false, reason: "Nonaktif" };
   }
 
@@ -24,33 +25,14 @@ export function getProductAvailability(
       const material = materials.find(m => m.id === ingredient.id);
       
       if (!material) {
-        return { available: false, reason: `Bahan ${ingredient.name} tidak ditemukan` };
+        return { available: false, reason: `Bahan "${ingredient.name}" Tidak Ditemukan` };
       }
 
       // Check if material is active
       if (!material.isActive) {
-        return { available: false, reason: `${ingredient.name} Nonaktif` };
+        return { available: false, reason: `Bahan "${ingredient.name}" Off` };
       }
-
-      // Check if stock is sufficient (simple check for now)
-      if (material.stock <= 0) {
-        return { available: false, reason: `${ingredient.name} Habis` };
-      }
-      
-      // Note: We could do a more precise check (stock < ingredient.quantity),
-      // but for a quick POS summary, stock > 0 is the primary indicator.
     }
-  }
-
-  // 3. Retail stock check (if no ingredients)
-  if ((!product.rawMaterials || product.rawMaterials.length === 0) && product.stock <= 0) {
-    // Some retail products might allow negative stock or ignore it, 
-    // but typically stock 0 means empty.
-    // However, if the business doesn't track retail stock strictly, they might just 
-    // rely on the isActive toggle.
-    // Let's assume if they don't have ingredients, we check the product.stock 
-    // ONLY if it's meant to be tracked. 
-    // For now, let's keep it simple: manual isActive is king for retail.
   }
 
   return { available: true };

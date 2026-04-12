@@ -7,6 +7,7 @@ import {
 	createMemo,
 	type Accessor,
 } from "solid-js";
+import { createStore, produce, reconcile } from "solid-js/store";
 import {
 	Plus,
 	Trash2,
@@ -18,7 +19,7 @@ import {
 	Layers,
 	Upload,
 } from "lucide-solid";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import {
 	db,
 	type Product,
@@ -38,6 +39,8 @@ import {
 	SheetTitle,
 } from "~/components/ui/sheet";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
+import { toast } from "solid-toast";
+import { getProductAvailability } from "~/lib/availability";
 
 // ────────────── Utilities ──────────────
 function calcMargin(price: number, cogs: number) {
@@ -77,6 +80,7 @@ function getMarginStatus(m: number) {
 
 // ────────────── Main Component ──────────────
 export default function ProductsManager() {
+	const navigate = useNavigate();
 	const [products, { refetch }] = createResource(
 		async () => await db.products.toArray(),
 	);
@@ -111,8 +115,9 @@ export default function ProductsManager() {
 	const [formCategoryId, setFormCategoryId] = createSignal("");
 	const [formStock, setFormStock] = createSignal("0");
 	const [formImage, setFormImage] = createSignal("");
+	const [formIsActive, setFormIsActive] = createSignal(true);
 	const [formRaw, setFormRaw] = createSignal<RawMaterialCost[]>([]);
-	const [formVariants, setFormVariants] = createSignal<VariantGroup[]>([]);
+	const [formVariants, setFormVariants] = createStore<VariantGroup[]>([]);
 	const [formDiscount, setFormDiscount] = createSignal<Partial<Discount>>({
 		name: "",
 		type: "PERCENT",
@@ -149,8 +154,9 @@ export default function ProductsManager() {
 		setFormCategoryId(categories()?.[0]?.name ?? "Kopi");
 		setFormStock("0");
 		setFormImage("");
+		setFormIsActive(true);
 		setFormRaw([]);
-		setFormVariants([]);
+		setFormVariants(reconcile([]));
 		setFormDiscount({
 			name: "",
 			type: "PERCENT",
@@ -171,8 +177,9 @@ export default function ProductsManager() {
 		setFormCategoryId(p.category);
 		setFormStock(p.stock.toString());
 		setFormImage(p.image || "");
-		setFormRaw(structuredClone(p.rawMaterials ?? []));
-		setFormVariants(structuredClone(p.variants ?? []));
+		setFormIsActive(p.isActive ?? true);
+		setFormRaw(p.rawMaterials || []);
+		setFormVariants(reconcile(p.variants || []));
 
 		const existingDisc = allDiscounts()?.find((d) => d.productId === p.id);
 		if (existingDisc) {
@@ -207,11 +214,11 @@ export default function ProductsManager() {
 				price,
 				cogs,
 				category: formCategoryId(),
-				stock: Number.parseInt(formStock()) || 0,
+				stock: 0, // Dikosongkan karena tidak dipakai di level produk pada sistem F&B ini
 				isActive: formIsActive(),
 				image: formImage(),
 				rawMaterials: formRaw().length > 0 ? formRaw() : undefined,
-				variants: formVariants().length > 0 ? formVariants() : undefined,
+				variants: formVariants.length > 0 ? [...formVariants] : undefined,
 			};
 			const { id: _id, ...updateData } = product;
 			if (isEditing()) await db.products.update(formId(), updateData);
@@ -240,6 +247,12 @@ export default function ProductsManager() {
 	async function deleteProduct(id: string, e: Event) {
 		e.stopPropagation();
 		setDeleteTargetId(id);
+	}
+
+	async function toggleActive(p: Product, e: Event) {
+		e.stopPropagation();
+		await db.products.update(p.id, { isActive: !(p.isActive ?? true) });
+		refetch();
 	}
 
 	async function confirmDeleteProduct() {
@@ -288,26 +301,71 @@ export default function ProductsManager() {
 		});
 	}
 
-	function syncAllPrices() {
+	async function syncAllPrices() {
+		toast.dismiss(); // Bersihkan notifikasi lama agar tidak 'nyangkut'
 		const lib = materialsLibrary();
 		if (!lib) return;
 
 		let updated = false;
-		const newRaw = formRaw().map((r) => {
-			if (!r.id) return r;
-			const match = lib.find((m) => m.id === r.id);
-			if (match && match.costPerUnit !== r.costPerUnit) {
-				updated = true;
-				return { ...r, costPerUnit: match.costPerUnit, cost: match.costPerUnit };
+		let repairedCount = 0;
+		let addedCount = 0;
+
+		const newRaw = await Promise.all(formRaw().map(async (r) => {
+			let match = lib.find((m) => m.id === r.id);
+			
+			// 1. Cari berdasarkan NAMA jika ID tidak ketemu (SMART SYNC)
+			if (!match) {
+				const nameMatch = lib.find(m => m.name.toLowerCase() === r.name.toLowerCase());
+				if (nameMatch) {
+					match = nameMatch;
+					repairedCount++;
+				}
+			}
+
+			// 2. Jika MASIH tidak ketemu, TAMBAHKAN ke Library (AUTO REGISTER)
+			if (!match && r.name) {
+				const newId = `mat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+				const newMat = {
+					id: newId,
+					name: r.name,
+					unit: r.unit || "gram",
+					stock: 0,
+					costPerUnit: r.costPerUnit || r.cost || 0,
+					isActive: true
+				};
+				await db.rawMaterialLibrary.add(newMat);
+				match = newMat as any;
+				addedCount++;
+			}
+
+			if (match) {
+				const priceChanged = match.costPerUnit !== r.costPerUnit;
+				const idChanged = match.id !== r.id;
+				
+				if (priceChanged || idChanged) {
+					updated = true;
+					return {
+						...r,
+						id: match.id,
+						costPerUnit: match.costPerUnit,
+						cost: match.costPerUnit,
+					};
+				}
 			}
 			return r;
-		});
+		}));
 
-		if (updated) {
+		if (updated || addedCount > 0) {
 			setFormRaw(newRaw);
-			toast.success("Harga bahan telah disinkronkan dengan Library");
+			refetchMaterials(); // Refresh resource library agar sinkron
+			
+			let msg = "Sync Library Berhasil!";
+			if (repairedCount > 0) msg = `Tersambung ${repairedCount} bahan & `;
+			if (addedCount > 0) msg = `Terdaftar ${addedCount} bahan baru ke Library!`;
+			
+			toast.success(msg);
 		} else {
-			toast.info("Semua harga sudah sesuai dengan Library");
+			toast("Semua harga sudah sesuai dengan Library");
 		}
 	}
 
@@ -338,38 +396,28 @@ export default function ProductsManager() {
 	}
 
 	// ── Variant helpers ──
-	function addGroup() {
-		setFormVariants([
-			...formVariants(),
-			{
-				id: `vg_${Date.now()}`,
-				name: "Pilihan",
-				isRequired: false,
-				type: "SINGLE",
-				options: [],
-			},
-		]);
+	function addVariantGroup() {
+		setFormVariants(formVariants.length, {
+			id: crypto.randomUUID(),
+			name: "Grup Varian Baru",
+			isRequired: false,
+			type: "SINGLE",
+			options: [{ name: "Opsi 1", priceModifier: 0, cogsModifier: 0 }],
+		});
 	}
-	function updateGroup(i: number, field: keyof VariantGroup, val: any) {
-		const arr = [...formVariants()];
-		(arr[i] as any)[field] = val;
-		setFormVariants(arr);
+	function updateVariantGroup(i: number, field: keyof VariantGroup, val: any) {
+		setFormVariants(i, field, val);
 	}
-	function removeGroup(i: number) {
-		setFormVariants(formVariants().filter((_, idx) => idx !== i));
+	function removeVariantGroup(i: number) {
+		setFormVariants(produce(state => {
+			state.splice(i, 1);
+		}));
 	}
 	function addOption(gi: number) {
-		setFormVariants((prev) => {
-			const next = [...prev];
-			next[gi] = {
-				...next[gi],
-				options: [
-					...next[gi].options,
-					{ name: "", priceModifier: 0, cogsModifier: 0 },
-				],
-			};
-			return next;
-		});
+		setFormVariants(gi, "options", (prev) => [
+			...prev,
+			{ name: "Opsi Baru", priceModifier: 0, cogsModifier: 0 },
+		]);
 	}
 	function updateOption(
 		gi: number,
@@ -377,19 +425,10 @@ export default function ProductsManager() {
 		field: keyof VariantOption,
 		val: any,
 	) {
-		const arr = [...formVariants()];
-		arr[gi].options[oi] = { ...arr[gi].options[oi], [field]: val };
-		setFormVariants(arr);
+		setFormVariants(gi, "options", oi, field, val);
 	}
 	function removeOption(gi: number, oi: number) {
-		setFormVariants((prev) => {
-			const next = [...prev];
-			next[gi] = {
-				...next[gi],
-				options: next[gi].options.filter((_, idx) => idx !== oi),
-			};
-			return next;
-		});
+		setFormVariants(gi, "options", (prev) => prev.filter((_, idx) => idx !== oi));
 	}
 
 	// ── Variant Template helpers ──
@@ -403,32 +442,30 @@ export default function ProductsManager() {
 			return;
 		}
 		await db.variantTemplates.add({
-			id: `vt_${Date.now()}`,
+			id: crypto.randomUUID(),
 			name: vg.name,
 			isRequired: vg.isRequired,
 			type: vg.type,
-			options: vg.options,
+			options: vg.options.map(o => ({ ...o })), // Deep clone options
+			isActive: true,
 		});
 		refetchTemplates();
 		setAlertMessage(`Template "${vg.name}" berhasil disimpan ke library!`);
 	}
 
 	function assignFromTemplate(tpl: VariantTemplate) {
-		const alreadyAdded = formVariants().some((v) => v.name === tpl.name);
+		const alreadyAdded = formVariants.some((v) => v.name === tpl.name);
 		if (alreadyAdded) {
 			setAlertMessage(`Varian "${tpl.name}" sudah ditambahkan.`);
 			return;
 		}
-		setFormVariants([
-			...formVariants(),
-			{
-				id: `vg_${Date.now()}`,
-				name: tpl.name,
-				isRequired: tpl.isRequired,
-				type: tpl.type,
-				options: [...tpl.options],
-			},
-		]);
+		setFormVariants(formVariants.length, {
+			id: crypto.randomUUID(),
+			name: tpl.name,
+			isRequired: tpl.isRequired,
+			type: tpl.type,
+			options: tpl.options.map(o => ({ ...o })),
+		});
 		setShowTemplateLib(false);
 	}
 
@@ -444,12 +481,12 @@ export default function ProductsManager() {
 			{/* Header */}
 			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3">
-					<A
-						href="/app/inventory"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-bold text-lg tracking-tight leading-none">
 							Katalog Produk
@@ -510,13 +547,19 @@ export default function ProductsManager() {
 					}
 				>
 					<For each={products()}>
-						{(p) => (
-							<div
-								role="button"
-								tabIndex={0}
-								class="flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border border-border/60 shadow-sm cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99] group"
-								onClick={() => openEdit(p)}
-							>
+						{(p) => {
+							const availability = getProductAvailability(p, materialsLibrary() || []);
+							return (
+								<div
+									role="button"
+									tabIndex={0}
+									class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all shadow-sm cursor-pointer hover:border-primary/30 active:scale-[0.99] group ${
+										!availability.available
+											? "opacity-60 grayscale border-slate-200"
+											: "border-border/60"
+									}`}
+									onClick={() => openEdit(p)}
+								>
 								<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
 									<ProductImage src={p.image} name={p.name} />
 								</div>
@@ -563,19 +606,37 @@ export default function ProductsManager() {
 										</Show>
 									</p>
 								</div>
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors ml-auto"
-									onClick={(e) => {
-										e.stopPropagation();
-										deleteProduct(p.id, e);
-									}}
-								>
-									<Trash2 size={13} />
-								</Button>
+									<div class="flex items-center gap-1.5 ml-auto">
+										<Show when={!availability.available && availability.reason !== "Nonaktif"}>
+											<span class="text-[8px] font-black bg-red-500 text-white px-1.5 py-1 rounded uppercase tracking-tighter">
+												{availability.reason}
+											</span>
+										</Show>
+										<button
+											onClick={(e) => toggleActive(p, e)}
+											class={`h-8 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
+												availability.available
+													? "bg-white border-slate-200 text-slate-400"
+													: "bg-slate-900 border-slate-900 text-white shadow-sm"
+											}`}
+										>
+											{availability.available ? "Aktif" : "Off"}
+										</button>
+									<Button
+										variant="ghost"
+										size="icon"
+										class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
+										onClick={(e) => {
+											e.stopPropagation();
+											deleteProduct(p.id, e);
+										}}
+									>
+										<Trash2 size={13} />
+									</Button>
+								</div>
 							</div>
-						)}
+							);
+						}}
 					</For>
 				</Show>
 			</div>
@@ -644,53 +705,23 @@ export default function ProductsManager() {
 									/>
 								</div>
 
-								<div class="grid grid-cols-2 gap-3">
-									<div class="flex flex-col gap-1.5">
-										<label
-											for="prod-price"
-											class="text-xs font-bold uppercase tracking-widest text-muted-foreground"
-										>
-											Harga Jual (Rp)
-										</label>
-										<input
-											id="prod-price"
-											required
-											type="number"
-											class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
-											value={formPrice()}
-											onInput={(e) =>
-												setFormPrice(e.currentTarget.value)
-											}
-										/>
-									</div>
-									<div
-										class={`flex flex-col gap-1.5 transition-all ${formRaw().length > 0 ? "opacity-30 pointer-events-none" : ""}`}
+								<div class="flex flex-col gap-1.5">
+									<label
+										for="prod-price"
+										class="text-xs font-bold uppercase tracking-widest text-muted-foreground"
 									>
-										<label
-											for="prod-stock"
-											class="text-xs font-bold uppercase tracking-widest text-muted-foreground"
-										>
-											Stok Awal
-										</label>
-										<input
-											id="prod-stock"
-											required={formRaw().length === 0}
-											disabled={formRaw().length > 0}
-											type="number"
-											class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
-											value={
-												formRaw().length > 0 ? "0" : formStock()
-											}
-											onInput={(e) =>
-												setFormStock(e.currentTarget.value)
-											}
-										/>
-										<Show when={formRaw().length > 0}>
-											<p class="text-[9px] font-bold text-emerald-600 mt-1 italic">
-												Dihitung otomatis via Resep
-											</p>
-										</Show>
-									</div>
+										Harga Jual (Rp)
+									</label>
+									<input
+										id="prod-price"
+										required
+										type="number"
+										class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+										value={formPrice()}
+										onInput={(e) =>
+											setFormPrice(e.currentTarget.value)
+										}
+									/>
 								</div>
 
 								<div class="flex flex-col gap-1.5">
@@ -766,6 +797,34 @@ export default function ProductsManager() {
 									<p class="text-[10px] font-bold text-muted-foreground/60 px-1 italic">
 										Gunakan foto persegi (1:1) untuk hasil terbaik.
 									</p>
+								</div>
+
+								<div class="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/70">
+									<div class="flex flex-col">
+										<p class="text-xs font-bold uppercase tracking-widest text-foreground">
+											Status Produk
+										</p>
+										<p class="text-[10px] font-medium text-muted-foreground mt-0.5">
+											Tersedia untuk dijual di kasir
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={() => setFormIsActive(!formIsActive())}
+										class={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+											formIsActive()
+												? "bg-emerald-500"
+												: "bg-slate-300"
+										}`}
+									>
+										<span
+											class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+												formIsActive()
+													? "translate-x-6"
+													: "translate-x-1"
+											}`}
+										/>
+									</button>
 								</div>
 							</div>
 						</Show>
@@ -879,8 +938,8 @@ export default function ProductsManager() {
 									<p class="text-xs font-bold text-muted-foreground">
 										Daftar Bahan & HPP
 									</p>
-									<Show when={formRaw().some(r => r.id)}>
-										<button 
+									<Show when={formRaw().some((r) => r.id)}>
+										<button
 											type="button"
 											onClick={syncAllPrices}
 											class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-wider"
@@ -907,7 +966,14 @@ export default function ProductsManager() {
 															<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 opacity-60">
 																Bahan #{i + 1}
 															</span>
-															<Show when={raw().id}>
+															<Show 
+																when={materialsLibrary()?.some(m => m.id === raw().id)}
+																fallback={
+																	<span class="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded flex items-center gap-1 border border-red-100 animate-pulse">
+																		⚠️ Bahan Terhapus / Link Terputus
+																	</span>
+																}
+															>
 																<span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded flex items-center gap-1">
 																	🔗 Terhubung
 																</span>
@@ -1113,7 +1179,7 @@ export default function ProductsManager() {
 						<Show when={activeTab() === "variants"}>
 							<div class="flex flex-col gap-4 p-4 text-left">
 								{/* Active variant groups */}
-								<For each={formVariants()}>
+								<For each={formVariants}>
 									{(vg, gi) => (
 										<div class="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/70 text-left">
 											<div class="flex items-center justify-between">
@@ -1134,7 +1200,7 @@ export default function ProductsManager() {
 														variant="ghost"
 														size="icon"
 														class="h-7 w-7 text-red-400 hover:text-red-500"
-														onClick={() => removeGroup(gi())}
+														onClick={() => removeVariantGroup(gi())}
 													>
 														<X size={15} />
 													</Button>
@@ -1147,7 +1213,7 @@ export default function ProductsManager() {
 												placeholder="Nama grup, mis: Pilihan Ukuran"
 												value={vg.name}
 												onInput={(e) =>
-													updateGroup(
+													updateVariantGroup(
 														gi(),
 														"name",
 														e.currentTarget.value,
@@ -1168,7 +1234,7 @@ export default function ProductsManager() {
 														class="h-10 rounded-xl border border-border/60 bg-muted/30 px-3 font-bold text-sm focus:outline-none"
 														value={vg.type}
 														onChange={(e) =>
-															updateGroup(
+															updateVariantGroup(
 																gi(),
 																"type",
 																e.currentTarget.value as
@@ -1200,7 +1266,7 @@ export default function ProductsManager() {
 															placeholder="0"
 															value={vg.maxSelectable || ""}
 															onInput={(e) =>
-																updateGroup(
+																updateVariantGroup(
 																	gi(),
 																	"maxSelectable",
 																	Number.parseInt(
@@ -1223,7 +1289,7 @@ export default function ProductsManager() {
 														class="h-10 rounded-xl border border-border/60 bg-muted/30 px-3 font-bold text-sm focus:outline-none"
 														value={vg.isRequired ? "1" : "0"}
 														onChange={(e) =>
-															updateGroup(
+															updateVariantGroup(
 																gi(),
 																"isRequired",
 																e.currentTarget.value === "1",
@@ -1426,7 +1492,7 @@ export default function ProductsManager() {
 									</button>
 									<button
 										type="button"
-										onClick={addGroup}
+										onClick={addVariantGroup}
 										class="flex-1 h-11 rounded-xl border border-dashed border-border/60 text-muted-foreground text-xs font-bold hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-1.5"
 									>
 										<CirclePlus size={14} /> Buat Grup Baru

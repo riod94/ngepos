@@ -1,6 +1,6 @@
 import { createSignal, createResource, Show, batch } from "solid-js";
 import { History, Clock, TriangleAlert, ArrowLeft } from "lucide-solid";
-import { A, useSearchParams } from "@solidjs/router";
+import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { db, getSetting } from "~/db/db";
 import { DateFilter, DateFilterType, DateRange } from "~/components/DateFilter";
 import { toast } from "solid-toast";
@@ -8,16 +8,20 @@ import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { Swipeable } from "~/components/Swipeable";
 
 export default function HistoryPage() {
+	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
-	
+
 	const filter = () => (searchParams.f as DateFilterType) || "HARI_INI";
 	const customRange = () => {
 		if (searchParams.from && searchParams.to) {
-			return { from: Number(searchParams.from), to: Number(searchParams.to) };
+			return {
+				from: Number(searchParams.from),
+				to: Number(searchParams.to),
+			};
 		}
 		return undefined;
 	};
-	
+
 	const [transactions, { refetch }] = createResource(
 		() => ({ f: filter(), r: customRange() }),
 		async ({ f, r }) => {
@@ -36,7 +40,11 @@ export default function HistoryPage() {
 				const start = new Date(y, m, 1, 0, 0, 0, 0);
 				const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
 				return await query
-					.filter((tx) => tx.timestamp >= start.getTime() && tx.timestamp <= end.getTime())
+					.filter(
+						(tx) =>
+							tx.timestamp >= start.getTime() &&
+							tx.timestamp <= end.getTime(),
+					)
 					.toArray();
 			}
 			if (f === "CUSTOM" && r) {
@@ -45,13 +53,13 @@ export default function HistoryPage() {
 					.toArray();
 			}
 			return await query.toArray();
-		}
+		},
 	);
 
 	// Permission check
 	const [canDelete] = createResource(async () => {
 		// For now, if user name in setting is "Riod Prabowo" or equivalent, or we check role
-		// In actual app, we'd check active staff role. 
+		// In actual app, we'd check active staff role.
 		// Let's assume for this SaaS, the "Super Admin" permission is tied to the owner info.
 		return true; // Enabling for the prompt request
 	});
@@ -95,12 +103,12 @@ export default function HistoryPage() {
 		<div class="flex flex-col min-h-screen bg-background pb-24">
 			<div class="px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
 				<div class="flex items-center gap-3 mb-5">
-					<A
-						href="/app/reports"
+					<button
+						onClick={() => navigate(-1)}
 						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
 					>
 						<ArrowLeft size={18} />
-					</A>
+					</button>
 					<div>
 						<h1 class="font-black text-xl tracking-tight leading-none">
 							Riwayat
@@ -168,7 +176,7 @@ export default function HistoryPage() {
 				>
 					<div class="flex flex-col gap-3">
 						{transactions()!.map((tx) => (
-							<Swipeable 
+							<Swipeable
 								onDelete={() => setDeleteTxId(tx.id)}
 								disabled={!canDelete()}
 							>
@@ -188,10 +196,13 @@ export default function HistoryPage() {
 											</Show>
 										</div>
 										<span class="text-sm font-semibold text-muted-foreground">
-											{new Date(tx.timestamp).toLocaleString("id-ID", {
-												dateStyle: "medium",
-												timeStyle: "short",
-											})}
+											{new Date(tx.timestamp).toLocaleString(
+												"id-ID",
+												{
+													dateStyle: "medium",
+													timeStyle: "short",
+												},
+											)}
 										</span>
 									</div>
 									<div class="flex flex-col items-end gap-1.5">
