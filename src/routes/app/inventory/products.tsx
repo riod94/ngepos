@@ -1558,59 +1558,59 @@ export default function ProductsManager() {
 																	</div>
 																</div>
 																								
-																								{/* Ingredient Adjustments */}
-																								<div class="flex flex-col gap-2 mt-1 pt-3 border-t border-border/30">
-																									<div class="flex items-center justify-between">
-																										<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
-																											Bahan Tambahan
-																										</p>
-																										<Show when={opt.ingredientAdjustments && opt.ingredientAdjustments.length > 0}>
-																											<p class="text-[10px] font-bold text-primary">
-																												HPP: Rp {calcCogsFromAdjustments(opt.ingredientAdjustments).toLocaleString("id-ID")}
-																											</p>
-																										</Show>
-																									</div>
-																									<For each={opt.ingredientAdjustments || []}>
-																										{(adj, ai) => {
-																											const mat = materialsLibrary()?.find(m => m.id === adj.materialId);
-																											return (
-																												<div class="flex items-center gap-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
-																													<select
-																														class="flex-1 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs focus:outline-none"
-																														value={adj.materialId}
-																														onChange={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "materialId", e.currentTarget.value)}
-																													>
-																														<option value="">Pilih bahan...</option>
-																														<For each={materialsLibrary()}>
-																															{(m) => <option value={m.id}>{m.name} (Rp {m.costPerUnit.toLocaleString("id-ID")}/{m.unit})</option>}
-																														</For>
-																													</select>
-																													<input
-																														type="number"
-																														class="w-16 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs text-center focus:outline-none"
-																														value={adj.adjustment}
-																														onInput={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "adjustment", Number.parseFloat(e.currentTarget.value) || 0)}
-																													/>
-																													<span class="text-[10px] font-bold text-muted-foreground">{mat?.unit || ""}</span>
-																													<button
-																														type="button"
-																														onClick={() => removeIngredientAdjustment(gi(), oi(), ai())}
-																														class="h-9 w-9 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
-																													>
-																														<Trash2 size={12} />
-																													</button>
-																												</div>
-																											);
-																										}}
-																									</For>
+																				{/* Ingredient Adjustments */}
+																				<div class="flex flex-col gap-2 mt-1 pt-3 border-t border-border/30">
+																					<div class="flex items-center justify-between">
+																						<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+																							Bahan Tambahan
+																						</p>
+																						<Show when={opt.ingredientAdjustments && opt.ingredientAdjustments.length > 0}>
+																							<p class="text-[10px] font-bold text-primary">
+																								HPP: Rp {calcCogsFromAdjustments(opt.ingredientAdjustments).toLocaleString("id-ID")}
+																							</p>
+																						</Show>
+																					</div>
+																					<For each={opt.ingredientAdjustments || []}>
+																						{(adj, ai) => {
+																							const mat = materialsLibrary()?.find(m => m.id === adj.materialId);
+																							return (
+																								<div class="flex items-center gap-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
+																									<select
+																										class="flex-1 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs focus:outline-none"
+																										value={adj.materialId}
+																										onChange={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "materialId", e.currentTarget.value)}
+																									>
+																										<option value="">Pilih bahan...</option>
+																										<For each={materialsLibrary()}>
+																											{(m) => <option value={m.id}>{m.name} (Rp {m.costPerUnit.toLocaleString("id-ID")}/{m.unit})</option>}
+																										</For>
+																									</select>
+																									<input
+																										type="number"
+																										class="w-16 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs text-center focus:outline-none"
+																										value={adj.adjustment}
+																										onInput={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "adjustment", Number.parseFloat(e.currentTarget.value) || 0)}
+																									/>
+																									<span class="text-[10px] font-bold text-muted-foreground">{mat?.unit || ""}</span>
 																									<button
 																										type="button"
-																										onClick={() => addIngredientAdjustment(gi(), oi())}
-																										class="h-9 text-[10px] font-bold border border-dashed border-border/40 rounded-lg text-muted-foreground hover:text-primary hover:border-primary/30 transition-all w-full flex items-center justify-center gap-1.5 mt-1"
+																										onClick={() => removeIngredientAdjustment(gi(), oi(), ai())}
+																										class="h-9 w-9 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
 																									>
-																										<Plus size={12} /> Tambah Bahan Varian
+																										<Trash2 size={12} />
 																									</button>
 																								</div>
+																							);
+																						}}
+																					</For>
+																					<button
+																						type="button"
+																						onClick={() => addIngredientAdjustment(gi(), oi())}
+																						class="h-9 text-[10px] font-bold border border-dashed border-border/40 rounded-lg text-muted-foreground hover:text-primary hover:border-primary/30 transition-all w-full flex items-center justify-center gap-1.5 mt-1"
+																					>
+																						<Plus size={12} /> Tambah Bahan Varian
+																					</button>
+																				</div>
 															</div>
 														</div>
 													)}
