@@ -18,6 +18,10 @@ import {
 	Tag,
 	Layers,
 	Upload,
+	Copy,
+	Search,
+	Grid3X3,
+	List,
 } from "lucide-solid";
 import { A, useNavigate } from "@solidjs/router";
 import {
@@ -41,6 +45,12 @@ import {
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { toast } from "solid-toast";
 import { getProductAvailability } from "~/lib/availability";
+
+// ────────────── Types ──────────────
+interface IngredientAdjustment {
+	materialId: string;
+	adjustment: number;
+}
 
 // ────────────── Utilities ──────────────
 function calcMargin(price: number, cogs: number) {
@@ -130,6 +140,30 @@ export default function ProductsManager() {
 	// Variant & Material template manager
 	const [showTemplateLib, setShowTemplateLib] = createSignal(false);
 	const [showMaterialLib, setShowMaterialLib] = createSignal(false);
+
+	// ── Search & View state ──
+	const [searchQuery, setSearchQuery] = createSignal("");
+	const [viewMode, setViewMode] = createSignal<"grid" | "list">(
+		(localStorage.getItem("products_view_mode") as "grid" | "list") || "list"
+	);
+	function toggleViewMode() {
+		const next = viewMode() === "list" ? "grid" : "list";
+		setViewMode(next);
+		localStorage.setItem("products_view_mode", next);
+	}
+
+	// ── Filtered products ──
+	const filteredProducts = createMemo(() => {
+		const list = products();
+		if (!list) return [];
+		const q = searchQuery().toLowerCase().trim();
+		if (!q) return list;
+		return list.filter(
+			(p) =>
+				p.name.toLowerCase().includes(q) ||
+				p.category.toLowerCase().includes(q)
+		);
+	});
 
 	// Delete confirmation state
 	const [deleteTargetId, setDeleteTargetId] = createSignal<string | null>(
@@ -395,6 +429,62 @@ export default function ProductsManager() {
 		setShowMaterialLib(false);
 	}
 
+	// ── Duplicate ──
+	async function duplicateProduct(p: Product) {
+		const newId = `prod_${Date.now()}`;
+		const dupProduct: Product = {
+			...structuredClone(p),
+			id: newId,
+			name: `${p.name} (Copy)`,
+			isActive: false,
+		};
+		await db.products.add(dupProduct);
+		refetch();
+		toast.success(`Produk "${p.name}" berhasil diduplikasi`);
+	}
+
+	// ── Ingredient adjustment helpers ──
+	function calcCogsFromAdjustments(adjustments?: IngredientAdjustment[]): number {
+		if (!adjustments || adjustments.length === 0) return 0;
+		const lib = materialsLibrary();
+		if (!lib) return 0;
+		return adjustments.reduce((sum, adj) => {
+			const mat = lib.find((m) => m.id === adj.materialId);
+			return sum + (mat ? mat.costPerUnit * adj.adjustment : 0);
+		}, 0);
+	}
+
+	function getVariantCogs(opt: { priceModifier: number; cogsModifier: number; ingredientAdjustments?: IngredientAdjustment[] }): number {
+		const fromAdjustments = calcCogsFromAdjustments(opt.ingredientAdjustments);
+		return fromAdjustments > 0 ? fromAdjustments : opt.cogsModifier;
+	}
+
+	function addIngredientAdjustment(gi: number, oi: number) {
+		const current = formVariants[gi]?.options[oi];
+		const adjustments = [...(current?.ingredientAdjustments || []), { materialId: "", adjustment: 1 }];
+		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+	}
+
+	function updateIngredientAdjustment(gi: number, oi: number, ai: number, field: keyof IngredientAdjustment, value: string | number) {
+		const current = formVariants[gi]?.options[oi];
+		if (!current) return;
+		const adjustments = [...(current.ingredientAdjustments || [])];
+		adjustments[ai] = { ...adjustments[ai], [field]: value } as any;
+		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+		// Auto-calculate cogsModifier from adjustments
+		const newCogs = calcCogsFromAdjustments(adjustments);
+		if (newCogs > 0) {
+			setFormVariants(gi, "options", oi, "cogsModifier", newCogs);
+		}
+	}
+
+	function removeIngredientAdjustment(gi: number, oi: number, ai: number) {
+		const current = formVariants[gi]?.options[oi];
+		if (!current) return;
+		const adjustments = (current.ingredientAdjustments || []).filter((_, idx) => idx !== ai);
+		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+	}
+
 	// ── Variant helpers ──
 	function addVariantGroup() {
 		setFormVariants(formVariants.length, {
@@ -528,10 +618,34 @@ export default function ProductsManager() {
 				onConfirm={() => setAlertMessage(null)}
 			/>
 
-			{/* Product List */}
-			<div class="flex flex-col gap-2.5 p-4">
+			{/* Search Bar + View Toggle */}
+			<div class="px-4 pb-2">
+				<div class="flex items-center gap-2">
+					<div class="relative flex-1">
+						<Search size={15} class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+						<input
+							type="text"
+							class="h-10 w-full rounded-xl border border-border/60 bg-card pl-9 pr-3 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+							placeholder="Cari produk..."
+							value={searchQuery()}
+							onInput={(e) => setSearchQuery(e.currentTarget.value)}
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={toggleViewMode}
+						class="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-95"
+						title={viewMode() === "list" ? "Tampilan Grid" : "Tampilan List"}
+					>
+						{viewMode() === "list" ? <Grid3X3 size={16} /> : <List size={16} />}
+					</button>
+				</div>
+			</div>
+
+			{/* Product List / Grid */}
+			<div class={`p-4 ${viewMode() === "grid" ? "grid grid-cols-2 gap-3" : "flex flex-col gap-2.5"}`}>
 				<Show
-					when={products() && products()!.length > 0}
+					when={filteredProducts() && filteredProducts()!.length > 0}
 					fallback={
 						<div class="flex flex-col items-center py-20 text-muted-foreground gap-4">
 							<div class="w-14 h-14 rounded-full bg-muted flex items-center justify-center border border-border/50">
@@ -546,10 +660,48 @@ export default function ProductsManager() {
 						</div>
 					}
 				>
-					<For each={products()}>
+					<For each={filteredProducts()}>
 						{(p) => {
 							const availability = getProductAvailability(p, materialsLibrary() || []);
-							return (
+							return viewMode() === "grid" ? (
+								// ── Grid Card ──
+								<div
+									role="button"
+									tabIndex={0}
+									class={`flex flex-col text-left bg-card rounded-2xl border transition-all shadow-sm cursor-pointer hover:border-primary/30 active:scale-[0.99] overflow-hidden ${
+										!availability.available
+											? "opacity-60 grayscale border-slate-200"
+											: "border-border/60"
+									}`}
+									onClick={() => openEdit(p)}
+								>
+									<div class="aspect-square bg-muted overflow-hidden">
+										<ProductImage src={p.image} name={p.name} />
+									</div>
+									<div class="p-3 flex flex-col gap-1.5">
+										<h3 class="font-bold text-sm leading-tight truncate">{p.name}</h3>
+										<p class="font-bold text-xs text-foreground">Rp {p.price.toLocaleString("id-ID")}</p>
+										<div class="flex items-center gap-1 flex-wrap">
+											<span class="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{p.category}</span>
+											<Show when={p.variants && p.variants.length > 0}>
+												<span class="text-[10px] font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">Varian</span>
+											</Show>
+										</div>
+										<Show when={p.rawMaterials && p.rawMaterials.length > 0}>
+											{(() => {
+												const m = calcMargin(p.price, p.cogs);
+												const status = getMarginStatus(m);
+												return (
+													<span class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded self-start ${status.color} ${status.bg}`}>
+														{status.label} {m}%
+													</span>
+												);
+											})()}
+										</Show>
+									</div>
+								</div>
+							) : (
+								// ── List Card (original) ──
 								<div
 									role="button"
 									tabIndex={0}
@@ -560,57 +712,39 @@ export default function ProductsManager() {
 									}`}
 									onClick={() => openEdit(p)}
 								>
-								<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
-									<ProductImage src={p.image} name={p.name} />
-								</div>
-								<div class="flex-1 min-w-0">
-									<h3 class="font-bold text-sm leading-tight truncate">
-										{p.name}
-									</h3>
-									<div class="flex items-center gap-1 mt-1 flex-wrap">
-										<span class="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-											{p.category}
-										</span>
-										<Show when={p.variants && p.variants.length > 0}>
-											<span class="text-xs font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-												<Layers size={9} /> Varian
-											</span>
-										</Show>
-										<Show
-											when={
-												p.rawMaterials && p.rawMaterials.length > 0
-											}
-										>
-											{(raw) => {
-												const m = calcMargin(p.price, p.cogs);
-												const status = getMarginStatus(m);
-												return (
-													<span
-														class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${status.color} ${status.bg}`}
-													>
-														{status.label} {m}%
-													</span>
-												);
-											}}
-										</Show>
+									<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
+										<ProductImage src={p.image} name={p.name} />
 									</div>
-									<p class="text-xs mt-1.5 flex items-center gap-2 font-bold">
-										<span class="text-foreground">
-											Rp {p.price.toLocaleString("id-ID")}
-										</span>
-										<Show when={p.cogs > 0}>
-											<span class="text-muted-foreground/30">•</span>
-											<span class="text-primary/70">
-												HPP Rp {p.cogs.toLocaleString("id-ID")}
-											</span>
-										</Show>
-									</p>
-								</div>
+									<div class="flex-1 min-w-0">
+										<h3 class="font-bold text-sm leading-tight truncate">{p.name}</h3>
+										<div class="flex items-center gap-1 mt-1 flex-wrap">
+											<span class="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{p.category}</span>
+											<Show when={p.variants && p.variants.length > 0}>
+												<span class="text-xs font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Layers size={9} /> Varian</span>
+											</Show>
+											<Show when={p.rawMaterials && p.rawMaterials.length > 0}>
+												{(raw) => {
+													const m = calcMargin(p.price, p.cogs);
+													const status = getMarginStatus(m);
+													return (
+														<span class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${status.color} ${status.bg}`}>
+															{status.label} {m}%
+														</span>
+													);
+												}}
+											</Show>
+										</div>
+										<p class="text-xs mt-1.5 flex items-center gap-2 font-bold">
+											<span class="text-foreground">Rp {p.price.toLocaleString("id-ID")}</span>
+											<Show when={p.cogs > 0}>
+												<span class="text-muted-foreground/30">&bull;</span>
+												<span class="text-primary/70">HPP Rp {p.cogs.toLocaleString("id-ID")}</span>
+											</Show>
+										</p>
+									</div>
 									<div class="flex items-center gap-1.5 ml-auto">
 										<Show when={!availability.available && availability.reason !== "Nonaktif"}>
-											<span class="text-[8px] font-black bg-red-500 text-white px-1.5 py-1 rounded uppercase tracking-tighter">
-												{availability.reason}
-											</span>
+											<span class="text-[8px] font-black bg-red-500 text-white px-1.5 py-1 rounded uppercase tracking-tighter">{availability.reason}</span>
 										</Show>
 										<button
 											onClick={(e) => toggleActive(p, e)}
@@ -622,19 +756,19 @@ export default function ProductsManager() {
 										>
 											{availability.available ? "Aktif" : "Off"}
 										</button>
-									<Button
-										variant="ghost"
-										size="icon"
-										class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-										onClick={(e) => {
-											e.stopPropagation();
-											deleteProduct(p.id, e);
-										}}
-									>
-										<Trash2 size={13} />
-									</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
+											onClick={(e) => {
+												e.stopPropagation();
+												deleteProduct(p.id, e);
+											}}
+										>
+											<Trash2 size={13} />
+										</Button>
+									</div>
 								</div>
-							</div>
 							);
 						}}
 					</For>
@@ -649,9 +783,26 @@ export default function ProductsManager() {
 				>
 					{/* Sheet Header */}
 					<SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
-						<SheetTitle class="font-black text-xl tracking-tight">
-							{isEditing() ? "Edit Produk" : "Tambah Produk"}
-						</SheetTitle>
+						<div class="flex items-center justify-between">
+							<SheetTitle class="font-black text-xl tracking-tight">
+								{isEditing() ? "Edit Produk" : "Tambah Produk"}
+							</SheetTitle>
+							<Show when={isEditing()}>
+								<button
+									type="button"
+									class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all text-xs font-bold border border-border/40"
+									onClick={() => {
+										const p = products()?.find((x) => x.id === formId());
+										if (p) {
+											setSheetOpen(false);
+											duplicateProduct(p);
+										}
+								}}
+								>
+									<Copy size={13} /> Duplikasi
+								</button>
+							</Show>
+						</div>
 					</SheetHeader>
 
 					{/* Tab Bar — underline style, konsisten */}
@@ -1406,6 +1557,60 @@ export default function ProductsManager() {
 																		/>
 																	</div>
 																</div>
+																								
+																								{/* Ingredient Adjustments */}
+																								<div class="flex flex-col gap-2 mt-1 pt-3 border-t border-border/30">
+																									<div class="flex items-center justify-between">
+																										<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+																											Bahan Tambahan
+																										</p>
+																										<Show when={opt.ingredientAdjustments && opt.ingredientAdjustments.length > 0}>
+																											<p class="text-[10px] font-bold text-primary">
+																												HPP: Rp {calcCogsFromAdjustments(opt.ingredientAdjustments).toLocaleString("id-ID")}
+																											</p>
+																										</Show>
+																									</div>
+																									<For each={opt.ingredientAdjustments || []}>
+																										{(adj, ai) => {
+																											const mat = materialsLibrary()?.find(m => m.id === adj.materialId);
+																											return (
+																												<div class="flex items-center gap-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
+																													<select
+																														class="flex-1 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs focus:outline-none"
+																														value={adj.materialId}
+																														onChange={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "materialId", e.currentTarget.value)}
+																													>
+																														<option value="">Pilih bahan...</option>
+																														<For each={materialsLibrary()}>
+																															{(m) => <option value={m.id}>{m.name} (Rp {m.costPerUnit.toLocaleString("id-ID")}/{m.unit})</option>}
+																														</For>
+																													</select>
+																													<input
+																														type="number"
+																														class="w-16 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs text-center focus:outline-none"
+																														value={adj.adjustment}
+																														onInput={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "adjustment", Number.parseFloat(e.currentTarget.value) || 0)}
+																													/>
+																													<span class="text-[10px] font-bold text-muted-foreground">{mat?.unit || ""}</span>
+																													<button
+																														type="button"
+																														onClick={() => removeIngredientAdjustment(gi(), oi(), ai())}
+																														class="h-9 w-9 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+																													>
+																														<Trash2 size={12} />
+																													</button>
+																												</div>
+																											);
+																										}}
+																									</For>
+																									<button
+																										type="button"
+																										onClick={() => addIngredientAdjustment(gi(), oi())}
+																										class="h-9 text-[10px] font-bold border border-dashed border-border/40 rounded-lg text-muted-foreground hover:text-primary hover:border-primary/30 transition-all w-full flex items-center justify-center gap-1.5 mt-1"
+																									>
+																										<Plus size={12} /> Tambah Bahan Varian
+																									</button>
+																								</div>
 															</div>
 														</div>
 													)}
