@@ -1,277 +1,327 @@
 import { createSignal, createResource, Show, For } from "solid-js";
-import { ArrowLeft, Plus, Box, ArrowDownCircle, ArrowRightLeft, Scale, ChevronLeft, Zap } from "lucide-solid";
+import { ArrowLeft, Plus, Box, Zap, Trash2 } from "lucide-solid";
 import { A, useNavigate } from "@solidjs/router";
 import { db, type RawMaterialLibrary } from "~/db/db";
 import { Button } from "~/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "~/components/ui/sheet";
 import { toast } from "solid-toast";
 
 export default function Materials() {
-  const navigate = useNavigate();
-  const [materials, { refetch }] = createResource(async () =>
-    await db.rawMaterialLibrary.toArray()
-  );
+	const navigate = useNavigate();
+	const [materials, { refetch }] = createResource(
+		async () => await db.rawMaterialLibrary.toArray(),
+	);
 
-  const [isAddOpen, setIsAddOpen] = createSignal(false);
-  const [formName, setFormName] = createSignal("");
-  const [formUnit, setFormUnit] = createSignal("gram");
-  const [formCost, setFormCost] = createSignal<number | "">("");
-  const [showCustomUnit, setShowCustomUnit] = createSignal(false);
-  const [editingId, setEditingId] = createSignal<string | null>(null);
-  const [isSaving, setIsSaving] = createSignal(false);
+	const [isAddOpen, setIsAddOpen] = createSignal(false);
+	const [formName, setFormName] = createSignal("");
+	const [formUnit, setFormUnit] = createSignal("gram");
+	const [formCost, setFormCost] = createSignal<number | "">("");
+	const [showCustomUnit, setShowCustomUnit] = createSignal(false);
+	const [editingId, setEditingId] = createSignal<string | null>(null);
+	const [isSaving, setIsSaving] = createSignal(false);
 
-  const COMMON_UNITS = ["gram", "ml", "pcs", "kg", "liter", "box"];
+	const COMMON_UNITS = ["gram", "ml", "pcs", "kg", "liter", "box"];
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
-  };
+	const formatCurrency = (val: number) => {
+		return new Intl.NumberFormat("id-ID", {
+			style: "currency",
+			currency: "IDR",
+			maximumFractionDigits: 0,
+		}).format(val);
+	};
 
-  const openAdd = () => {
-    setEditingId(null);
-    setFormName("");
-    setFormUnit("gram");
-    setFormCost("");
-    setShowCustomUnit(false);
-    setIsAddOpen(true);
-  };
+	const openAdd = () => {
+		setEditingId(null);
+		setFormName("");
+		setFormUnit("gram");
+		setFormCost("");
+		setShowCustomUnit(false);
+		setIsAddOpen(true);
+	};
 
-  const openEdit = (mat: RawMaterialLibrary) => {
-    setEditingId(mat.id);
-    setFormName(mat.name);
-    setFormUnit(mat.unit);
-    setFormCost(mat.costPerUnit);
-    setShowCustomUnit(!COMMON_UNITS.includes(mat.unit));
-    setIsAddOpen(true);
-  };
+	const openEdit = (mat: RawMaterialLibrary) => {
+		setEditingId(mat.id);
+		setFormName(mat.name);
+		setFormUnit(mat.unit);
+		setFormCost(mat.costPerUnit);
+		setShowCustomUnit(!COMMON_UNITS.includes(mat.unit));
+		setIsAddOpen(true);
+	};
 
-  const toggleActive = async (mat: RawMaterialLibrary, e: Event) => {
-    e.stopPropagation();
-    await db.rawMaterialLibrary.update(mat.id, { isActive: !mat.isActive });
-    refetch();
-    toast.success(`Bahan ${mat.name} ${!mat.isActive ? "diaktifkan" : "dinonaktifkan"}`);
-  };
+	const toggleActive = async (mat: RawMaterialLibrary, e: Event) => {
+		e.stopPropagation();
+		await db.rawMaterialLibrary.update(mat.id, { isActive: !mat.isActive });
+		refetch();
+		toast.success(
+			`Bahan ${mat.name} ${!mat.isActive ? "diaktifkan" : "dinonaktifkan"}`,
+		);
+	};
 
-  const handleAddSave = async (e: Event) => {
-    e.preventDefault();
-    if (isSaving()) return;
-    setIsSaving(true);
-    try {
-      const id = editingId() || `mat_${Date.now()}`;
-      await db.rawMaterialLibrary.put({
-        id,
-        name: formName().trim(),
-        unit: formUnit().trim(),
-        stock: 0,
-        costPerUnit: Number(formCost()) || 0,
-        isActive: editingId() ? (materials()?.find(m => m.id === id)?.isActive ?? true) : true,
-      });
-      setIsAddOpen(false);
-      refetch();
-      toast.success(editingId() ? "Bahan diperbarui" : "Bahan berhasil ditambahkan");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+	const handleAddSave = async (e: Event) => {
+		e.preventDefault();
+		if (isSaving()) return;
+		setIsSaving(true);
+		try {
+			const id = editingId() || `mat_${Date.now()}`;
+			await db.rawMaterialLibrary.put({
+				id,
+				name: formName().trim(),
+				unit: formUnit().trim(),
+				stock: 0,
+				costPerUnit: Number(formCost()) || 0,
+				isActive: editingId()
+					? (materials()?.find((m) => m.id === id)?.isActive ?? true)
+					: true,
+			});
+			setIsAddOpen(false);
+			refetch();
+			toast.success(
+				editingId() ? "Bahan diperbarui" : "Bahan berhasil ditambahkan",
+			);
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
-  const deleteMaterial = async (id: string, e: Event) => {
-    e.stopPropagation();
-    if (confirm("Hapus bahan ini permanen?")) {
-      await db.rawMaterialLibrary.delete(id);
-      refetch();
-      toast.success("Bahan berhasil dihapus");
-    }
-  };
+	const deleteMaterial = async (id: string, e: Event) => {
+		e.stopPropagation();
+		if (confirm("Hapus bahan ini permanen?")) {
+			await db.rawMaterialLibrary.delete(id);
+			refetch();
+			toast.success("Bahan berhasil dihapus");
+		}
+	};
 
-  const toggleActive = async (mat: RawMaterialLibrary, e: Event) => {
-    e.stopPropagation();
-    await db.rawMaterialLibrary.update(mat.id, { isActive: !mat.isActive });
-    refetch();
-    toast.success(`Bahan ${mat.name} ${!mat.isActive ? "diaktifkan" : "dinonaktifkan"}`);
-  };
+	return (
+		<div class="flex flex-col min-h-screen bg-muted/10 pb-24 font-jakarta text-left">
+			{/* Header — 100% Match with products.tsx */}
+			<div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
+				<div class="flex items-center gap-3">
+					<button
+						onClick={() => navigate(-1)}
+						class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
+					>
+						<ArrowLeft size={18} />
+					</button>
+					<div>
+						<h1 class="font-bold text-lg tracking-tight leading-none text-foreground">
+							Bahan Baku
+						</h1>
+						<span class="text-xs font-semibold text-muted-foreground mt-0.5 block">
+							Manajemen Stok & HPP
+						</span>
+					</div>
+				</div>
+				<Button
+					onClick={openAdd}
+					class="h-10 px-4 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-all text-white"
+				>
+					<Plus size={15} class="mr-1.5" stroke-width={2.5} /> Tambah
+				</Button>
+			</div>
 
-  return (
-    <div class="flex flex-col min-h-screen bg-muted/10 pb-24 font-jakarta text-left">
-      {/* Header — 100% Match with products.tsx */}
-      <div class="flex items-center justify-between px-5 pt-6 pb-4 bg-background border-b border-border/40 sticky top-0 z-10 backdrop-blur-xl">
-        <div class="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            class="w-10 h-10 flex items-center justify-center bg-card rounded-full shadow-sm border border-border/60 transition-all hover:bg-muted active:scale-95 shrink-0"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 class="font-bold text-lg tracking-tight leading-none text-foreground">Bahan Baku</h1>
-            <span class="text-xs font-semibold text-muted-foreground mt-0.5 block">
-              Manajemen Stok & HPP
-            </span>
-          </div>
-        </div>
-        <Button
-          onClick={openAdd}
-          class="h-10 px-4 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-all text-white"
-        >
-          <Plus size={15} class="mr-1.5" stroke-width={2.5} /> Tambah
-        </Button>
-      </div>
+			{/* Main List — Match product list structure */}
+			<div class="flex flex-col gap-2.5 p-4">
+				<Show
+					when={materials() && materials()!.length > 0}
+					fallback={
+						<div class="flex flex-col items-center py-20 text-muted-foreground gap-4">
+							<Box size={48} stroke-width={1.5} class="opacity-40" />
+							<div class="text-center">
+								<p class="font-bold text-sm">Belum ada bahan baku</p>
+								<p class="text-xs mt-1">
+									Tambahkan bahan baku untuk resep produk.
+								</p>
+							</div>
+						</div>
+					}
+				>
+					<For each={materials()}>
+						{(mat) => (
+							<div
+								role="button"
+								tabIndex={0}
+								onClick={() => openEdit(mat)}
+								class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all shadow-sm cursor-pointer active:scale-[0.99] hover:border-primary/30 ${
+									!mat.isActive
+										? "opacity-60 grayscale border-slate-200"
+										: "border-border/60"
+								}`}
+							>
+								<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50 flex items-center justify-center text-slate-400">
+									<Box size={22} />
+								</div>
 
-      {/* Main List — Match product list structure */}
-      <div class="flex flex-col gap-2.5 p-4">
-        <Show
-          when={materials() && materials()!.length > 0}
-          fallback={
-            <div class="flex flex-col items-center py-20 text-muted-foreground gap-4">
-              <Box size={48} stroke-width={1.5} class="opacity-40" />
-              <div class="text-center">
-                <p class="font-bold text-sm">Belum ada bahan baku</p>
-                <p class="text-xs mt-1">Tambahkan bahan baku untuk resep produk.</p>
-              </div>
-            </div>
-          }
-        >
-          <For each={materials()}>
-            {(mat) => (
-              <div 
-                role="button"
-                tabIndex={0}
-                onClick={() => openEdit(mat)}
-                class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all shadow-sm cursor-pointer active:scale-[0.99] hover:border-primary/30 ${
-                  !mat.isActive ? 'opacity-60 grayscale border-slate-200' : 'border-border/60'
-                }`}
-              >
-                <div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50 flex items-center justify-center text-slate-400">
-                  <Box size={22} />
-                </div>
-                
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-sm leading-tight truncate text-foreground">
-                    {mat.name}
-                  </h3>
-                  <div class="flex items-center gap-2 mt-1 flex-wrap">
-                    <span class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${
-                      mat.isActive ? 'text-emerald-600 bg-emerald-50' : 'text-slate-500 bg-slate-100'
-                    }`}>
-                      1 {mat.unit}
-                    </span>
-                    <span class="text-[10px] font-bold text-muted-foreground">
-                      HPP: {formatCurrency(mat.costPerUnit)}
-                    </span>
-                  </div>
-                </div>
+								<div class="flex-1 min-w-0">
+									<h3 class="font-bold text-sm leading-tight truncate text-foreground">
+										{mat.name}
+									</h3>
+									<div class="flex items-center gap-2 mt-1 flex-wrap">
+										<span
+											class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${
+												mat.isActive
+													? "text-emerald-600 bg-emerald-50"
+													: "text-slate-500 bg-slate-100"
+											}`}
+										>
+											1 {mat.unit}
+										</span>
+										<span class="text-[10px] font-bold text-muted-foreground">
+											HPP: {formatCurrency(mat.costPerUnit)}
+										</span>
+									</div>
+								</div>
 
-                <div class="flex items-center gap-1.5 ml-auto">
-                  <button 
-                    onClick={(e) => toggleActive(mat, e)}
-                    class={`h-8 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
-                      mat.isActive ? 'bg-white border-slate-200 text-slate-400' : 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                    }`}
-                  >
-                    {mat.isActive ? 'Aktif' : 'Off'}
-                  </button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-                    onClick={(e) => deleteMaterial(mat.id, e)}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </For>
-        </Show>
-      </div>
+								<div class="flex items-center gap-1.5 ml-auto">
+									<button
+										onClick={(e) => toggleActive(mat, e)}
+										class={`h-8 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
+											mat.isActive
+												? "bg-white border-slate-200 text-slate-400"
+												: "bg-slate-900 border-slate-900 text-white shadow-sm"
+										}`}
+									>
+										{mat.isActive ? "Aktif" : "Off"}
+									</button>
+									<Button
+										variant="ghost"
+										size="icon"
+										class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
+										onClick={(e) => deleteMaterial(mat.id, e)}
+									>
+										<Trash2 size={14} />
+									</Button>
+								</div>
+							</div>
+						)}
+					</For>
+				</Show>
+			</div>
 
-      <Sheet open={isAddOpen()} onOpenChange={setIsAddOpen}>
-        <SheetContent position="bottom" class="h-auto max-h-[92vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden font-jakarta pb-safe">
-          <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
-            <SheetTitle class="font-black text-xl tracking-tight text-left text-foreground">
-              {editingId() ? "Edit Bahan Baku" : "Tambah Bahan Baku"}
-            </SheetTitle>
-          </SheetHeader>
+			<Sheet open={isAddOpen()} onOpenChange={setIsAddOpen}>
+				<SheetContent
+					position="bottom"
+					class="h-auto max-h-[92vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden font-jakarta pb-safe"
+				>
+					<SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
+						<SheetTitle class="font-black text-xl tracking-tight text-left text-foreground">
+							{editingId() ? "Edit Bahan Baku" : "Tambah Bahan Baku"}
+						</SheetTitle>
+					</SheetHeader>
 
-          <form id="add-material-form" onSubmit={handleAddSave} class="flex-1 overflow-y-auto p-5 flex flex-col gap-5 bg-background text-left">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Nama Bahan</label>
-              <input
-                required
-                type="text"
-                class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
-                value={formName()}
-                onInput={(e) => setFormName((e.target as HTMLInputElement).value)}
-                placeholder="Misal: Biji Kopi Arabica"
-              />
-            </div>
+					<form
+						id="add-material-form"
+						onSubmit={handleAddSave}
+						class="flex-1 overflow-y-auto p-5 flex flex-col gap-5 bg-background text-left"
+					>
+						<div class="flex flex-col gap-1.5">
+							<label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+								Nama Bahan
+							</label>
+							<input
+								required
+								type="text"
+								class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-3.5 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+								value={formName()}
+								onInput={(e) =>
+									setFormName((e.target as HTMLInputElement).value)
+								}
+								placeholder="Misal: Biji Kopi Arabica"
+							/>
+						</div>
 
-            <div class="flex flex-col gap-3">
-              <label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Satuan Dasar</label>
-              <div class="flex flex-wrap gap-2 px-1">
-                <For each={COMMON_UNITS}>
-                  {(unit) => (
-                    <button
-                      type="button"
-                      onClick={() => { setFormUnit(unit); setShowCustomUnit(false); }}
-                      class={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
-                        formUnit() === unit && !showCustomUnit()
-                        ? "bg-primary border-primary text-white shadow-md shadow-primary/20"
-                        : "bg-muted/30 border-border/40 text-muted-foreground hover:border-border/60"
-                      }`}
-                    >
-                      {unit}
-                    </button>
-                  )}
-                </For>
-                <button
-                  type="button"
-                  onClick={() => setShowCustomUnit(true)}
-                  class={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
-                    showCustomUnit()
-                    ? "bg-secondary border-secondary text-white shadow-md shadow-secondary/20"
-                    : "bg-muted/30 border-border/40 text-muted-foreground"
-                  }`}
-                >
-                  Kustom...
-                </button>
-              </div>
+						<div class="flex flex-col gap-3">
+							<label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+								Satuan Dasar
+							</label>
+							<div class="flex flex-wrap gap-2 px-1">
+								<For each={COMMON_UNITS}>
+									{(unit) => (
+										<button
+											type="button"
+											onClick={() => {
+												setFormUnit(unit);
+												setShowCustomUnit(false);
+											}}
+											class={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
+												formUnit() === unit && !showCustomUnit()
+													? "bg-primary border-primary text-white shadow-md shadow-primary/20"
+													: "bg-muted/30 border-border/40 text-muted-foreground hover:border-border/60"
+											}`}
+										>
+											{unit}
+										</button>
+									)}
+								</For>
+								<button
+									type="button"
+									onClick={() => setShowCustomUnit(true)}
+									class={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
+										showCustomUnit()
+											? "bg-secondary border-secondary text-white shadow-md shadow-secondary/20"
+											: "bg-muted/30 border-border/40 text-muted-foreground"
+									}`}
+								>
+									Kustom...
+								</button>
+							</div>
 
-              <Show when={showCustomUnit()}>
-                <input
-                  required
-                  type="text"
-                  class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-4 font-bold text-sm focus:outline-none focus:border-primary/60 transition-all text-foreground mt-1"
-                  value={formUnit()}
-                  onInput={(e) => setFormUnit(e.currentTarget.value)}
-                  placeholder="Ketik satuan..."
-                />
-              </Show>
-            </div>
+							<Show when={showCustomUnit()}>
+								<input
+									required
+									type="text"
+									class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 px-4 font-bold text-sm focus:outline-none focus:border-primary/60 transition-all text-foreground mt-1"
+									value={formUnit()}
+									onInput={(e) => setFormUnit(e.currentTarget.value)}
+									placeholder="Ketik satuan..."
+								/>
+							</Show>
+						</div>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Harga Satuan Standar (Rp)</label>
-              <div class="relative">
-                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground/50">Rp</span>
-                <input
-                  required
-                  type="number"
-                  class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 pl-10 pr-4 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
-                  value={formCost()}
-                  onInput={(e) => setFormCost(Number(e.currentTarget.value))}
-                  placeholder="Harga per satuan"
-                />
-              </div>
-              <p class="text-[9px] font-bold text-muted-foreground mt-1 px-1">Harga per {formUnit() || 'satuan'} ini akan digunakan sebagai dasar kalkulasi HPP Produk.</p>
-            </div>
-          </form>
+						<div class="flex flex-col gap-1.5">
+							<label class="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+								Harga Satuan Standar (Rp)
+							</label>
+							<div class="relative">
+								<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground/50">
+									Rp
+								</span>
+								<input
+									required
+									type="number"
+									class="h-12 w-full rounded-xl border border-border/70 bg-muted/30 pl-10 pr-4 font-bold text-base focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
+									value={formCost()}
+									onInput={(e) =>
+										setFormCost(Number(e.currentTarget.value))
+									}
+									placeholder="Harga per satuan"
+								/>
+							</div>
+							<p class="text-[9px] font-bold text-muted-foreground mt-1 px-1">
+								Harga per {formUnit() || "satuan"} ini akan digunakan
+								sebagai dasar kalkulasi HPP Produk.
+							</p>
+						</div>
+					</form>
 
-          <div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0">
-            <Button type="submit" form="add-material-form" disabled={isSaving()} class="w-full h-12 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all gap-2 text-white">
-              <Zap size={16} class="fill-current" />
-              {isSaving() ? "Menyimpan..." : "Simpan Bahan Baku"}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </div>
-  );
+					<div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0">
+						<Button
+							type="submit"
+							form="add-material-form"
+							disabled={isSaving()}
+							class="w-full h-12 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all gap-2 text-white"
+						>
+							<Zap size={16} class="fill-current" />
+							{isSaving() ? "Menyimpan..." : "Simpan Bahan Baku"}
+						</Button>
+					</div>
+				</SheetContent>
+			</Sheet>
+		</div>
+	);
 }

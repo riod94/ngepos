@@ -1,4 +1,3 @@
-import { json } from "@solidjs/start/server";
 import { db } from "~/server/db";
 import { transactions, transactionItems, expenses } from "~/server/db/schema";
 import { jwtVerify } from "jose";
@@ -13,7 +12,7 @@ export async function POST({ request }: { request: Request }) {
 		// 1. Auth Check
 		const authHeader = request.headers.get("Authorization");
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
-			return json({ error: "Unauthorized" }, { status: 401 });
+			return Response.json({ error: "Unauthorized" }, { status: 401 });
 		}
 		const token = authHeader.split(" ")[1];
 		await jwtVerify(token, JWT_SECRET);
@@ -90,9 +89,9 @@ export async function POST({ request }: { request: Request }) {
 			}
 		});
 
-		return json({ success: true });
+		return Response.json({ success: true });
 	} catch (err) {
 		console.error("Sync API Error:", err);
-		return json({ error: "Gagal melakukan sinkronisasi" }, { status: 500 });
+		return Response.json({ error: "Gagal melakukan sinkronisasi" }, { status: 500 });
 	}
 }
