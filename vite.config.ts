@@ -13,6 +13,7 @@ export default defineConfig({
     include: ["dexie"]
   },
   server: {
+    host: true, // Listen on all interfaces for nginx proxy
     fs: {
       allow: [".."]
     }
