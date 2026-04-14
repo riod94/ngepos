@@ -74,11 +74,43 @@ export default function Reports() {
 			};
 
 			if (p === "HARI_INI") {
-				startTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
-				endTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+				startTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					0,
+					0,
+					0,
+					0,
+				).getTime();
+				endTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					23,
+					59,
+					59,
+					999,
+				).getTime();
 			} else if (p === "BULAN_INI") {
-				startTs = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
-				endTs = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+				startTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					1,
+					0,
+					0,
+					0,
+					0,
+				).getTime();
+				endTs = new Date(
+					now.getFullYear(),
+					now.getMonth() + 1,
+					0,
+					23,
+					59,
+					59,
+					999,
+				).getTime();
 			} else if (p === "CUSTOM" && r) {
 				startTs = r.from;
 				endTs = r.to;
@@ -93,16 +125,18 @@ export default function Reports() {
 				db.transactionItems.toArray(),
 			]);
 
-			const txList = allTx.filter(t => {
+			const txList = allTx.filter((t) => {
 				const ts = safe(t.timestamp);
 				return ts >= startTs && ts <= endTs;
 			});
-			const expList = allExp.filter(e => {
+			const expList = allExp.filter((e) => {
 				const ts = safe(e.timestamp);
 				return ts >= startTs && ts <= endTs;
 			});
-			const txIds = new Set(txList.map(t => t.id));
-			const itemList = allItems.filter(item => txIds.has(item.transactionId));
+			const txIds = new Set(txList.map((t) => t.id));
+			const itemList = allItems.filter((item) =>
+				txIds.has(item.transactionId),
+			);
 
 			// 2. Fetch Info Outlet (Settings)
 			const [name, addr, phone, logo] = await Promise.all([
@@ -119,17 +153,50 @@ export default function Reports() {
 				logo: logo || undefined,
 			};
 
+			let periodLabel = p;
+			if (p === "HARI_INI") {
+				periodLabel = now.toLocaleDateString("id-ID", {
+					day: "numeric",
+					month: "long",
+					year: "numeric",
+				});
+			} else if (p === "BULAN_INI") {
+				periodLabel = now
+					.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+					.replace(" ", "-");
+			} else if (p === "CUSTOM" && r) {
+				const from = new Date(r.from).toLocaleDateString("id-ID", {
+					day: "numeric",
+					month: "short",
+				});
+				const to = new Date(r.to).toLocaleDateString("id-ID", {
+					day: "numeric",
+					month: "short",
+					year: "numeric",
+				});
+				periodLabel = `${from} - ${to}`;
+			}
+
 			const summary = {
 				...report()!,
-				periodLabel: p === "CUSTOM" && r 
-					? `${new Date(r.from).toLocaleDateString()} - ${new Date(r.to).toLocaleDateString()}`
-					: p,
+				periodLabel,
 			};
 
 			if (format === "EXCEL") {
-				await exportService.exportToExcel(summary, txList, itemList, expList);
+				await exportService.exportToExcel(
+					summary,
+					txList,
+					itemList,
+					expList,
+				);
 			} else {
-				await exportService.exportToPDF(summary, txList, itemList, expList, outletInfo);
+				await exportService.exportToPDF(
+					summary,
+					txList,
+					itemList,
+					expList,
+					outletInfo,
+				);
 			}
 
 			toast.success(`Laporan ${format} berhasil diunduh`);
@@ -149,11 +216,43 @@ export default function Reports() {
 			let endTs = 8640000000000000;
 
 			if (p === "HARI_INI") {
-				startTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
-				endTs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+				startTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					0,
+					0,
+					0,
+					0,
+				).getTime();
+				endTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					23,
+					59,
+					59,
+					999,
+				).getTime();
 			} else if (p === "BULAN_INI") {
-				startTs = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
-				endTs = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+				startTs = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					1,
+					0,
+					0,
+					0,
+					0,
+				).getTime();
+				endTs = new Date(
+					now.getFullYear(),
+					now.getMonth() + 1,
+					0,
+					23,
+					59,
+					59,
+					999,
+				).getTime();
 			} else if (p === "CUSTOM" && r) {
 				startTs = r.from;
 				endTs = r.to;
@@ -184,7 +283,10 @@ export default function Reports() {
 			});
 
 			const omset = txList.reduce((s, t) => s + safe(t.totalAmount), 0);
-			const baseOmset = txList.reduce((s, t) => s + safe(t.originalAmount || t.totalAmount), 0);
+			const baseOmset = txList.reduce(
+				(s, t) => s + safe(t.originalAmount || t.totalAmount),
+				0,
+			);
 			const platformAdjustment = omset - baseOmset;
 
 			const cogsTotal = txList.reduce((s, t) => s + safe(t.cogsTotal), 0);
@@ -195,17 +297,17 @@ export default function Reports() {
 			const trueProfit = netProfit; // Memperbaiki pengurangan ganda HPP
 
 			// --- AGGREGATION FOR CHARTS ---
-			
+
 			// 1. Trend Data (Hourly for Today, Daily for others)
 			const trendMap = new Map<string, { omset: number; cogs: number }>();
-			
+
 			if (p === "HARI_INI") {
 				// Initialize all 24 hours
 				for (let i = 0; i < 24; i++) {
 					const label = `${String(i).padStart(2, "0")}:00`;
 					trendMap.set(label, { omset: 0, cogs: 0 });
 				}
-				txList.forEach(t => {
+				txList.forEach((t) => {
 					const hour = new Date(safe(t.timestamp)).getHours();
 					const label = `${String(hour).padStart(2, "0")}:00`;
 					const entry = trendMap.get(label)!;
@@ -213,9 +315,13 @@ export default function Reports() {
 					entry.cogs += safe(t.cogsTotal);
 				});
 			} else {
-				txList.forEach(t => {
-					const date = new Date(safe(t.timestamp)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
-					if (!trendMap.has(date)) trendMap.set(date, { omset: 0, cogs: 0 });
+				txList.forEach((t) => {
+					const date = new Date(safe(t.timestamp)).toLocaleDateString(
+						"id-ID",
+						{ day: "2-digit", month: "short" },
+					);
+					if (!trendMap.has(date))
+						trendMap.set(date, { omset: 0, cogs: 0 });
 					const entry = trendMap.get(date)!;
 					entry.omset += safe(t.totalAmount);
 					entry.cogs += safe(t.cogsTotal);
@@ -225,19 +331,24 @@ export default function Reports() {
 			const trend = Array.from(trendMap.entries()).map(([label, data]) => ({
 				label,
 				omset: data.omset,
-				cogs: data.cogs
+				cogs: data.cogs,
 			}));
 
 			// 2. Payment Method Distribution
 			const paymentMap = new Map<string, number>();
-			txList.forEach(t => {
+			txList.forEach((t) => {
 				const method = t.paymentMethod || "Tunai";
-				paymentMap.set(method, (paymentMap.get(method) || 0) + safe(t.totalAmount));
+				paymentMap.set(
+					method,
+					(paymentMap.get(method) || 0) + safe(t.totalAmount),
+				);
 			});
-			const paymentMethods = Array.from(paymentMap.entries()).map(([method, total]) => ({
-				method,
-				total
-			})).sort((a, b) => b.total - a.total);
+			const paymentMethods = Array.from(paymentMap.entries())
+				.map(([method, total]) => ({
+					method,
+					total,
+				}))
+				.sort((a, b) => b.total - a.total);
 
 			const result = {
 				omset,
@@ -275,10 +386,10 @@ export default function Reports() {
 				<div class="flex justify-between items-start mb-5">
 					<div>
 						<h1 class="font-black text-2xl tracking-tighter leading-none text-primary">
-							Laporan & Analisis
+							Laporan
 						</h1>
 						<p class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.12em] mt-2 mb-0">
-							Ringkasan Performa & Navigasi Data
+							Ringkasan Performa
 						</p>
 					</div>
 
@@ -286,18 +397,22 @@ export default function Reports() {
 						<DropdownMenuTrigger
 							as={Button}
 							variant="outline"
+							disabled={exporting()}
 							class="h-10 rounded-xl font-bold text-xs flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:border-primary/40 shrink-0 bg-background/50 backdrop-blur-sm"
 						>
 							<Show when={exporting()} fallback={<FileDown size={14} />}>
-								<RefreshCw size={14} class="animate-spin" />
+								<RefreshCw
+									size={14}
+									class="animate-spin text-primary"
+								/>
 							</Show>
-							<span>Ekspor</span>
+							<span>{exporting() ? "Memproses..." : "Ekspor"}</span>
 							<ChevronDown size={12} class="opacity-50" />
 						</DropdownMenuTrigger>
 						<DropdownMenuPortal>
 							<DropdownMenuContent class="min-w-[180px] p-2 rounded-2xl bg-background/95 backdrop-blur-xl border border-border/60 shadow-2xl">
 								<DropdownMenuItem
-									onClick={() => handleExport("EXCEL")}
+									onSelect={() => handleExport("EXCEL")}
 									class="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 text-emerald-700 font-bold text-xs transition-colors cursor-pointer"
 								>
 									<div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
@@ -305,11 +420,13 @@ export default function Reports() {
 									</div>
 									<div class="flex flex-col">
 										<span>Excel Spreadsheet</span>
-										<span class="text-[9px] opacity-60 font-medium lowercase">Laporan .xlsx</span>
+										<span class="text-[9px] opacity-60 font-medium lowercase">
+											Laporan .xlsx
+										</span>
 									</div>
 								</DropdownMenuItem>
 								<DropdownMenuItem
-									onClick={() => handleExport("PDF")}
+									onSelect={() => handleExport("PDF")}
 									class="flex items-center gap-3 p-3 rounded-xl hover:bg-rose-50 text-rose-700 font-bold text-xs transition-colors cursor-pointer"
 								>
 									<div class="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
@@ -317,7 +434,9 @@ export default function Reports() {
 									</div>
 									<div class="flex flex-col">
 										<span>Dokumen PDF</span>
-										<span class="text-[9px] opacity-60 font-medium lowercase">Cetak & Bagikan</span>
+										<span class="text-[9px] opacity-60 font-medium lowercase">
+											Cetak & Bagikan
+										</span>
 									</div>
 								</DropdownMenuItem>
 							</DropdownMenuContent>
@@ -343,9 +462,9 @@ export default function Reports() {
 			>
 				<div class="p-5 flex flex-col gap-4">
 					{/* Charts Section */}
-					<FinancialCharts 
-						trendData={report()!.trend} 
-						paymentData={report()!.paymentMethods} 
+					<FinancialCharts
+						trendData={report()!.trend}
+						paymentData={report()!.paymentMethods}
 					/>
 
 					{/* Hero: Net Profit */}
@@ -379,8 +498,7 @@ export default function Reports() {
 					{/* Section 1: Penjualan */}
 					<div class="bg-card p-5 rounded-2xl border border-border/60 shadow-sm flex flex-col gap-4">
 						<h3 class="font-black text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-							<ShoppingBag size={16} class="text-primary" />{" "}
-							Penjualan
+							<ShoppingBag size={16} class="text-primary" /> Penjualan
 						</h3>
 
 						<MetricRow
@@ -424,8 +542,7 @@ export default function Reports() {
 					{/* Section 2: Biaya Operasional */}
 					<div class="bg-card p-5 rounded-3xl border border-border/60 shadow-sm flex flex-col gap-4">
 						<h3 class="font-black text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-							<Wallet size={16} class="text-red-500" /> Biaya
-							Operasional
+							<Wallet size={16} class="text-red-500" /> Biaya Operasional
 						</h3>
 
 						<MetricRow

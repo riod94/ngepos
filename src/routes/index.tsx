@@ -8,10 +8,11 @@ export default function LandingPage() {
       {/* Neo-brutalist header */}
       <header class="flex items-center justify-between p-6 border-b border-border/60 backdrop-blur-md sticky top-0 z-50 bg-background/90 shadow-sm">
         <div class="flex items-center gap-2">
-          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-inner">
-            <Coffee size={24} stroke-width={3} />
-          </div>
-          <span class="font-black text-2xl tracking-tighter uppercase text-foreground">Ngepos .</span>
+          <img 
+            src="/logo_wordmark.png" 
+            alt="Ngepos" 
+            class="h-10 object-contain hover:opacity-80 transition-opacity cursor-pointer" 
+          />
         </div>
         <A href="/app">
           <Button class="rounded-full font-bold px-6 shadow-[0_4px_10px_rgba(0,0,0,0.05)] border border-border/80 text-sm hover:bg-muted transition-colors bg-card text-foreground">

@@ -52,8 +52,8 @@ export const exportService = {
 		txItems: TransactionItem[],
 		expenses: Expense[],
 	) {
-		const XLSX = await import("xlsx");
-		const wb = XLSX.utils.book_new();
+		const { utils, writeFile } = await import("xlsx");
+		const wb = utils.book_new();
 
 		// 1. Sheet Ringkasan
 		const ringkasanData = [
@@ -74,8 +74,8 @@ export const exportService = {
 			["Jumlah Transaksi", summary.txCount],
 			["Jumlah Pengeluaran", summary.expenseCount],
 		];
-		const wsRingkasan = XLSX.utils.aoa_to_sheet(ringkasanData);
-		XLSX.utils.book_append_sheet(wb, wsRingkasan, "Ringkasan");
+		const wsRingkasan = utils.aoa_to_sheet(ringkasanData);
+		utils.book_append_sheet(wb, wsRingkasan, "Ringkasan");
 
 		// 2. Sheet Transaksi
 		const txData = transactions.map((t) => ({
@@ -90,8 +90,8 @@ export const exportService = {
 			"Status": t.status,
 			"Backdated": t.isBackdated ? "Ya" : "Tidak",
 		}));
-		const wsTx = XLSX.utils.json_to_sheet(txData);
-		XLSX.utils.book_append_sheet(wb, wsTx, "Transaksi");
+		const wsTx = utils.json_to_sheet(txData);
+		utils.book_append_sheet(wb, wsTx, "Transaksi");
 
 		// 3. Sheet Detail Produk
 		const detailData = txItems.map((item) => {
@@ -112,8 +112,8 @@ export const exportService = {
 				"Total HPP": item.cogsAtTime * item.quantity,
 			};
 		});
-		const wsDetail = XLSX.utils.json_to_sheet(detailData);
-		XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Produk");
+		const wsDetail = utils.json_to_sheet(detailData);
+		utils.book_append_sheet(wb, wsDetail, "Detail Produk");
 
 		// 4. Sheet Pengeluaran
 		const expData = expenses.map((e) => ({
@@ -123,12 +123,12 @@ export const exportService = {
 			"Jumlah": e.amount,
 			"Backdated": e.isBackdated ? "Ya" : "Tidak",
 		}));
-		const wsExp = XLSX.utils.json_to_sheet(expData);
-		XLSX.utils.book_append_sheet(wb, wsExp, "Pengeluaran");
+		const wsExp = utils.json_to_sheet(expData);
+		utils.book_append_sheet(wb, wsExp, "Pengeluaran");
 
 		// Download file
 		const fileName = `Laporan_Ngepos_${summary.periodLabel.replace(/\s+/g, "_")}_${Date.now()}.xlsx`;
-		XLSX.writeFile(wb, fileName);
+		writeFile(wb, fileName);
 	},
 
 	/**
@@ -141,8 +141,12 @@ export const exportService = {
 		expenses: Expense[],
 		outlet: OutletInfo,
 	) {
-		const { jsPDF } = await import("jspdf");
-		const { default: autoTable } = await import("jspdf-autotable");
+		const jspdfModule = await import("jspdf");
+		// Menangani perbedaan struktur modul jspdf (default vs named export)
+		const jsPDF = jspdfModule.jsPDF || (jspdfModule as any).default;
+		
+		const autoTableModule = await import("jspdf-autotable");
+		const autoTable = autoTableModule.default || autoTableModule;
 
 		const doc = new jsPDF();
 		const pageWidth = doc.internal.pageSize.width;
