@@ -1,34 +1,20 @@
+import type { Chart } from "chart.js";
 import { createSignal, onMount, onCleanup, createEffect, Show } from "solid-js";
-import {
-	Chart,
-	LineController,
-	LineElement,
-	PointElement,
-	LinearScale,
-	Title,
-	CategoryScale,
-	Tooltip,
-	Legend,
-	Filler,
-	DoughnutController,
-	ArcElement,
-} from "chart.js";
-import { ChevronDown, ChevronUp, BarChart3 } from "lucide-solid";
+import { ChevronDown, ChevronUp, ChartBar } from "lucide-solid";
 
-// Register Chart.js components
-Chart.register(
-	LineController,
-	LineElement,
-	PointElement,
-	LinearScale,
-	Title,
-	CategoryScale,
-	Tooltip,
-	Legend,
-	Filler,
-	DoughnutController,
-	ArcElement,
-);
+// Chart.js instance constructors (loaded dynamically)
+let ChartJS: any;
+let LineController: any;
+let LineElement: any;
+let PointElement: any;
+let LinearScale: any;
+let Title: any;
+let CategoryScale: any;
+let Tooltip: any;
+let Legend: any;
+let Filler: any;
+let DoughnutController: any;
+let ArcElement: any;
 
 interface TrendPoint {
 	label: string;
@@ -59,8 +45,39 @@ export function FinancialCharts(props: FinancialChartsProps) {
 		}
 	});
 
-	const initCharts = () => {
+	const initCharts = async () => {
 		if (isExpanded()) {
+			// Lazy load Chart.js components
+			if (!ChartJS) {
+				const chartModule = await import("chart.js");
+				ChartJS = chartModule.Chart;
+				LineController = chartModule.LineController;
+				LineElement = chartModule.LineElement;
+				PointElement = chartModule.PointElement;
+				LinearScale = chartModule.LinearScale;
+				Title = chartModule.Title;
+				CategoryScale = chartModule.CategoryScale;
+				Tooltip = chartModule.Tooltip;
+				Legend = chartModule.Legend;
+				Filler = chartModule.Filler;
+				DoughnutController = chartModule.DoughnutController;
+				ArcElement = chartModule.ArcElement;
+
+				ChartJS.register(
+					LineController,
+					LineElement,
+					PointElement,
+					LinearScale,
+					Title,
+					CategoryScale,
+					Tooltip,
+					Legend,
+					Filler,
+					DoughnutController,
+					ArcElement,
+				);
+			}
+
 			// Small delay to ensure canvas is rendered
 			setTimeout(() => {
 				initTrendChart();
@@ -106,7 +123,7 @@ export function FinancialCharts(props: FinancialChartsProps) {
 
 	const initTrendChart = () => {
 		if (!trendCanvas || trendChart) return;
-		trendChart = new Chart(trendCanvas, {
+		trendChart = new ChartJS(trendCanvas, {
 			type: "line",
 			data: {
 				labels: props.trendData.map((d) => d.label),
@@ -162,7 +179,7 @@ export function FinancialCharts(props: FinancialChartsProps) {
 						ticks: {
 							font: { size: 10 },
 							color: "#94a3b8",
-							callback: (val) =>
+							callback: (val: string | number) =>
 								"Rp" + (Number(val) / 1000).toLocaleString() + "k",
 						},
 					},
@@ -173,7 +190,7 @@ export function FinancialCharts(props: FinancialChartsProps) {
 
 	const initPaymentChart = () => {
 		if (!paymentCanvas || paymentChart) return;
-		paymentChart = new Chart(paymentCanvas, {
+		paymentChart = new ChartJS(paymentCanvas, {
 			type: "doughnut",
 			data: {
 				labels: props.paymentData.map((d) => d.method),
@@ -203,7 +220,7 @@ export function FinancialCharts(props: FinancialChartsProps) {
 						cornerRadius: 12,
 						bodyFont: { size: 12, weight: "bold" },
 						callbacks: {
-							label: (ctx) => {
+							label: (ctx: any) => {
 								const val = ctx.raw as number;
 								return `${ctx.label}: Rp ${val.toLocaleString("id-ID")}`;
 							},
@@ -223,7 +240,7 @@ export function FinancialCharts(props: FinancialChartsProps) {
 			>
 				<div class="flex items-center gap-3">
 					<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-						<BarChart3 size={16} />
+						<ChartBar size={16} />
 					</div>
 					<div class="text-left">
 						<h3 class="font-black text-xs uppercase tracking-widest text-foreground">

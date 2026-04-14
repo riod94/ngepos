@@ -12,9 +12,22 @@ export function useAuth() {
 	// Check session on initial load
 	const initAuth = async () => {
 		try {
-			setIsAuthChecking(true);
+			// ── OPTIMISTIC: Gunakan cache lokal dulu agar UI render instan ──
+			const cached = localStorage.getItem("auth_user_cache");
+			if (cached) {
+				try {
+					setCurrentUser(JSON.parse(cached));
+					setIsAuthChecking(false); // Render UI langsung, verifikasi di background
+				} catch {
+					localStorage.removeItem("auth_user_cache");
+					setIsAuthChecking(true);
+				}
+			} else {
+				setIsAuthChecking(true);
+			}
+
+			// ── BACKGROUND: Verifikasi token ke server ──
 			const token = localStorage.getItem("auth_token");
-			
 			if (token) {
 				const res = await fetch("/api/auth/me", {
 					headers: { Authorization: `Bearer ${token}` }
@@ -23,10 +36,17 @@ export function useAuth() {
 				if (res.ok) {
 					const data = await res.json();
 					setCurrentUser(data.user);
+					// Update cache dengan data fresh dari server
+					localStorage.setItem("auth_user_cache", JSON.stringify(data.user));
 				} else {
+					// Token expired/invalid — bersihkan semua cache
 					localStorage.removeItem("auth_token");
+					localStorage.removeItem("auth_user_cache");
 					setCurrentUser(null);
 				}
+			} else {
+				// Tidak ada token — pastikan user null
+				setCurrentUser(null);
 			}
 		} catch (e) {
 			console.error("Auth Init Error:", e);
@@ -170,6 +190,7 @@ export function useAuth() {
 
 	const logout = () => {
 		localStorage.removeItem("auth_token");
+		localStorage.removeItem("auth_user_cache");
 		setCurrentUser(null);
 	};
 

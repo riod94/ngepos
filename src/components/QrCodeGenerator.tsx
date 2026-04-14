@@ -1,5 +1,4 @@
 import { onMount, createSignal } from "solid-js";
-import QRCode from "qrcode";
 import { Package } from "lucide-solid";
 
 interface QrCodeGeneratorProps {
@@ -17,6 +16,7 @@ export function QrCodeGenerator(props: QrCodeGeneratorProps) {
   onMount(async () => {
     if (canvasRef) {
       try {
+        const QRCode = await import("qrcode");
         await QRCode.toCanvas(canvasRef, props.value, {
           width: props.size || 150,
           margin: 1, // Reduced margin for cleaner look

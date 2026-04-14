@@ -1,6 +1,7 @@
-@import "@fontsource/plus-jakarta-sans/300.css";
-@import "@fontsource/plus-jakarta-sans/500.css";
-@import "@fontsource/plus-jakarta-sans/700.css";
+/* Font: Latin-only subset untuk performa optimal */
+@import "@fontsource/plus-jakarta-sans/latin-300.css";
+@import "@fontsource/plus-jakarta-sans/latin-500.css";
+@import "@fontsource/plus-jakarta-sans/latin-700.css";
 
 @tailwind base;
 @tailwind components;

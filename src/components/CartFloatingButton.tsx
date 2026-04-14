@@ -1,5 +1,11 @@
-import { Show, createSignal, For, createResource } from "solid-js";
-import { unwrap } from "solid-js/store";
+import {
+	Show,
+	createSignal,
+	For,
+	createResource,
+	lazy,
+	Suspense,
+} from "solid-js";
 import {
 	Plus,
 	Minus,
@@ -15,7 +21,6 @@ import {
 	ShoppingBag,
 	PencilLine,
 	UserPlus,
-	UserCheck,
 	Gift,
 } from "lucide-solid";
 import { useNavigate } from "@solidjs/router";
@@ -33,15 +38,19 @@ import {
 	appliedRewardId,
 	setAppliedRewardId,
 } from "~/stores/cart";
-import { QrCodeScanner } from "~/components/QrCodeScanner";
+const QrCodeScanner = lazy(() =>
+	import("~/components/QrCodeScanner").then((m) => ({
+		default: m.QrCodeScanner,
+	})),
+);
 import { LoyaltyBanner } from "~/components/LoyaltyBanner";
-import { 
-	isStampEligible, 
-	getActiveProgram, 
-	addStamp, 
-	getCustomerProgress, 
+import {
+	isStampEligible,
+	getActiveProgram,
+	addStamp,
+	getCustomerProgress,
 	checkAndCreateReward,
-	claimReward
+	claimReward,
 } from "~/stores/loyalty";
 import { VariantSelector } from "~/components/VariantSelector";
 import { Button } from "~/components/ui/button";
@@ -64,7 +73,12 @@ import { toast } from "solid-toast";
 import { useCheckout } from "~/hooks/useCheckout";
 import { Calendar } from "~/components/ui/calendar";
 
-type PayStep = "select" | "adjustment" | "qris_pending" | "done_ok" | "done_fail";
+type PayStep =
+	| "select"
+	| "adjustment"
+	| "qris_pending"
+	| "done_ok"
+	| "done_fail";
 
 // ─── helper: compute total COGS from items list ──────────────────────────────
 async function computeCogsTotal(items: any[]): Promise<number> {
@@ -76,8 +90,12 @@ async function computeCogsTotal(items: any[]): Promise<number> {
 
 			if (item.selectedVariants) {
 				for (const sv of item.selectedVariants) {
-					const group = product?.variants?.find((g: any) => g.name === sv.groupName);
-					const option = group?.options.find((o: any) => o.name === sv.optionName);
+					const group = product?.variants?.find(
+						(g: any) => g.name === sv.groupName,
+					);
+					const option = group?.options.find(
+						(o: any) => o.name === sv.optionName,
+					);
 					unitCogs += option?.cogsModifier ?? 0;
 				}
 			}
@@ -108,9 +126,15 @@ export function CartFloatingButton() {
 
 	// QRIS image (lazy loaded when dialog opens)
 	const [qrisImage] = createResource(() => getSetting("qris_image"));
-	const [gfEnabled] = createResource(async () => (await getSetting("enable_gofood")) === "true");
-	const [grEnabled] = createResource(async () => (await getSetting("enable_grabfood")) === "true");
-	const [shEnabled] = createResource(async () => (await getSetting("enable_shopeefood")) === "true");
+	const [gfEnabled] = createResource(
+		async () => (await getSetting("enable_gofood")) === "true",
+	);
+	const [grEnabled] = createResource(
+		async () => (await getSetting("enable_grabfood")) === "true",
+	);
+	const [shEnabled] = createResource(
+		async () => (await getSetting("enable_shopeefood")) === "true",
+	);
 
 	const [adjustedAmount, setAdjustedAmount] = createSignal(0);
 	const [selectedPlatform, setSelectedPlatform] = createSignal<string>("");
@@ -122,7 +146,7 @@ export function CartFloatingButton() {
 		const rw = await db.customerRewards.get(rid);
 		if (!rw) return null;
 		const lp = await db.loyaltyPrograms.get(rw.programId);
-		if (!lp || lp.rewardType !== 'FREE_PRODUCT') return null;
+		if (!lp || lp.rewardType !== "FREE_PRODUCT") return null;
 		return await db.products.get(lp.rewardProductId!);
 	});
 
@@ -130,7 +154,7 @@ export function CartFloatingButton() {
 	const getLoyaltyRewardAmount = () => {
 		const rid = appliedRewardId();
 		if (!rid) return 0;
-		// Since we only handle FREE_PRODUCT as auto-add style logic for now, 
+		// Since we only handle FREE_PRODUCT as auto-add style logic for now,
 		// but let's calculate the discount value here
 		const p = rewardProduct();
 		if (p) return p.price;
@@ -175,7 +199,7 @@ export function CartFloatingButton() {
 			transactionTimestamp: transactionTimestamp(),
 			isBackdated: isBackdated(),
 			rewardProduct: rewardProduct(),
-			finalTotalAmountFunc: finalTotalAmount
+			finalTotalAmountFunc: finalTotalAmount,
 		});
 		if (!id) return;
 		finishPayment(id);
@@ -192,7 +216,7 @@ export function CartFloatingButton() {
 			transactionTimestamp: transactionTimestamp(),
 			isBackdated: isBackdated(),
 			rewardProduct: rewardProduct(),
-			finalTotalAmountFunc: finalTotalAmount
+			finalTotalAmountFunc: finalTotalAmount,
 		});
 		if (!id) return;
 		finishPayment(id);
@@ -205,7 +229,7 @@ export function CartFloatingButton() {
 			transactionTimestamp: transactionTimestamp(),
 			isBackdated: isBackdated(),
 			rewardProduct: rewardProduct(),
-			finalTotalAmountFunc: finalTotalAmount
+			finalTotalAmountFunc: finalTotalAmount,
 		});
 		if (!id) return;
 		finishPayment(id);
@@ -278,14 +302,27 @@ export function CartFloatingButton() {
 						class="h-[88vh] rounded-t-[32px] md:max-w-lg md:mx-auto flex flex-col p-0 border-none bg-background shadow-[0_-15px_50px_rgba(0,0,0,0.1)] overflow-hidden"
 					>
 						<Show when={scannerOpen()}>
-							<QrCodeScanner 
-								onScan={(id) => {
-									setLinkedCustomerId(id);
-									setScannerOpen(false);
-									toast.success("Member berhasil dihubungkan!");
-								}} 
-								onClose={() => setScannerOpen(false)} 
-							/>
+							<Suspense
+								fallback={
+									<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+										<div class="bg-card w-full max-w-md h-64 rounded-3xl flex flex-col items-center justify-center gap-4">
+											<div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+											<span class="text-xs font-black uppercase tracking-widest text-muted-foreground">
+												Loading Scanner...
+											</span>
+										</div>
+									</div>
+								}
+							>
+								<QrCodeScanner
+									onScan={(id) => {
+										setLinkedCustomerId(id);
+										setScannerOpen(false);
+										toast.success("Member berhasil dihubungkan!");
+									}}
+									onClose={() => setScannerOpen(false)}
+								/>
+							</Suspense>
 						</Show>
 
 						<SheetHeader class="px-6 pt-7 pb-4 border-b border-border/50 shrink-0">
@@ -296,15 +333,23 @@ export function CartFloatingButton() {
 
 						{/* Loyalty Section */}
 						<div class="px-5 pt-4 shrink-0 space-y-3">
-							<Show when={linkedCustomerId()} fallback={
-								<button 
-									onClick={() => setScannerOpen(true)}
-									class="w-full h-12 rounded-2xl bg-primary/5 hover:bg-primary/10 border-2 border-primary/20 border-dashed flex items-center justify-center gap-3 text-primary transition-all group"
-								>
-									<UserPlus size={18} class="group-hover:scale-110 transition-transform" />
-									<span class="text-xs font-black uppercase tracking-widest">Hubungkan Member QR</span>
-								</button>
-							}>
+							<Show
+								when={linkedCustomerId()}
+								fallback={
+									<button
+										onClick={() => setScannerOpen(true)}
+										class="w-full h-12 rounded-2xl bg-primary/5 hover:bg-primary/10 border-2 border-primary/20 border-dashed flex items-center justify-center gap-3 text-primary transition-all group"
+									>
+										<UserPlus
+											size={18}
+											class="group-hover:scale-110 transition-transform"
+										/>
+										<span class="text-xs font-black uppercase tracking-widest">
+											Hubungkan Member QR
+										</span>
+									</button>
+								}
+							>
 								<LoyaltyBanner customerId={linkedCustomerId()!} />
 							</Show>
 						</div>
@@ -337,10 +382,9 @@ export function CartFloatingButton() {
 							<Show when={backdateOpen()}>
 								<div class="mt-2 grid grid-cols-2 gap-2">
 									<div class="flex flex-col gap-2">
-										<label
-											class="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5"
-										>
-											<CalendarIcon size={12} stroke-width={3} /> Tanggal
+										<label class="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+											<CalendarIcon size={12} stroke-width={3} />{" "}
+											Tanggal
 										</label>
 										<button
 											type="button"
@@ -348,7 +392,9 @@ export function CartFloatingButton() {
 											class="h-12 w-full rounded-xl border border-primary/20 bg-primary/5 px-3 flex flex-col justify-center text-left hover:bg-primary/10 transition-all"
 										>
 											<span class="text-xs font-black text-primary">
-												{new Date(backdateDate()).toLocaleDateString("id-ID", {
+												{new Date(
+													backdateDate(),
+												).toLocaleDateString("id-ID", {
 													day: "numeric",
 													month: "short",
 													year: "numeric",
@@ -360,7 +406,10 @@ export function CartFloatingButton() {
 										</button>
 									</div>
 
-									<Dialog open={isCalendarOpen()} onOpenChange={setIsCalendarOpen}>
+									<Dialog
+										open={isCalendarOpen()}
+										onOpenChange={setIsCalendarOpen}
+									>
 										<DialogContent class="max-w-[360px] p-6 rounded-[32px]">
 											<DialogHeader class="mb-2">
 												<DialogTitle class="text-[10px] font-black uppercase tracking-widest text-primary">
@@ -431,7 +480,11 @@ export function CartFloatingButton() {
 											</p>
 										</div>
 										<div class="flex flex-col items-center gap-2">
-											<Show when={item.variants && item.variants.length > 0}>
+											<Show
+												when={
+													item.variants && item.variants.length > 0
+												}
+											>
 												<Button
 													variant="ghost"
 													size="icon"
@@ -476,7 +529,9 @@ export function CartFloatingButton() {
 							<Show when={rewardProduct()}>
 								<div class="flex items-center gap-3 bg-amber-50 px-4 py-4 rounded-3xl border-2 border-amber-200 border-dashed animate-in zoom-in-95 duration-300">
 									<div class="flex-1 min-w-0">
-										<p class="text-[9px] font-black uppercase tracking-widest text-amber-600">🎉 Bonus Loyalty</p>
+										<p class="text-[9px] font-black uppercase tracking-widest text-amber-600">
+											🎉 Bonus Loyalty
+										</p>
 										<h4 class="font-black text-sm leading-tight truncate text-amber-900">
 											{rewardProduct()?.name}
 										</h4>
@@ -512,7 +567,7 @@ export function CartFloatingButton() {
 										Rp {getCartSubtotal().toLocaleString("id-ID")}
 									</span>
 								</div>
-								
+
 								<Show when={calculateDiscounts().total > 0}>
 									<div class="flex items-center justify-between text-emerald-600">
 										<div class="flex flex-col">
@@ -524,7 +579,10 @@ export function CartFloatingButton() {
 											</span>
 										</div>
 										<span class="font-bold text-sm">
-											- Rp {calculateDiscounts().total.toLocaleString("id-ID")}
+											- Rp{" "}
+											{calculateDiscounts().total.toLocaleString(
+												"id-ID",
+											)}
 										</span>
 									</div>
 								</Show>
@@ -540,7 +598,10 @@ export function CartFloatingButton() {
 											</span>
 										</div>
 										<span class="font-bold text-sm">
-											- Rp {getLoyaltyRewardAmount().toLocaleString("id-ID")}
+											- Rp{" "}
+											{getLoyaltyRewardAmount().toLocaleString(
+												"id-ID",
+											)}
 										</span>
 									</div>
 								</Show>
@@ -596,86 +657,96 @@ export function CartFloatingButton() {
 							</DialogDescription>
 						</DialogHeader>
 						<div class="flex flex-col gap-3">
-						<div class="grid grid-cols-2 gap-3">
-							{/* Cash */}
-							<button
-								type="button"
-								disabled={processing()}
-								onClick={handleCash}
-								class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
-							>
-								<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-									{processing() ? (
-										<div class="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-600 rounded-full animate-spin" />
-									) : (
-										<Banknote size={22} stroke-width={2.5} />
-									)}
-								</div>
-								<span class="font-black text-xs uppercase tracking-widest">Tunai</span>
-							</button>
-
-							{/* QRIS */}
-							<Show when={hasQris()}>
+							<div class="grid grid-cols-2 gap-3">
+								{/* Cash */}
 								<button
 									type="button"
 									disabled={processing()}
-									onClick={() => setPayStep("qris_pending")}
-									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-blue-500/50 hover:bg-blue-50/30 transition-all group disabled:opacity-50 h-28 text-center"
-								>
-									<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-										<QrCode size={22} stroke-width={2.5} />
-									</div>
-									<span class="font-black text-xs uppercase tracking-widest">QRIS</span>
-								</button>
-							</Show>
-
-							{/* GoFood */}
-							<Show when={gfEnabled()}>
-								<button
-									type="button"
-									disabled={processing()}
-									onClick={() => startPlatformPayment("GOFOOD")}
+									onClick={handleCash}
 									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
 								>
 									<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-										<Bike size={22} stroke-width={2.5} />
+										{processing() ? (
+											<div class="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-600 rounded-full animate-spin" />
+										) : (
+											<Banknote size={22} stroke-width={2.5} />
+										)}
 									</div>
-									<span class="font-black text-xs uppercase tracking-widest">GoFood</span>
+									<span class="font-black text-xs uppercase tracking-widest">
+										Tunai
+									</span>
 								</button>
-							</Show>
 
-							{/* GrabFood */}
-							<Show when={grEnabled()}>
-								<button
-									type="button"
-									disabled={processing()}
-									onClick={() => startPlatformPayment("GRABFOOD")}
-									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-green-500/50 hover:bg-green-50/30 transition-all group disabled:opacity-50 h-28 text-center"
-								>
-									<div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-										<Truck size={22} stroke-width={2.5} />
-									</div>
-									<span class="font-black text-xs uppercase tracking-widest">GrabFood</span>
-								</button>
-							</Show>
+								{/* QRIS */}
+								<Show when={hasQris()}>
+									<button
+										type="button"
+										disabled={processing()}
+										onClick={() => setPayStep("qris_pending")}
+										class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-blue-500/50 hover:bg-blue-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+									>
+										<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+											<QrCode size={22} stroke-width={2.5} />
+										</div>
+										<span class="font-black text-xs uppercase tracking-widest">
+											QRIS
+										</span>
+									</button>
+								</Show>
 
-							{/* ShopeeFood */}
-							<Show when={shEnabled()}>
-								<button
-									type="button"
-									disabled={processing()}
-									onClick={() => startPlatformPayment("SHOPEEFOOD")}
-									class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-orange-500/50 hover:bg-orange-50/30 transition-all group disabled:opacity-50 h-28 text-center"
-								>
-									<div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-										<ShoppingBag size={22} stroke-width={2.5} />
-									</div>
-									<span class="font-black text-xs uppercase tracking-widest text-[#F97316]">Shopee</span>
-								</button>
-							</Show>
+								{/* GoFood */}
+								<Show when={gfEnabled()}>
+									<button
+										type="button"
+										disabled={processing()}
+										onClick={() => startPlatformPayment("GOFOOD")}
+										class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+									>
+										<div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+											<Bike size={22} stroke-width={2.5} />
+										</div>
+										<span class="font-black text-xs uppercase tracking-widest">
+											GoFood
+										</span>
+									</button>
+								</Show>
+
+								{/* GrabFood */}
+								<Show when={grEnabled()}>
+									<button
+										type="button"
+										disabled={processing()}
+										onClick={() => startPlatformPayment("GRABFOOD")}
+										class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-green-500/50 hover:bg-green-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+									>
+										<div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+											<Truck size={22} stroke-width={2.5} />
+										</div>
+										<span class="font-black text-xs uppercase tracking-widest">
+											GrabFood
+										</span>
+									</button>
+								</Show>
+
+								{/* ShopeeFood */}
+								<Show when={shEnabled()}>
+									<button
+										type="button"
+										disabled={processing()}
+										onClick={() => startPlatformPayment("SHOPEEFOOD")}
+										class="flex flex-col items-center justify-center gap-2 p-4 rounded-3xl border-2 border-border/80 bg-card hover:border-orange-500/50 hover:bg-orange-50/30 transition-all group disabled:opacity-50 h-28 text-center"
+									>
+										<div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+											<ShoppingBag size={22} stroke-width={2.5} />
+										</div>
+										<span class="font-black text-xs uppercase tracking-widest text-[#F97316]">
+											Shopee
+										</span>
+									</button>
+								</Show>
+							</div>
 						</div>
-					</div>
-				</Show>
+					</Show>
 
 					{/* Step: Adjustment (Set Actual Received Amount) */}
 					<Show when={payStep() === "adjustment"}>
@@ -689,40 +760,65 @@ export function CartFloatingButton() {
 									<ChevronLeft size={20} />
 								</button>
 								<div>
-									<h3 class="font-black text-base text-foreground leading-none">Konfirmasi Setoran</h3>
-									<p class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Order {selectedPlatform()}</p>
+									<h3 class="font-black text-base text-foreground leading-none">
+										Konfirmasi Setoran
+									</h3>
+									<p class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+										Order {selectedPlatform()}
+									</p>
 								</div>
 							</div>
 
 							<div class="bg-muted/30 p-4 rounded-2xl border border-border/40">
-								<p class="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">Total Tagihan App</p>
-								<p class="text-2xl font-black text-center tracking-tighter opacity-50 line-through">Rp {getCartTotal().toLocaleString("id-ID")}</p>
+								<p class="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">
+									Total Tagihan App
+								</p>
+								<p class="text-2xl font-black text-center tracking-tighter opacity-50 line-through">
+									Rp {getCartTotal().toLocaleString("id-ID")}
+								</p>
 							</div>
 
 							<div class="flex flex-col gap-2">
 								<label class="flex flex-col gap-2">
-									<span class="text-xs font-black text-primary uppercase tracking-widest px-1">Total Tunai/Net Diterima</span>
+									<span class="text-xs font-black text-primary uppercase tracking-widest px-1">
+										Total Tunai/Net Diterima
+									</span>
 									<div class="relative">
-										<div class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-lg">Rp</div>
-										<input 
+										<div class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-lg">
+											Rp
+										</div>
+										<input
 											type="number"
 											autofocus
 											class="w-full h-16 rounded-2xl border-2 border-primary/30 bg-card pl-12 pr-4 font-black text-2xl tracking-tighter focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 											value={adjustedAmount()}
-											onInput={e => setAdjustedAmount(Number.parseInt(e.currentTarget.value) || 0)}
+											onInput={(e) =>
+												setAdjustedAmount(
+													Number.parseInt(e.currentTarget.value) ||
+														0,
+												)
+											}
 										/>
 									</div>
 								</label>
 							</div>
 
 							<div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
-								<span class="text-xs font-bold text-emerald-800 uppercase tracking-widest">Selisih/Margin</span>
-								<span class={`font-black text-lg ${adjustedAmount() - getCartTotal() >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-									{adjustedAmount() - getCartTotal() >= 0 ? "+" : "-"} Rp {Math.abs(adjustedAmount() - getCartTotal()).toLocaleString("id-ID")}
+								<span class="text-xs font-bold text-emerald-800 uppercase tracking-widest">
+									Selisih/Margin
+								</span>
+								<span
+									class={`font-black text-lg ${adjustedAmount() - getCartTotal() >= 0 ? "text-emerald-700" : "text-red-600"}`}
+								>
+									{adjustedAmount() - getCartTotal() >= 0 ? "+" : "-"}{" "}
+									Rp{" "}
+									{Math.abs(
+										adjustedAmount() - getCartTotal(),
+									).toLocaleString("id-ID")}
 								</span>
 							</div>
 
-							<Button 
+							<Button
 								class="w-full h-14 rounded-2xl font-black text-base shadow-lg shadow-primary/20"
 								onClick={handlePlatformConfirm}
 								disabled={processing()}

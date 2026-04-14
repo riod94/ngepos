@@ -1,11 +1,9 @@
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import { 
-	type Transaction, 
-	type TransactionItem, 
-	type Expense, 
-	EXPENSE_CATEGORY_LABELS 
+// Library jspdf dan xlsx akan di-load secara dinamis saat fungsi dipanggil agar tidak membengkakkan bundle utama.
+import {
+	type Transaction,
+	type TransactionItem,
+	type Expense,
+	EXPENSE_CATEGORY_LABELS
 } from "~/db/db";
 
 // Helper untuk format rupiah
@@ -54,6 +52,7 @@ export const exportService = {
 		txItems: TransactionItem[],
 		expenses: Expense[],
 	) {
+		const XLSX = await import("xlsx");
 		const wb = XLSX.utils.book_new();
 
 		// 1. Sheet Ringkasan
@@ -142,6 +141,9 @@ export const exportService = {
 		expenses: Expense[],
 		outlet: OutletInfo,
 	) {
+		const { jsPDF } = await import("jspdf");
+		const { default: autoTable } = await import("jspdf-autotable");
+
 		const doc = new jsPDF();
 		const pageWidth = doc.internal.pageSize.width;
 
@@ -158,7 +160,7 @@ export const exportService = {
 		doc.setFontSize(22);
 		doc.setTextColor(15, 23, 42); // slate-900
 		doc.text(outlet.name || "NGEPOS", outlet.logo ? 45 : 15, 25);
-		
+
 		doc.setFont("helvetica", "normal");
 		doc.setFontSize(10);
 		doc.setTextColor(100, 116, 139); // slate-500
@@ -173,7 +175,7 @@ export const exportService = {
 		doc.setFontSize(16);
 		doc.setTextColor(15, 23, 42);
 		doc.text("LAPORAN RINGKASAN KEUANGAN", 15, 58);
-		
+
 		doc.setFont("helvetica", "bold");
 		doc.setFontSize(10);
 		doc.text(`Periode: ${summary.periodLabel}`, 15, 65);
@@ -227,7 +229,7 @@ export const exportService = {
 			const variants = item.selectedVariants
 				?.map((v) => `${v.groupName}: ${v.optionName}`)
 				.join(", ");
-			
+
 			return [
 				tx?.receiptNumber || "-",
 				item.productName + (variants ? ` (${variants})` : ""),

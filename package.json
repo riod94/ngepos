@@ -4,11 +4,10 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "vite start",
+    "start": "node .output/server/index.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/outfit": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@kobalte/core": "^0.13.11",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
