@@ -191,7 +191,7 @@ export default function Variations() {
 
       {/* Edit/Add Variasi Sheet — Sync with products.tsx style */}
       <Sheet open={isOpen()} onOpenChange={setIsOpen}>
-        <SheetContent position="bottom" class="h-auto max-h-[92vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden font-jakarta pb-safe">
+        <SheetContent position="bottom" hideClose={true} class="h-auto max-h-[92vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden font-jakarta pb-safe">
           <SheetHeader class="px-5 pt-6 pb-4 border-b border-border/50 shrink-0">
             <SheetTitle class="font-black text-xl tracking-tight text-left text-foreground">
               {editingId() ? "Edit Variasi" : "Tambah Variasi"}
@@ -285,8 +285,16 @@ export default function Variations() {
             </div>
           </form>
  
-          <div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0 text-left">
-            <Button type="submit" form="variation-form" class="w-full h-12 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all gap-2 text-white">
+          <div class="px-5 pb-8 pt-4 border-t border-border/50 bg-background shrink-0 text-left flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              class="flex-1 h-12 rounded-full font-bold text-sm border-border/60 hover:bg-muted active:scale-95 transition-all text-muted-foreground"
+            >
+              Batal
+            </Button>
+            <Button type="submit" form="variation-form" class="flex-[2] h-12 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all gap-2 text-white">
               <Zap size={16} class="fill-current" />
               SIMPAN VARIASI
             </Button>

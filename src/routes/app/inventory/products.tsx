@@ -144,7 +144,7 @@ export default function ProductsManager() {
 	// ── Search & View state ──
 	const [searchQuery, setSearchQuery] = createSignal("");
 	const [viewMode, setViewMode] = createSignal<"grid" | "list">(
-		(localStorage.getItem("products_view_mode") as "grid" | "list") || "list"
+		(localStorage.getItem("products_view_mode") as "grid" | "list") || "list",
 	);
 	function toggleViewMode() {
 		const next = viewMode() === "list" ? "grid" : "list";
@@ -161,7 +161,7 @@ export default function ProductsManager() {
 		return list.filter(
 			(p) =>
 				p.name.toLowerCase().includes(q) ||
-				p.category.toLowerCase().includes(q)
+				p.category.toLowerCase().includes(q),
 		);
 	});
 
@@ -344,59 +344,64 @@ export default function ProductsManager() {
 		let repairedCount = 0;
 		let addedCount = 0;
 
-		const newRaw = await Promise.all(formRaw().map(async (r) => {
-			let match = lib.find((m) => m.id === r.id);
-			
-			// 1. Cari berdasarkan NAMA jika ID tidak ketemu (SMART SYNC)
-			if (!match) {
-				const nameMatch = lib.find(m => m.name.toLowerCase() === r.name.toLowerCase());
-				if (nameMatch) {
-					match = nameMatch;
-					repairedCount++;
+		const newRaw = await Promise.all(
+			formRaw().map(async (r) => {
+				let match = lib.find((m) => m.id === r.id);
+
+				// 1. Cari berdasarkan NAMA jika ID tidak ketemu (SMART SYNC)
+				if (!match) {
+					const nameMatch = lib.find(
+						(m) => m.name.toLowerCase() === r.name.toLowerCase(),
+					);
+					if (nameMatch) {
+						match = nameMatch;
+						repairedCount++;
+					}
 				}
-			}
 
-			// 2. Jika MASIH tidak ketemu, TAMBAHKAN ke Library (AUTO REGISTER)
-			if (!match && r.name) {
-				const newId = `mat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-				const newMat = {
-					id: newId,
-					name: r.name,
-					unit: r.unit || "gram",
-					stock: 0,
-					costPerUnit: r.costPerUnit || r.cost || 0,
-					isActive: true
-				};
-				await db.rawMaterialLibrary.add(newMat);
-				match = newMat as any;
-				addedCount++;
-			}
-
-			if (match) {
-				const priceChanged = match.costPerUnit !== r.costPerUnit;
-				const idChanged = match.id !== r.id;
-				
-				if (priceChanged || idChanged) {
-					updated = true;
-					return {
-						...r,
-						id: match.id,
-						costPerUnit: match.costPerUnit,
-						cost: match.costPerUnit,
+				// 2. Jika MASIH tidak ketemu, TAMBAHKAN ke Library (AUTO REGISTER)
+				if (!match && r.name) {
+					const newId = `mat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+					const newMat = {
+						id: newId,
+						name: r.name,
+						unit: r.unit || "gram",
+						stock: 0,
+						costPerUnit: r.costPerUnit || r.cost || 0,
+						isActive: true,
 					};
+					await db.rawMaterialLibrary.add(newMat);
+					match = newMat as any;
+					addedCount++;
 				}
-			}
-			return r;
-		}));
+
+				if (match) {
+					const priceChanged = match.costPerUnit !== r.costPerUnit;
+					const idChanged = match.id !== r.id;
+
+					if (priceChanged || idChanged) {
+						updated = true;
+						return {
+							...r,
+							id: match.id,
+							costPerUnit: match.costPerUnit,
+							cost: match.costPerUnit,
+						};
+					}
+				}
+				return r;
+			}),
+		);
 
 		if (updated || addedCount > 0) {
 			setFormRaw(newRaw);
 			refetchMaterials(); // Refresh resource library agar sinkron
-			
+
 			let msg = "Sync Library Berhasil!";
 			if (repairedCount > 0) msg = `Tersambung ${repairedCount} bahan & `;
-			if (addedCount > 0) msg = `Terdaftar ${addedCount} bahan baru ke Library!`;
-			
+			if (addedCount > 0)
+				msg = `Terdaftar ${addedCount} bahan baru ke Library!`;
+
 			toast.success(msg);
 		} else {
 			toast("Semua harga sudah sesuai dengan Library");
@@ -444,7 +449,9 @@ export default function ProductsManager() {
 	}
 
 	// ── Ingredient adjustment helpers ──
-	function calcCogsFromAdjustments(adjustments?: IngredientAdjustment[]): number {
+	function calcCogsFromAdjustments(
+		adjustments?: IngredientAdjustment[],
+	): number {
 		if (!adjustments || adjustments.length === 0) return 0;
 		const lib = materialsLibrary();
 		if (!lib) return 0;
@@ -454,35 +461,73 @@ export default function ProductsManager() {
 		}, 0);
 	}
 
-	function getVariantCogs(opt: { priceModifier: number; cogsModifier: number; ingredientAdjustments?: IngredientAdjustment[] }): number {
-		const fromAdjustments = calcCogsFromAdjustments(opt.ingredientAdjustments);
+	function getVariantCogs(opt: {
+		priceModifier: number;
+		cogsModifier: number;
+		ingredientAdjustments?: IngredientAdjustment[];
+	}): number {
+		const fromAdjustments = calcCogsFromAdjustments(
+			opt.ingredientAdjustments,
+		);
 		return fromAdjustments > 0 ? fromAdjustments : opt.cogsModifier;
 	}
 
 	function addIngredientAdjustment(gi: number, oi: number) {
 		const current = formVariants[gi]?.options[oi];
-		const adjustments = [...(current?.ingredientAdjustments || []), { materialId: "", adjustment: 1 }];
-		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+		const adjustments = [
+			...(current?.ingredientAdjustments || []),
+			{ materialId: "", adjustment: 1 },
+		];
+		setFormVariants(
+			gi,
+			"options",
+			oi,
+			"ingredientAdjustments" as any,
+			adjustments as any,
+		);
 	}
 
-	function updateIngredientAdjustment(gi: number, oi: number, ai: number, field: keyof IngredientAdjustment, value: string | number) {
+	function updateIngredientAdjustment(
+		gi: number,
+		oi: number,
+		ai: number,
+		field: keyof IngredientAdjustment,
+		value: string | number,
+	) {
 		const current = formVariants[gi]?.options[oi];
 		if (!current) return;
 		const adjustments = [...(current.ingredientAdjustments || [])];
 		adjustments[ai] = { ...adjustments[ai], [field]: value } as any;
-		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+		setFormVariants(
+			gi,
+			"options",
+			oi,
+			"ingredientAdjustments" as any,
+			adjustments as any,
+		);
+
 		// Auto-calculate cogsModifier from adjustments
 		const newCogs = calcCogsFromAdjustments(adjustments);
-		if (newCogs > 0) {
-			setFormVariants(gi, "options", oi, "cogsModifier", newCogs);
-		}
+		setFormVariants(gi, "options", oi, "cogsModifier", newCogs);
 	}
 
 	function removeIngredientAdjustment(gi: number, oi: number, ai: number) {
 		const current = formVariants[gi]?.options[oi];
 		if (!current) return;
-		const adjustments = (current.ingredientAdjustments || []).filter((_, idx) => idx !== ai);
-		setFormVariants(gi, "options", oi, "ingredientAdjustments" as any, adjustments as any);
+		const adjustments = (current.ingredientAdjustments || []).filter(
+			(_, idx) => idx !== ai,
+		);
+		setFormVariants(
+			gi,
+			"options",
+			oi,
+			"ingredientAdjustments" as any,
+			adjustments as any,
+		);
+
+		// Re-calculate cogsModifier after removal
+		const newCogs = calcCogsFromAdjustments(adjustments);
+		setFormVariants(gi, "options", oi, "cogsModifier", newCogs);
 	}
 
 	// ── Variant helpers ──
@@ -499,9 +544,11 @@ export default function ProductsManager() {
 		setFormVariants(i, field, val);
 	}
 	function removeVariantGroup(i: number) {
-		setFormVariants(produce(state => {
-			state.splice(i, 1);
-		}));
+		setFormVariants(
+			produce((state) => {
+				state.splice(i, 1);
+			}),
+		);
 	}
 	function addOption(gi: number) {
 		setFormVariants(gi, "options", (prev) => [
@@ -518,7 +565,9 @@ export default function ProductsManager() {
 		setFormVariants(gi, "options", oi, field, val);
 	}
 	function removeOption(gi: number, oi: number) {
-		setFormVariants(gi, "options", (prev) => prev.filter((_, idx) => idx !== oi));
+		setFormVariants(gi, "options", (prev) =>
+			prev.filter((_, idx) => idx !== oi),
+		);
 	}
 
 	// ── Variant Template helpers ──
@@ -536,7 +585,7 @@ export default function ProductsManager() {
 			name: vg.name,
 			isRequired: vg.isRequired,
 			type: vg.type,
-			options: vg.options.map(o => ({ ...o })), // Deep clone options
+			options: vg.options.map((o) => ({ ...o })), // Deep clone options
 			isActive: true,
 		});
 		refetchTemplates();
@@ -554,7 +603,7 @@ export default function ProductsManager() {
 			name: tpl.name,
 			isRequired: tpl.isRequired,
 			type: tpl.type,
-			options: tpl.options.map(o => ({ ...o })),
+			options: tpl.options.map((o) => ({ ...o })),
 		});
 		setShowTemplateLib(false);
 	}
@@ -622,7 +671,10 @@ export default function ProductsManager() {
 			<div class="px-4 pb-2">
 				<div class="flex items-center gap-2">
 					<div class="relative flex-1">
-						<Search size={15} class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+						<Search
+							size={15}
+							class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+						/>
 						<input
 							type="text"
 							class="h-10 w-full rounded-xl border border-border/60 bg-card pl-9 pr-3 font-medium text-sm focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all"
@@ -635,15 +687,23 @@ export default function ProductsManager() {
 						type="button"
 						onClick={toggleViewMode}
 						class="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-95"
-						title={viewMode() === "list" ? "Tampilan Grid" : "Tampilan List"}
+						title={
+							viewMode() === "list" ? "Tampilan Grid" : "Tampilan List"
+						}
 					>
-						{viewMode() === "list" ? <Grid3X3 size={16} /> : <List size={16} />}
+						{viewMode() === "list" ? (
+							<Grid3X3 size={16} />
+						) : (
+							<List size={16} />
+						)}
 					</button>
 				</div>
 			</div>
 
 			{/* Product List / Grid */}
-			<div class={`p-4 ${viewMode() === "grid" ? "grid grid-cols-2 gap-3" : "flex flex-col gap-2.5"}`}>
+			<div
+				class={`p-4 ${viewMode() === "grid" ? "grid grid-cols-2 gap-3" : "flex flex-col gap-2.5"}`}
+			>
 				<Show
 					when={filteredProducts() && filteredProducts()!.length > 0}
 					fallback={
@@ -662,113 +722,232 @@ export default function ProductsManager() {
 				>
 					<For each={filteredProducts()}>
 						{(p) => {
-							const availability = getProductAvailability(p, materialsLibrary() || []);
-							return viewMode() === "grid" ? (
-								// ── Grid Card ──
-								<div
-									role="button"
-									tabIndex={0}
-									class={`flex flex-col text-left bg-card rounded-2xl border transition-all shadow-sm cursor-pointer hover:border-primary/30 active:scale-[0.99] overflow-hidden ${
-										!availability.available
-											? "opacity-60 grayscale border-slate-200"
-											: "border-border/60"
-									}`}
-									onClick={() => openEdit(p)}
-								>
-									<div class="aspect-square bg-muted overflow-hidden">
-										<ProductImage src={p.image} name={p.name} />
-									</div>
-									<div class="p-3 flex flex-col gap-1.5">
-										<h3 class="font-bold text-sm leading-tight truncate">{p.name}</h3>
-										<p class="font-bold text-xs text-foreground">Rp {p.price.toLocaleString("id-ID")}</p>
-										<div class="flex items-center gap-1 flex-wrap">
-											<span class="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{p.category}</span>
-											<Show when={p.variants && p.variants.length > 0}>
-												<span class="text-[10px] font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">Varian</span>
-											</Show>
-										</div>
-										<Show when={p.rawMaterials && p.rawMaterials.length > 0}>
-											{(() => {
-												const m = calcMargin(p.price, p.cogs);
-												const status = getMarginStatus(m);
-												return (
-													<span class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded self-start ${status.color} ${status.bg}`}>
-														{status.label} {m}%
-													</span>
-												);
-											})()}
-										</Show>
-									</div>
-								</div>
-							) : (
-								// ── List Card (original) ──
-								<div
-									role="button"
-									tabIndex={0}
-									class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all shadow-sm cursor-pointer hover:border-primary/30 active:scale-[0.99] group ${
-										!availability.available
-											? "opacity-60 grayscale border-slate-200"
-											: "border-border/60"
-									}`}
-									onClick={() => openEdit(p)}
-								>
-									<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
-										<ProductImage src={p.image} name={p.name} />
-									</div>
-									<div class="flex-1 min-w-0">
-										<h3 class="font-bold text-sm leading-tight truncate">{p.name}</h3>
-										<div class="flex items-center gap-1 mt-1 flex-wrap">
-											<span class="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{p.category}</span>
-											<Show when={p.variants && p.variants.length > 0}>
-												<span class="text-xs font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Layers size={9} /> Varian</span>
-											</Show>
-											<Show when={p.rawMaterials && p.rawMaterials.length > 0}>
-												{(raw) => {
-													const m = calcMargin(p.price, p.cogs);
-													const status = getMarginStatus(m);
-													return (
-														<span class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${status.color} ${status.bg}`}>
-															{status.label} {m}%
-														</span>
-													);
-												}}
-											</Show>
-										</div>
-										<p class="text-xs mt-1.5 flex items-center gap-2 font-bold">
-											<span class="text-foreground">Rp {p.price.toLocaleString("id-ID")}</span>
-											<Show when={p.cogs > 0}>
-												<span class="text-muted-foreground/30">&bull;</span>
-												<span class="text-primary/70">HPP Rp {p.cogs.toLocaleString("id-ID")}</span>
-											</Show>
-										</p>
-									</div>
-									<div class="flex items-center gap-1.5 ml-auto">
-										<Show when={!availability.available && availability.reason !== "Nonaktif"}>
-											<span class="text-[8px] font-black bg-red-500 text-white px-1.5 py-1 rounded uppercase tracking-tighter">{availability.reason}</span>
-										</Show>
-										<button
-											onClick={(e) => toggleActive(p, e)}
-											class={`h-8 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
-												availability.available
-													? "bg-white border-slate-200 text-slate-400"
-													: "bg-slate-900 border-slate-900 text-white shadow-sm"
+							const availability = getProductAvailability(
+								p,
+								materialsLibrary() || [],
+							);
+
+							return (
+								<Show
+									when={viewMode() === "grid"}
+									fallback={
+										// ── List Card (Compact Horizontal) ──
+										<div
+											role="button"
+											tabIndex={0}
+											class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all shadow-sm cursor-pointer hover:border-primary/30 active:scale-[0.99] group ${
+												!availability.available
+													? "opacity-60 grayscale border-slate-200"
+													: "border-border/60"
 											}`}
+											onClick={() => openEdit(p)}
 										>
-											{availability.available ? "Aktif" : "Off"}
-										</button>
-										<Button
-											variant="ghost"
-											size="icon"
-											class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-											onClick={(e) => {
-												e.stopPropagation();
-												deleteProduct(p.id, e);
-											}}
-										>
-											<Trash2 size={13} />
-										</Button>
+											<div class="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
+												<ProductImage src={p.image} name={p.name} />
+											</div>
+											<div class="flex-1 min-w-0">
+												<h3 class="font-bold text-sm leading-tight truncate">
+													{p.name}
+												</h3>
+												<div class="flex items-center gap-1 mt-1 flex-wrap">
+													<span class="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+														{p.category}
+													</span>
+													<Show
+														when={
+															p.variants && p.variants.length > 0
+														}
+													>
+														<span class="text-xs font-semibold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+															<Layers size={9} /> Varian
+														</span>
+													</Show>
+													<Show
+														when={
+															p.rawMaterials &&
+															p.rawMaterials.length > 0
+														}
+													>
+														{() => {
+															const m = calcMargin(
+																p.price,
+																p.cogs,
+															);
+															const status = getMarginStatus(m);
+															return (
+																<span
+																	class={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${status.color} ${status.bg}`}
+																>
+																	{status.label} {m}%
+																</span>
+															);
+														}}
+													</Show>
+												</div>
+												<p class="text-xs mt-1.5 flex items-center gap-2 font-bold">
+													<span class="text-foreground">
+														Rp {p.price.toLocaleString("id-ID")}
+													</span>
+													<Show when={p.cogs > 0}>
+														<span class="text-muted-foreground/30">
+															&bull;
+														</span>
+														<span class="text-primary/70">
+															HPP Rp{" "}
+															{p.cogs.toLocaleString("id-ID")}
+														</span>
+													</Show>
+												</p>
+											</div>
+											<div class="flex items-center gap-1.5 ml-auto">
+												<Show
+													when={
+														!availability.available &&
+														availability.reason !== "Nonaktif"
+													}
+												>
+													<span class="text-[8px] font-black bg-red-500 text-white px-1.5 py-1 rounded uppercase tracking-tighter">
+														{availability.reason}
+													</span>
+												</Show>
+												<button
+													onClick={(e) => toggleActive(p, e)}
+													class={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
+														availability.available
+															? "bg-emerald-500 border-emerald-400 text-white shadow-sm"
+															: "bg-slate-900 border-slate-900 text-white"
+													}`}
+												>
+													{availability.available
+														? "Aktif"
+														: "Off"}
+												</button>
+												<Button
+													variant="ghost"
+													size="icon"
+													class="h-8 w-8 rounded-full hover:bg-red-50 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
+													onClick={(e) => {
+														e.stopPropagation();
+														deleteProduct(p.id, e);
+													}}
+												>
+													<Trash2 size={13} />
+												</Button>
+											</div>
+										</div>
+									}
+								>
+									{/* ── Grid Card (Premium Vertical) ── */}
+									<div
+										role="button"
+										tabIndex={0}
+										class={`group relative flex flex-col bg-card rounded-3xl border transition-all duration-300 shadow-sm hover:shadow-xl hover:border-primary/40 active:scale-[0.98] overflow-hidden ${
+											!availability.available
+												? "opacity-75 grayscale-[0.3] border-slate-200"
+												: "border-border/60"
+										}`}
+										onClick={() => openEdit(p)}
+									>
+										{/* Top Badge & Action Overlay */}
+										<div class="absolute top-2.5 left-2.5 right-2.5 z-[5] flex justify-between items-start pointer-events-none">
+											<div class="flex flex-col gap-1">
+												<span class="bg-background/95 backdrop-blur-md text-primary text-[8px] font-black px-1.5 py-0.5 rounded-full border border-primary/20 shadow-sm uppercase tracking-wider">
+													{p.category}
+												</span>
+												<Show
+													when={
+														!availability.available &&
+														availability.reason !== "Nonaktif"
+													}
+												>
+													<span class="bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-sm uppercase tracking-tighter">
+														{availability.reason}
+													</span>
+												</Show>
+											</div>
+											<div class="pointer-events-auto">
+												<button
+													onClick={(e) => {
+														e.stopPropagation();
+														deleteProduct(p.id, e);
+													}}
+													class="w-7 h-7 rounded-full bg-white/95 backdrop-blur-md shadow-md flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0"
+												>
+													<Trash2 size={12} stroke-width={2.5} />
+												</button>
+											</div>
+										</div>
+
+										{/* Image Section */}
+										<div class="relative aspect-square bg-muted/20 overflow-hidden">
+											<ProductImage src={p.image} name={p.name} />
+
+											{/* Status Indicator at the bottom of image */}
+											<div class="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-center pointer-events-auto">
+												<button
+													onClick={(e) => toggleActive(p, e)}
+													class={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] backdrop-blur-md border transition-all shadow-sm ${
+														availability.available
+															? "bg-emerald-500 text-white border-emerald-400"
+															: "bg-slate-900 text-white border-slate-700"
+													}`}
+												>
+													{availability.available
+														? "Aktif"
+														: "Off"}
+												</button>
+												<Show
+													when={
+														p.variants && p.variants.length > 0
+													}
+												>
+													<div class="w-6 h-6 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center text-secondary shadow-sm border border-secondary/20">
+														<Layers
+															size={11}
+															stroke-width={2.5}
+														/>
+													</div>
+												</Show>
+											</div>
+										</div>
+
+										{/* Content Section */}
+										<div class="p-3 flex flex-col gap-1.5 flex-1 min-h-[5rem]">
+											<h3 class="font-bold text-xs text-foreground leading-tight line-clamp-2 min-h-[2.25rem] tracking-tight">
+												{p.name}
+											</h3>
+
+											<div class="mt-auto pt-1.5 border-t border-border/40 flex flex-col gap-1">
+												<p class="font-black text-sm text-primary tracking-tighter">
+													Rp {p.price.toLocaleString("id-ID")}
+												</p>
+												<Show
+													when={
+														p.rawMaterials &&
+														p.rawMaterials.length > 0
+													}
+												>
+													{(() => {
+														const m = calcMargin(p.price, p.cogs);
+														const status = getMarginStatus(m);
+														return (
+															<div class="flex items-center justify-between gap-1 overflow-hidden">
+																<span
+																	class={`text-[7px] uppercase font-black px-1.5 py-0.5 rounded-sm shrink-0 border ${status.color} ${status.bg} ${status.border}`}
+																>
+																	{m}%
+																</span>
+																<span class="text-[7px] font-bold text-muted-foreground truncate uppercase opacity-60">
+																	{status.label}
+																</span>
+															</div>
+														);
+													})()}
+												</Show>
+											</div>
+										</div>
 									</div>
-								</div>
+								</Show>
 							);
 						}}
 					</For>
@@ -779,6 +958,7 @@ export default function ProductsManager() {
 			<Sheet open={sheetOpen()} onOpenChange={setSheetOpen}>
 				<SheetContent
 					position="bottom"
+					hideClose={true}
 					class="h-[96vh] rounded-t-[32px] flex flex-col p-0 border-none shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
 				>
 					{/* Sheet Header */}
@@ -792,12 +972,14 @@ export default function ProductsManager() {
 									type="button"
 									class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all text-xs font-bold border border-border/40"
 									onClick={() => {
-										const p = products()?.find((x) => x.id === formId());
+										const p = products()?.find(
+											(x) => x.id === formId(),
+										);
 										if (p) {
 											setSheetOpen(false);
 											duplicateProduct(p);
 										}
-								}}
+									}}
 								>
 									<Copy size={13} /> Duplikasi
 								</button>
@@ -1117,11 +1299,14 @@ export default function ProductsManager() {
 															<span class="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 opacity-60">
 																Bahan #{i + 1}
 															</span>
-															<Show 
-																when={materialsLibrary()?.some(m => m.id === raw().id)}
+															<Show
+																when={materialsLibrary()?.some(
+																	(m) => m.id === raw().id,
+																)}
 																fallback={
 																	<span class="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded flex items-center gap-1 border border-red-100 animate-pulse">
-																		⚠️ Bahan Terhapus / Link Terputus
+																		⚠️ Bahan Terhapus / Link
+																		Terputus
 																	</span>
 																}
 															>
@@ -1351,7 +1536,9 @@ export default function ProductsManager() {
 														variant="ghost"
 														size="icon"
 														class="h-7 w-7 text-red-400 hover:text-red-500"
-														onClick={() => removeVariantGroup(gi())}
+														onClick={() =>
+															removeVariantGroup(gi())
+														}
 													>
 														<X size={15} />
 													</Button>
@@ -1459,16 +1646,16 @@ export default function ProductsManager() {
 											<div class="flex flex-col gap-3 bg-muted/20 p-3 rounded-2xl border border-border/50">
 												<For each={vg.options}>
 													{(opt, oi) => (
-														<div class="relative flex flex-col gap-3 p-4 bg-background border border-border/60 rounded-2xl shadow-sm hover:border-primary/30 transition-all group text-left">
+														<div class="relative flex flex-col gap-3 p-3.5 bg-background border border-border/60 rounded-3xl shadow-sm hover:border-primary/20 transition-all group text-left">
 															{/* Row 1: Name & Delete */}
-															<div class="flex items-end gap-2 text-left">
-																<div class="flex-1 flex flex-col gap-1.5 text-left">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+															<div class="flex items-center gap-3">
+																<div class="flex-1 flex flex-col gap-1">
+																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
 																		Nama Opsi
 																	</p>
 																	<input
 																		type="text"
-																		class="w-full h-11 rounded-xl border border-border/60 bg-background px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+																		class="w-full h-11 rounded-2xl border border-border/60 bg-muted/20 px-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 																		placeholder="Contoh: Ekstra Topping"
 																		value={opt.name}
 																		onInput={(e) =>
@@ -1486,7 +1673,7 @@ export default function ProductsManager() {
 																	type="button"
 																	variant="ghost"
 																	size="icon"
-																	class="h-11 w-11 rounded-xl text-red-400 hover:text-red-500 hover:bg-red-50 shrink-0 border border-transparent hover:border-red-100 transition-all"
+																	class="h-11 w-11 rounded-2xl text-red-500 hover:bg-red-50 shrink-0 border border-transparent hover:border-red-100 transition-all self-end"
 																	onClick={() =>
 																		removeOption(gi(), oi())
 																	}
@@ -1496,18 +1683,18 @@ export default function ProductsManager() {
 															</div>
 
 															{/* Row 2: Pricing & HPP */}
-															<div class="grid grid-cols-2 gap-3 text-left">
-																<div class="flex flex-col gap-1.5 text-left">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
+															<div class="grid grid-cols-2 gap-3">
+																<div class="flex flex-col gap-1">
+																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
 																		Harga +/-
 																	</p>
 																	<div class="relative">
-																		<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">
+																		<span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">
 																			Rp
 																		</span>
 																		<input
 																			type="number"
-																			class="w-full h-11 rounded-xl border border-border/60 bg-background pl-10 pr-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+																			class="w-full h-11 rounded-2xl border border-border/60 bg-card pl-10 pr-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
 																			placeholder="0"
 																			value={
 																				opt.priceModifier
@@ -1527,17 +1714,40 @@ export default function ProductsManager() {
 																		/>
 																	</div>
 																</div>
-																<div class="flex flex-col gap-1.5 text-left">
-																	<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
-																		HPP +/-
-																	</p>
+																<div class="flex flex-col gap-1">
+																	<div class="flex items-center justify-between px-1">
+																		<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+																			HPP +/-
+																		</p>
+																		<Show
+																			when={
+																				opt.ingredientAdjustments &&
+																				opt
+																					.ingredientAdjustments
+																					.length > 0
+																			}
+																		>
+																			<span class="text-[8px] font-black bg-primary text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm shadow-primary/20">
+																				Auto
+																			</span>
+																		</Show>
+																	</div>
 																	<div class="relative">
-																		<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-primary/60">
+																		<span
+																			class={`absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black ${opt.ingredientAdjustments?.length ? "text-primary/70" : "text-muted-foreground"}`}
+																		>
 																			Rp
 																		</span>
 																		<input
 																			type="number"
-																			class="w-full h-11 rounded-xl border border-primary/20 bg-primary/5 pl-10 pr-4 font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 text-primary transition-all underline-offset-4"
+																			class={`w-full h-11 rounded-2xl border font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all pl-10 pr-4 ${
+																				opt.ingredientAdjustments &&
+																				opt
+																					.ingredientAdjustments
+																					.length > 0
+																					? "bg-primary/5 border-primary/30 text-primary"
+																					: "bg-card border-border/60"
+																			}`}
 																			placeholder="0"
 																			value={
 																				opt.cogsModifier
@@ -1557,60 +1767,135 @@ export default function ProductsManager() {
 																		/>
 																	</div>
 																</div>
-																								
-																				{/* Ingredient Adjustments */}
-																				<div class="flex flex-col gap-2 mt-1 pt-3 border-t border-border/30">
-																					<div class="flex items-center justify-between">
-																						<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 text-left">
-																							Bahan Tambahan
-																						</p>
-																						<Show when={opt.ingredientAdjustments && opt.ingredientAdjustments.length > 0}>
-																							<p class="text-[10px] font-bold text-primary">
-																								HPP: Rp {calcCogsFromAdjustments(opt.ingredientAdjustments).toLocaleString("id-ID")}
-																							</p>
-																						</Show>
-																					</div>
-																					<For each={opt.ingredientAdjustments || []}>
-																						{(adj, ai) => {
-																							const mat = materialsLibrary()?.find(m => m.id === adj.materialId);
-																							return (
-																								<div class="flex items-center gap-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
-																									<select
-																										class="flex-1 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs focus:outline-none"
-																										value={adj.materialId}
-																										onChange={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "materialId", e.currentTarget.value)}
-																									>
-																										<option value="">Pilih bahan...</option>
-																										<For each={materialsLibrary()}>
-																											{(m) => <option value={m.id}>{m.name} (Rp {m.costPerUnit.toLocaleString("id-ID")}/{m.unit})</option>}
-																										</For>
-																									</select>
-																									<input
-																										type="number"
-																										class="w-16 h-9 rounded-lg border border-border/50 bg-background px-2 font-bold text-xs text-center focus:outline-none"
-																										value={adj.adjustment}
-																										onInput={(e) => updateIngredientAdjustment(gi(), oi(), ai(), "adjustment", Number.parseFloat(e.currentTarget.value) || 0)}
-																									/>
-																									<span class="text-[10px] font-bold text-muted-foreground">{mat?.unit || ""}</span>
-																									<button
-																										type="button"
-																										onClick={() => removeIngredientAdjustment(gi(), oi(), ai())}
-																										class="h-9 w-9 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
-																									>
-																										<Trash2 size={12} />
-																									</button>
-																								</div>
-																							);
-																						}}
-																					</For>
-																					<button
-																						type="button"
-																						onClick={() => addIngredientAdjustment(gi(), oi())}
-																						class="h-9 text-[10px] font-bold border border-dashed border-border/40 rounded-lg text-muted-foreground hover:text-primary hover:border-primary/30 transition-all w-full flex items-center justify-center gap-1.5 mt-1"
+															</div>
+
+															{/* Row 3: Ingredient Adjustments (Bahan Tambahan) */}
+															<div class="mt-1 pt-4 border-t border-border/50 border-dashed flex flex-col gap-3">
+																<div class="flex items-center justify-between px-1">
+																	<div class="flex items-center gap-2">
+																		<Layers
+																			size={14}
+																			class="text-muted-foreground"
+																		/>
+																		<p class="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+																			Bahan Tambahan
+																		</p>
+																	</div>
+																	<Show
+																		when={
+																			opt.ingredientAdjustments &&
+																			opt
+																				.ingredientAdjustments
+																				.length > 0
+																		}
+																	>
+																		<p class="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">
+																			Rp{" "}
+																			{calcCogsFromAdjustments(
+																				opt.ingredientAdjustments,
+																			).toLocaleString(
+																				"id-ID",
+																			)}
+																		</p>
+																	</Show>
+																</div>
+
+																<div class="flex flex-col gap-2">
+																	<For
+																		each={
+																			opt.ingredientAdjustments ||
+																			[]
+																		}
+																	>
+																		{(adj, ai) => (
+																			<div class="grid grid-cols-[1fr_60px_40px] items-center gap-1.5 bg-muted/30 p-1.5 rounded-2xl border border-border/40 group/item overflow-hidden">
+																				<select
+																					class="h-10 rounded-xl border border-border/50 bg-background px-2.5 font-bold text-[11px] focus:outline-none focus:border-primary/40 transition-all min-w-0 w-full"
+																					value={
+																						adj.materialId
+																					}
+																					onChange={(e) =>
+																						updateIngredientAdjustment(
+																							gi(),
+																							oi(),
+																							ai(),
+																							"materialId",
+																							e
+																								.currentTarget
+																								.value,
+																						)
+																					}
+																				>
+																					<option value="">
+																						Bahan...
+																					</option>
+																					<For
+																						each={materialsLibrary()}
 																					>
-																						<Plus size={12} /> Tambah Bahan Varian
-																					</button>
-																				</div>
+																						{(m) => (
+																							<option
+																								value={
+																									m.id
+																								}
+																							>
+																								{m.name}
+																							</option>
+																						)}
+																					</For>
+																				</select>
+																				<input
+																					type="number"
+																					class="w-full h-10 rounded-xl border border-border/50 bg-background px-1 font-bold text-xs text-center focus:outline-none focus:border-primary/40 transition-all"
+																					value={
+																						adj.adjustment
+																					}
+																					onInput={(e) =>
+																						updateIngredientAdjustment(
+																							gi(),
+																							oi(),
+																							ai(),
+																							"adjustment",
+																							Number.parseFloat(
+																								e
+																									.currentTarget
+																									.value,
+																							) || 0,
+																						)
+																					}
+																				/>
+																				<button
+																					type="button"
+																					class="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0"
+																					onClick={() =>
+																						removeIngredientAdjustment(
+																							gi(),
+																							oi(),
+																							ai(),
+																						)
+																					}
+																				>
+																					<Trash2
+																						size={14}
+																					/>
+																				</button>
+																			</div>
+																		)}
+																	</For>
+
+																	<button
+																		type="button"
+																		onClick={() =>
+																			addIngredientAdjustment(
+																				gi(),
+																				oi(),
+																			)
+																		}
+																		class="h-9 text-[10px] font-bold border border-dashed border-border/40 rounded-lg text-muted-foreground hover:text-primary hover:border-primary/30 transition-all w-full flex items-center justify-center gap-1.5 mt-1"
+																	>
+																		<Plus size={12} /> Tambah
+																		Bahan Varian
+																	</button>
+																</div>
 															</div>
 														</div>
 													)}
@@ -1708,19 +1993,27 @@ export default function ProductsManager() {
 					</form>
 
 					{/* Sticky footer */}
-					<div class="px-4 pb-8 pt-3.5 border-t border-border/50 bg-background shrink-0">
+					<div class="px-4 pb-8 pt-3.5 border-t border-border/50 bg-background shrink-0 flex gap-3">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setSheetOpen(false)}
+							class="flex-1 h-12 rounded-xl font-bold text-sm border-border/60 hover:bg-muted active:scale-95 transition-all text-muted-foreground"
+						>
+							Batal
+						</Button>
 						<Button
 							type="submit"
 							form="product-form"
 							disabled={isSaving()}
-							class="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border-none transition-all"
+							class="flex-[2] h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border-none transition-all text-white shadow-md shadow-primary/20"
 						>
 							{isSaving() ? (
-								<div class="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+								<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
 							) : (
 								<>
-									<Zap size={16} />{" "}
-									{isEditing() ? "Perbarui Produk" : "Simpan Produk"}
+									<Zap size={16} class="fill-current" />{" "}
+									{isEditing() ? "Perbarui" : "Simpan Produk"}
 								</>
 							)}
 						</Button>
