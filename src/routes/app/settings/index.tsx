@@ -131,7 +131,7 @@ export default function SettingsPage() {
 
 			<div class="mt-auto px-5 pb-6 text-center">
 				<p class="text-xs font-bold text-muted-foreground/50 uppercase tracking-widest">
-					Ngepos POS · v0.3.0-alpha
+					Ngepos POS · v0.4.0
 				</p>
 			</div>
 		</div>
