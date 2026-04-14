@@ -14,27 +14,9 @@ import {
 import { db, Role } from "~/db/db";
 import { toast } from "solid-toast";
 import { Button } from "~/components/ui/button";
+import { ALL_PERMISSIONS, PERMISSION_CATEGORIES } from "~/data/permissions";
 
-const ALL_PERMISSIONS = [
-	{ id: "POS_ACCESS", label: "Akses Menu Kasir & Transaksi", icon: "🛒" },
-	{ id: "VIEW_HISTORY", label: "Lihat Riwayat Penjualan", icon: "📜" },
-	{
-		id: "DELETE_TRANSACTION",
-		label: "Hapus Transaksi dari Riwayat",
-		icon: "⚠️",
-	},
-	{ id: "MANAGE_EXPENSES", label: "Kelola Biaya & Pengeluaran", icon: "💸" },
-	{ id: "VIEW_REPORTS", label: "Lihat Laporan Laba/Rugi", icon: "📈" },
-	{ id: "MANAGE_PRODUCTS", label: "Kelola Produk & Stok", icon: "📦" },
-	{ id: "MANAGE_CATEGORIES", label: "Kelola Kategori Produk", icon: "🏷️" },
-	{ id: "MANAGE_OUTLET", label: "Kelola Informasi Outlet", icon: "🏢" },
-	{
-		id: "MANAGE_PAYMENTS",
-		label: "Kelola QRIS & Kanal Penjualan",
-		icon: "💳",
-	},
-	{ id: "MANAGE_STAFF", label: "Kelola Staff & Hak Akses (RBAC)", icon: "👥" },
-];
+
 
 export default function RoleManagement() {
 	const navigate = useNavigate();
@@ -44,25 +26,7 @@ export default function RoleManagement() {
 	const [selectedPerms, setSelectedPerms] = createSignal<string[]>([]);
 
 	const [roles, { refetch }] = createResource(async () => {
-		const data = await db.roles.toArray();
-		// Auto-seed if empty
-		if (data.length === 0) {
-			const defaultRoles: Role[] = [
-				{
-					id: "admin",
-					name: "Super Admin",
-					permissions: ALL_PERMISSIONS.map((p) => p.id),
-				},
-				{
-					id: "kasir",
-					name: "Kasir Standar",
-					permissions: ["POS_ACCESS", "VIEW_HISTORY"],
-				},
-			];
-			await db.roles.bulkAdd(defaultRoles);
-			return await db.roles.toArray();
-		}
-		return data;
+		return await db.roles.toArray();
 	});
 
 	const handleOpenModal = (role: Role | null = null) => {
@@ -301,57 +265,81 @@ export default function RoleManagement() {
 								/>
 							</div>
 
-							<div class="space-y-4">
-								<label class="text-xs font-black uppercase tracking-widest ml-1 text-muted-foreground block">
-									Daftar Izin Akses
-								</label>
-								<div class="grid grid-cols-1 gap-2">
-									<For each={ALL_PERMISSIONS}>
-										{(perm) => (
-											<button
-												onClick={() => togglePermission(perm.id)}
-												class={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
-													selectedPerms().includes(perm.id)
-														? "bg-primary/5 border-primary text-foreground shadow-sm"
-														: "bg-card border-border/40 text-muted-foreground hover:border-border"
-												}`}
-											>
-												<div class="w-10 h-10 bg-muted/50 rounded-xl flex items-center justify-center text-xl shrink-0">
-													{perm.icon}
-												</div>
-												<div class="flex-1 min-w-0">
-													<p
-														class={`text-sm font-black tracking-tight ${selectedPerms().includes(perm.id) ? "text-primary" : ""}`}
-													>
-														{perm.label}
-													</p>
-													<p class="text-[10px] font-semibold opacity-60 truncate">
-														Klik untuk{" "}
-														{selectedPerms().includes(perm.id)
-															? "mencabut"
-															: "memberikan"}{" "}
-														akses ini
-													</p>
-												</div>
-												<div
-													class={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-														selectedPerms().includes(perm.id)
-															? "bg-primary border-primary text-white scale-110"
-															: "border-border/60"
-													}`}
+							<div class="space-y-8">
+								<For each={PERMISSION_CATEGORIES}>
+									{(category) => (
+										<div class="space-y-3">
+											<div class="flex items-center gap-2 px-1">
+												<span class="text-xl">{category.icon}</span>
+												<h3 class="text-xs font-black uppercase tracking-widest text-muted-foreground">
+													{category.label}
+												</h3>
+											</div>
+											<div class="grid grid-cols-1 gap-2">
+												<For
+													each={ALL_PERMISSIONS.filter(
+														(p) => p.category === category.id,
+													)}
 												>
-													<Show
-														when={selectedPerms().includes(
-															perm.id,
-														)}
-													>
-														<Check size={14} stroke-width={4} />
-													</Show>
-												</div>
-											</button>
-										)}
-									</For>
-								</div>
+													{(perm) => (
+														<button
+															onClick={() =>
+																togglePermission(perm.id)
+															}
+															class={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
+																selectedPerms().includes(
+																	perm.id,
+																)
+																	? "bg-primary/5 border-primary text-foreground shadow-sm"
+																	: "bg-card border-border/40 text-muted-foreground hover:border-border"
+															}`}
+														>
+															<div class="w-10 h-10 bg-muted/50 rounded-xl flex items-center justify-center text-xl shrink-0">
+																{perm.icon}
+															</div>
+															<div class="flex-1 min-w-0">
+																<p
+																	class={`text-sm font-black tracking-tight ${selectedPerms().includes(perm.id) ? "text-primary" : ""}`}
+																>
+																	{perm.label}
+																</p>
+																<p class="text-[10px] font-semibold opacity-60 truncate">
+																	Klik untuk{" "}
+																	{selectedPerms().includes(
+																		perm.id,
+																	)
+																		? "mencabut"
+																		: "memberikan"}{" "}
+																	akses ini
+																</p>
+															</div>
+															<div
+																class={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+																	selectedPerms().includes(
+																		perm.id,
+																	)
+																		? "bg-primary border-primary text-white scale-110"
+																		: "border-border/60"
+																}`}
+															>
+																<Show
+																	when={selectedPerms().includes(
+																		perm.id,
+																	)}
+																>
+																	<Check
+																		size={14}
+																		stroke-width={4}
+																	/>
+																</Show>
+															</div>
+														</button>
+													)}
+												</For>
+											</div>
+										</div>
+									)}
+								</For>
 							</div>
 						</div>
 

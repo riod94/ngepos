@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '~/data/mockProducts';
+import { ALL_PERMISSIONS } from '~/data/permissions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -511,9 +512,12 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 export async function seedDatabase() {
   const productCount = await db.products.count();
+  const roleCount = await db.roles.count();
+
+  // Seed Categories & Products
   if (productCount === 0) {
     try {
-      console.log('Seeding Database Ngepos...');
+      console.log('Seeding Database Ngepos (Products)...');
       await db.categories.clear();
       await db.products.clear();
 
@@ -527,11 +531,39 @@ export async function seedDatabase() {
       const products = MOCK_PRODUCTS.map(p => ({
         ...p,
         cogs: 0,
+        isActive: true,
       })) as Product[];
       await db.products.bulkAdd(products);
-      console.log('Database seeded.');
     } catch (err) {
-      console.error(err);
+      console.error('Gagal seeding products:', err);
     }
+  }
+
+  // Seed or Update Roles
+  try {
+    const adminRole = await db.roles.get("admin");
+    const allPermIds = ALL_PERMISSIONS.map((p) => p.id);
+
+    // Always ensure admin has all permissions
+    if (!adminRole || JSON.stringify(adminRole.permissions) !== JSON.stringify(allPermIds)) {
+      console.log('Updating Super Admin permissions...');
+      await db.roles.put({
+        id: "admin",
+        name: "Super Admin",
+        permissions: allPermIds,
+      });
+    }
+
+    // Seed default kasir if no roles at all
+    if (roleCount === 0) {
+      console.log('Seeding default Kasir role...');
+      await db.roles.put({
+        id: "kasir",
+        name: "Kasir Standar",
+        permissions: ["POS_ACCESS", "VIEW_TRANSACTIONS"],
+      });
+    }
+  } catch (err) {
+    console.error('Gagal sync roles:', err);
   }
 }

@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show } from "solid-js";
+import { createSignal, createResource, For, Show, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import {
 	ArrowLeft,
@@ -37,11 +37,15 @@ export default function StaffManagement() {
 	});
 
 	const [roles] = createResource(async () => {
-		const data = await db.roles.toArray();
-		if (data.length > 0 && !roleId()) {
-			setRoleId(data[0].id);
+		return await db.roles.toArray();
+	});
+
+	// Handle default role selection
+	createEffect(() => {
+		const r = roles();
+		if (r && r.length > 0 && !roleId()) {
+			setRoleId(r[0].id);
 		}
-		return data;
 	});
 
 	const getRoleName = (id: string) => {
@@ -79,17 +83,18 @@ export default function StaffManagement() {
 	const handleSubmit = async (e: Event) => {
 		e.preventDefault();
 
-		if (!name() || pin().length !== 4 || !roleId()) {
-			toast.error("Nama, Jabatan, dan 4 digit PIN wajib diisi");
+		if (!name() || !roleId()) {
+			toast.error("Nama dan Jabatan wajib diisi");
 			return;
 		}
 
 		try {
+			const id = editingStaff()?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
 			const staffData: Staff = {
-				id: editingStaff()?.id || crypto.randomUUID(),
+				id,
 				name: name(),
 				roleId: roleId(),
-				pin: pin(),
+				pin: pin() || "0000", // Default pin if not provided
 				email: email(),
 				phone: phone(),
 				isActive: editingStaff()?.isActive ?? true,
@@ -368,59 +373,33 @@ export default function StaffManagement() {
 									</label>
 								</div>
 
-								<div class="grid grid-cols-2 gap-4">
-									<div class="space-y-2">
-										<label class="flex flex-col gap-2">
-											<span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 flex items-center gap-2">
-												<Shield size={10} /> Jabatan
-											</span>
-											<div class="relative">
-												<select
-													value={roleId()}
-													onInput={(e) =>
-														setRoleId(e.currentTarget.value)
-													}
-													class="w-full bg-muted/20 border-border/80 border-2 rounded-2xl h-14 px-5 font-black text-base appearance-none focus:outline-none focus:border-primary/50 transition-all pr-10"
-												>
-													<For each={roles()}>
-														{(role) => (
-															<option value={role.id}>
-																{role.name}
-															</option>
-														)}
-													</For>
-												</select>
-												<ChevronDown
-													class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-													size={18}
-												/>
-											</div>
-										</label>
-									</div>
-
-									<div class="space-y-2">
-										<label class="flex flex-col gap-2">
-											<span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 flex items-center gap-2">
-												<Key size={10} /> PIN Akses
-											</span>
-											<input
-												type="password"
-												maxLength={4}
-												required
-												placeholder="****"
-												value={pin()}
-												onInput={(e) => {
-													const val =
-														e.currentTarget.value.replaceAll(
-															/\D/g,
-															"",
-														);
-													setPin(val);
-												}}
-												class="w-full bg-muted/20 border-border/80 border-2 rounded-2xl h-14 px-4 font-black text-center text-xl tracking-[0.5em] focus:outline-none focus:border-primary/50 transition-all placeholder:tracking-normal placeholder:font-bold"
+								<div class="space-y-2">
+									<label class="flex flex-col gap-2">
+										<span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 flex items-center gap-2">
+											<Shield size={10} /> Jabatan Staff
+										</span>
+										<div class="relative">
+											<select
+												value={roleId()}
+												onInput={(e) =>
+													setRoleId(e.currentTarget.value)
+												}
+												class="w-full bg-muted/20 border-border/80 border-2 rounded-2xl h-14 px-5 font-black text-base appearance-none focus:outline-none focus:border-primary/50 transition-all pr-10"
+											>
+												<For each={roles()}>
+													{(role) => (
+														<option value={role.id}>
+															{role.name}
+														</option>
+													)}
+												</For>
+											</select>
+											<ChevronDown
+												class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+												size={18}
 											/>
-										</label>
-									</div>
+										</div>
+									</label>
 								</div>
 
 								<div class="space-y-2">
