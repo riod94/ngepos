@@ -5,7 +5,7 @@ import { solidStart } from "@solidjs/start/config";
 export default defineConfig({
   plugins: [
     solidStart({
-      ssr: false
+      ssr: false,
     }),
     nitro()
   ],

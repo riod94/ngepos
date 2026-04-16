@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, uuid, real, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, uuid, real, decimal, jsonb, index } from "drizzle-orm/pg-core";
 
 // ─── ROLES ──────────────────────────────────────────────────────────────────
 export const roles = pgTable("roles", {
@@ -12,7 +12,7 @@ export const roles = pgTable("roles", {
 export const staff = pgTable("staff", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	name: text("name").notNull(),
-	roleId: text("role_id").references(() => roles.id),
+	roleId: text("role_id").references(() => roles.id, { onDelete: "set null" }),
 	email: text("email").notNull().unique(),
 	password: text("password"),
 	isEmailVerified: boolean("is_email_verified").default(false).notNull(),
@@ -45,8 +45,14 @@ export const transactions = pgTable("transactions", {
 	backdatedNote: text("backdated_note"),
 	discountTotal: decimal("discount_total", { precision: 20, scale: 2 }).default("0"),
 	customerId: text("customer_id"),
+	cashierName: text("cashier_name"),
+	isAdjustment: boolean("is_adjustment").default(false),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+	index("idx_transactions_customer_id").on(table.customerId),
+	index("idx_transactions_payment_method").on(table.paymentMethod),
+	index("idx_transactions_timestamp").on(table.timestamp),
+]);
 
 // ─── TRANSACTION ITEMS ──────────────────────────────────────────────────────
 export const transactionItems = pgTable("transaction_items", {
@@ -58,7 +64,9 @@ export const transactionItems = pgTable("transaction_items", {
 	priceAtTime: decimal("price_at_time", { precision: 20, scale: 2 }).notNull(),
 	cogsAtTime: decimal("cogs_at_time", { precision: 20, scale: 2 }).notNull(),
 	selectedVariants: jsonb("selected_variants"),
-});
+}, (table) => [
+	index("idx_transaction_items_product_id").on(table.productId),
+]);
 
 // ─── EXPENSES ───────────────────────────────────────────────────────────────
 export const expenses = pgTable("expenses", {
@@ -69,7 +77,9 @@ export const expenses = pgTable("expenses", {
 	timestamp: timestamp("timestamp").notNull(),
 	isBackdated: boolean("is_backdated").default(false),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+	index("idx_expenses_timestamp").on(table.timestamp),
+]);
 
 // ─── PRODUCTS ───────────────────────────────────────────────────────────────
 export const products = pgTable("products", {

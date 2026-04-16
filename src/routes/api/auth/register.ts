@@ -4,13 +4,30 @@ import { eq } from "drizzle-orm";
 import { sendVerificationEmail } from "~/server/utils/mail";
 import { seedRoles } from "~/server/db/seed";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "~/server/utils/rateLimit";
+import { isValidEmail, isValidString, isValidPassword, safeParseJson } from "~/server/utils/validation";
 
 export async function POST({ request }: { request: Request }) {
 	try {
-		const { name, email, password } = await request.json();
+		const ip = getClientIp(request);
+		if (!checkRateLimit(`register:${ip}`, 3, 15 * 60 * 1000)) {
+			return rateLimitResponse();
+		}
 
-		if (!name || !email || !password || password.length < 6) {
-			return Response.json({ error: "Data tidak lengkap atau password too short" }, { status: 400 });
+		const { data, error: parseError } = await safeParseJson(request);
+		if (parseError) return parseError;
+
+		const { name, email, password } = data;
+
+		if (!isValidString(name, 2, 100)) {
+			return Response.json({ error: "Nama harus 2-100 karakter" }, { status: 400 });
+		}
+		if (!isValidEmail(email)) {
+			return Response.json({ error: "Format email tidak valid" }, { status: 400 });
+		}
+		const pwCheck = isValidPassword(password);
+		if (!pwCheck.valid) {
+			return Response.json({ error: pwCheck.error }, { status: 400 });
 		}
 
 		await seedRoles();
@@ -24,6 +41,7 @@ export async function POST({ request }: { request: Request }) {
 		const hashedPassword = await bcrypt.hash(password, 10);
 		
 		const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+		const hashedOtp = await bcrypt.hash(otpCode, 10);
 		const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); 
 
 		await db.insert(staff).values({
@@ -33,7 +51,7 @@ export async function POST({ request }: { request: Request }) {
 			roleId: "admin", 
 			isActive: true, 
 			isEmailVerified: false,
-			otpCode,
+			otpCode: hashedOtp,
 			otpExpiresAt,
 		});
 

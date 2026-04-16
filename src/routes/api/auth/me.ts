@@ -1,22 +1,11 @@
-import { jwtVerify } from "jose";
 import { db } from "~/server/db";
 import { staff, roles } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-
-const JWT_SECRET = new TextEncoder().encode(
-	process.env.JWT_SECRET || "default_super_secret_change_me_ngepos_2024"
-);
+import { verifyToken, AuthError } from "~/server/utils/auth";
 
 export async function GET({ request }: { request: Request }) {
 	try {
-		const authHeader = request.headers.get("Authorization");
-		if (!authHeader || !authHeader.startsWith("Bearer ")) {
-			return Response.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const token = authHeader.split(" ")[1];
-		const { payload } = await jwtVerify(token, JWT_SECRET);
-		
+		const payload = await verifyToken(request);
 		const userId = payload.sub as string;
 
 		// Fetch fresh data from DB
@@ -53,6 +42,9 @@ export async function GET({ request }: { request: Request }) {
 			}
 		});
 	} catch (err) {
+		if (err instanceof AuthError) {
+			return Response.json({ error: err.message }, { status: err.status });
+		}
 		console.error("Auth Me API Error:", err);
 		return Response.json({ error: "Token tidak valid atau kedaluwarsa" }, { status: 401 });
 	}

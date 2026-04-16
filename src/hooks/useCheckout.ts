@@ -9,14 +9,15 @@ import {
   linkedCustomerId,
   appliedRewardId,
 } from "~/stores/cart";
-import { 
-  isStampEligible, 
-  getActiveProgram, 
-  addStamp, 
-  getCustomerProgress, 
+import {
+  isStampEligible,
+  getActiveProgram,
+  addStamp,
+  getCustomerProgress,
   checkAndCreateReward,
   claimReward
 } from "~/stores/loyalty";
+import { useAuth } from "~/stores/auth";
 
 interface CheckoutOptions {
   method: string;
@@ -30,9 +31,25 @@ interface CheckoutOptions {
 export function useCheckout() {
   const [processing, setProcessing] = createSignal(false);
 
-  const getLoyaltyRewardAmount = (rwProd: any) => {
-    if (!appliedRewardId() || !rwProd) return 0;
-    return rwProd.price;
+  /**
+   * Calculate the discount amount for a loyalty reward based on the program's reward type.
+   * - FREE_PRODUCT: discount equals the reward product's full price
+   * - PERCENT_DISCOUNT: discount equals rewardValue% of the cart subtotal
+   * - FIXED_DISCOUNT: discount equals the fixed rewardValue amount
+   */
+  const getLoyaltyRewardAmount = (rwProd: any, subtotal: number, program: any) => {
+    if (!appliedRewardId() || !program) return 0;
+
+    switch (program.rewardType) {
+      case 'FREE_PRODUCT':
+        return rwProd?.price ?? 0;
+      case 'PERCENT_DISCOUNT':
+        return Math.round((subtotal * (program.rewardValue || 0) / 100) * 100) / 100;
+      case 'FIXED_DISCOUNT':
+        return program.rewardValue || 0;
+      default:
+        return rwProd?.price ?? 0;
+    }
   };
 
   async function submitTransaction(opts: CheckoutOptions): Promise<string | null> {
@@ -44,6 +61,7 @@ export function useCheckout() {
     const cartSnapshot = structuredClone(rawCart);
     const originalTotal = getCartSubtotal();
     const discountInfo = calculateDiscounts();
+    const activeLoyaltyProgram = await getActiveProgram();
 
     if (!cartSnapshot || cartSnapshot.length === 0) {
       toast.error("Gagal: Keranjang belanja kosong.");
@@ -145,7 +163,7 @@ export function useCheckout() {
           if (itemsToSave.length === 0) throw new Error("Item tidak terdeteksi");
 
           const isAdjustment = finalAmount !== finalTotalAmountFunc();
-          const discountTotalVal = discountInfo.total + getLoyaltyRewardAmount(rwProd);
+          const discountTotalVal = discountInfo.total + getLoyaltyRewardAmount(rwProd, originalTotal, activeLoyaltyProgram);
           const discountNoteVal = discountInfo.note + (rid ? ", Loyalty Reward" : "");
 
           await db.transactions.add({
@@ -172,40 +190,72 @@ export function useCheckout() {
       );
 
       // Post-checkout: Update Loyalty (outside transaction for side effects)
+      // Wrapped separately so loyalty errors don't fail the entire checkout
       if (resultTransactionId && linkedCustomerId()) {
-        const cid = linkedCustomerId()!;
-        const lp = await getActiveProgram();
-        if (lp) {
-          const cartProductIds = cartSnapshot.map((it: any) => String(it.id));
-          const eligible = isStampEligible(originalTotal, discountInfo.total > 0, cartProductIds, lp);
-          
-          if (eligible) {
-            await addStamp(cid, lp.id, resultTransactionId);
-            const progress = await getCustomerProgress(cid, lp.id);
+        try {
+          const cid = linkedCustomerId()!;
+          const lp = await getActiveProgram();
+          if (lp) {
+            const cartProductIds = cartSnapshot.map((it: any) => String(it.id));
+            const eligible = isStampEligible(originalTotal, discountInfo.total > 0, cartProductIds, lp);
             
-            if (progress.isEligibleForReward) {
-              await checkAndCreateReward(cid, lp.id);
-              toast.success("🎉 Target Stamp Tercapai! Reward baru tersedia.");
-            } else {
-              toast.success(`Stamp +1 (${progress.currentStamps}/${progress.targetStamps}) ✓`);
+            if (eligible) {
+              await addStamp(cid, lp.id, resultTransactionId);
+              const progress = await getCustomerProgress(cid, lp.id);
+              
+              if (progress.isEligibleForReward) {
+                await checkAndCreateReward(cid, lp.id);
+                toast.success("🎉 Target Stamp Tercapai! Reward baru tersedia.");
+              } else {
+                toast.success(`Stamp +1 (${progress.currentStamps}/${progress.targetStamps}) ✓`);
+              }
             }
           }
-        }
 
-        const rid = appliedRewardId();
-        if (rid) {
-          await claimReward(rid, resultTransactionId);
+          const rid = appliedRewardId();
+          if (rid) {
+            await claimReward(rid, resultTransactionId);
+          }
+        } catch (loyaltyErr: any) {
+          // Loyalty errors are non-critical — log but don't fail checkout
+          console.warn("[Checkout] Loyalty post-processing error (non-critical):", loyaltyErr);
+          toast.error("Stamp/Reward gagal diproses, tapi transaksi tersimpan.");
         }
       }
 
       // Trigger Background Sync
-      const { syncService } = await import("~/lib/syncService");
-      syncService.triggerSync();
+      try {
+        const { syncService } = await import("~/lib/syncService");
+        syncService.triggerSync();
+      } catch (syncErr: any) {
+        console.warn("[Checkout] Sync trigger error (non-critical):", syncErr);
+        // Sync will be retried automatically — no user-facing error needed
+      }
 
       return resultTransactionId;
     } catch (err: any) {
-      console.error("CRITICAL CHECKOUT ERROR:", err);
-      toast.error(`Kegagalan Checkout: ${err?.message || "Kesalahan Database"}`);
+      // Categorize errors for better user feedback
+      const errMsg = err?.message || "";
+      
+      if (errMsg.includes("Item tidak terdeteksi")) {
+        console.error("[Checkout] No items detected after processing");
+        toast.error("Tidak ada item yang terdeteksi. Coba lagi.");
+      } else if (err?.name === "ConstraintError" || errMsg.includes("constraint")) {
+        console.error("[Checkout] Database constraint error:", err);
+        toast.error("Konflik data. Transaksi mungkin sudah ada.");
+      } else if (err?.name === "QuotaExceededError" || errMsg.includes("quota")) {
+        console.error("[Checkout] Storage quota exceeded:", err);
+        toast.error("Penyimpanan penuh. Hapus data lama atau hubungi admin.");
+      } else if (err?.name === "TransactionInactiveError" || errMsg.includes("transaction")) {
+        console.error("[Checkout] Database transaction error:", err);
+        toast.error("Kesalahan transaksi database. Coba lagi.");
+      } else if (!navigator.onLine) {
+        console.error("[Checkout] Offline during checkout");
+        toast.error("Koneksi terputus. Transaksi disimpan lokal.");
+      } else {
+        console.error("CRITICAL CHECKOUT ERROR:", err);
+        toast.error(`Kegagalan Checkout: ${errMsg || "Kesalahan Database"}`);
+      }
       return null;
     } finally {
       setProcessing(false);

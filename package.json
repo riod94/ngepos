@@ -1,11 +1,11 @@
 {
-  "name": "example-with-tailwindcss",
+  "name": "ngepos",
   "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node .output/server/index.mjs",
+    "start": "vite preview",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -41,6 +41,7 @@
   "engines": {
     "node": ">=22"
   },
+  "packageManager": "bun",
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
     "@types/dotenv": "^8.2.3",

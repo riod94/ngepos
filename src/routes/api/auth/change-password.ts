@@ -1,22 +1,18 @@
-import { jwtVerify } from "jose";
 import { db } from "~/server/db";
 import { staff } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-
-const JWT_SECRET = new TextEncoder().encode(
-	process.env.JWT_SECRET || "default_super_secret_change_me_ngepos_2024"
-);
+import { verifyToken, AuthError } from "~/server/utils/auth";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "~/server/utils/rateLimit";
 
 export async function POST({ request }: { request: Request }) {
 	try {
-		const authHeader = request.headers.get("Authorization");
-		if (!authHeader || !authHeader.startsWith("Bearer ")) {
-			return Response.json({ error: "Unauthorized" }, { status: 401 });
+		const ip = getClientIp(request);
+		if (!checkRateLimit(`change-password:${ip}`, 5, 15 * 60 * 1000)) {
+			return rateLimitResponse();
 		}
 
-		const token = authHeader.split(" ")[1];
-		const { payload } = await jwtVerify(token, JWT_SECRET);
+		const payload = await verifyToken(request);
 		const userId = payload.sub as string;
 
 		const { oldPassword, newPassword } = await request.json();
@@ -65,6 +61,9 @@ export async function POST({ request }: { request: Request }) {
 			message: "Password berhasil diganti",
 		});
 	} catch (err) {
+		if (err instanceof AuthError) {
+			return Response.json({ error: err.message }, { status: err.status });
+		}
 		console.error("Change Password Error:", err);
 		return Response.json({ error: "Terjadi kesalahan saat mengganti password" }, { status: 500 });
 	}

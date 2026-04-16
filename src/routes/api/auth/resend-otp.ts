@@ -2,9 +2,16 @@ import { db } from "~/server/db";
 import { staff } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { sendVerificationEmail } from "~/server/utils/mail";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "~/server/utils/rateLimit";
+import bcrypt from "bcryptjs";
 
 export async function POST({ request }: { request: Request }) {
 	try {
+		const ip = getClientIp(request);
+		if (!checkRateLimit(`resend-otp:${ip}`, 3, 15 * 60 * 1000)) {
+			return rateLimitResponse();
+		}
+
 		const { email } = await request.json();
 
 		if (!email) {
@@ -26,11 +33,12 @@ export async function POST({ request }: { request: Request }) {
 
 		// Generate new OTP
 		const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+		const hashedOtp = await bcrypt.hash(otpCode, 10);
 		const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
 		// Update database
 		await db.update(staff)
-			.set({ otpCode, otpExpiresAt })
+			.set({ otpCode: hashedOtp, otpExpiresAt })
 			.where(eq(staff.email, email));
 
 		// Send email

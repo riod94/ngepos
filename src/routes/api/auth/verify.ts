@@ -1,9 +1,16 @@
 import { db } from "~/server/db";
 import { staff } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "~/server/utils/rateLimit";
+import bcrypt from "bcryptjs";
 
 export async function POST({ request }: { request: Request }) {
 	try {
+		const ip = getClientIp(request);
+		if (!checkRateLimit(`verify:${ip}`, 5, 60 * 1000)) {
+			return rateLimitResponse();
+		}
+
 		const { email, otpCode } = await request.json();
 
 		if (!email || !otpCode) {
@@ -25,7 +32,7 @@ export async function POST({ request }: { request: Request }) {
 		}
 
 		// Validate OTP
-		if (user.otpCode !== otpCode) {
+		if (!user.otpCode || !(await bcrypt.compare(otpCode, user.otpCode))) {
 			return Response.json({ error: "Kode OTP tidak valid" }, { status: 400 });
 		}
 

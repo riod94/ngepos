@@ -1,6 +1,6 @@
 {
-  "id": "d91bc170-575e-46f7-a346-34159f768b1e",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "1027c350-dd63-4aa8-ae12-5c70b87916e8",
+  "prevId": "d91bc170-575e-46f7-a346-34159f768b1e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -810,6 +810,19 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "cashier_name": {
+          "name": "cashier_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_adjustment": {
+          "name": "is_adjustment",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         },
         "updated_at": {
           "name": "updated_at",
