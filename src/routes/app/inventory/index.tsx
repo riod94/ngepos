@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import { A } from "@solidjs/router";
 import { Package, Tags, LayoutGrid, Package2 } from "lucide-solid";
 
@@ -58,7 +59,7 @@ export default function InventoryHub() {
 			</div>
 
 			<div class="p-5 flex flex-col gap-3">
-				{INVENTORY_ITEMS.map((item) => {
+				<For each={INVENTORY_ITEMS}>{(item) => {
 					const Icon = item.icon;
 					return (
 						<A href={item.href} class="block">
@@ -94,7 +95,7 @@ export default function InventoryHub() {
 							</div>
 						</A>
 					);
-				})}
+				}}</For>
 			</div>
 		</div>
 	);

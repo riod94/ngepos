@@ -151,7 +151,7 @@ export default function MemberCardSettings() {
 							</div>
 							<label class="relative inline-flex items-center cursor-pointer">
 								<input type="checkbox" checked={showStamps()} onChange={(e) => setShowStamps(e.currentTarget.checked)} class="sr-only peer" />
-								<div class="w-11 h-6 bg-muted/60 border border-border/80 rounded-full peer peer-checked:after:translate-x-[18px] peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner"></div>
+								<div class="w-11 h-6 bg-muted/60 border border-border/80 rounded-full peer peer-checked:after:translate-x-[18px] peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner" />
 							</label>
 						</div>
 

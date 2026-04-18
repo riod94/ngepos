@@ -1,4 +1,4 @@
-import { createSignal, createResource, Show, batch } from "solid-js";
+import { createSignal, createResource, Show, batch, For } from "solid-js";
 import { History, Clock, TriangleAlert, ArrowLeft } from "lucide-solid";
 import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { db, getSetting } from "~/db/db";
@@ -175,7 +175,7 @@ export default function HistoryPage() {
 					}
 				>
 					<div class="flex flex-col gap-3">
-						{transactions()!.map((tx) => (
+						<For each={transactions()!}>{(tx) => (
 							<Swipeable
 								onDelete={() => setDeleteTxId(tx.id)}
 								disabled={!canDelete()}
@@ -223,7 +223,7 @@ export default function HistoryPage() {
 									</div>
 								</A>
 							</Swipeable>
-						))}
+						)}</For>
 					</div>
 				</Show>
 			</div>

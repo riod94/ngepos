@@ -1,4 +1,4 @@
-import { JSX } from "solid-js";
+import { JSX, For } from "solid-js";
 import { A } from "@solidjs/router";
 import {
 	Package,
@@ -94,7 +94,7 @@ export default function SettingsPage() {
 
 			<div class="p-5 flex flex-col gap-3">
 				{/* Menu Items */}
-				{MENU_ITEMS.map((item) => {
+				<For each={MENU_ITEMS}>{(item) => {
 					const Icon = item.icon;
 					const inner = (
 						<div
@@ -126,7 +126,7 @@ export default function SettingsPage() {
 					);
 					if (item.disabled) return <div>{inner}</div>;
 					return <A href={item.href}>{inner}</A>;
-				})}
+				}}</For>
 			</div>
 
 			<div class="mt-auto px-5 pb-6 text-center">

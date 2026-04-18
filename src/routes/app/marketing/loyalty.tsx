@@ -195,14 +195,14 @@ export default function LoyaltySettingsPage() {
 							{(p) => {
 								return (
 									<div 
-										class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all cursor-pointer group shadow-sm ${!!p.isActive ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/60 hover:border-primary/30"}`}
+										class={`flex items-center w-full text-left gap-3 bg-card px-3.5 py-3 rounded-2xl border transition-all cursor-pointer group shadow-sm ${p.isActive ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/60 hover:border-primary/30"}`}
 										onClick={() => {
 											setEditingProgram(p);
 											setFormOpen(true);
 										}}
 									>
 										<div
-											class={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-border/50 transition-all ${!!p.isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
+											class={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-border/50 transition-all ${p.isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
 										>
 											<Trophy size={20} stroke-width={2.5} />
 										</div>

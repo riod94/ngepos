@@ -1,4 +1,4 @@
-import { JSX } from "solid-js";
+import { JSX, For } from "solid-js";
 import { A } from "@solidjs/router";
 import {
 	Users,
@@ -57,7 +57,7 @@ export default function MarketingHub() {
 			</div>
 
 			<div class="p-5 flex flex-col gap-3">
-				{MARKETING_ITEMS.map((item) => {
+				<For each={MARKETING_ITEMS}>{(item) => {
 					const Icon = item.icon;
 					return (
 						<A href={item.href} class="block">
@@ -83,7 +83,7 @@ export default function MarketingHub() {
 							</div>
 						</A>
 					);
-				})}
+				}}</For>
 			</div>
 
             <div class="px-5 py-4">

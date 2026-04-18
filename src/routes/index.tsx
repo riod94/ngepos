@@ -25,8 +25,8 @@ export default function LandingPage() {
         <div class="max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
           <div class="inline-flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-full mb-8 border border-border shadow-inner">
             <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
             <span class="text-xs font-black uppercase tracking-widest text-muted-foreground">Arsitektur Offline-First</span>
           </div>

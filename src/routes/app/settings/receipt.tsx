@@ -67,7 +67,7 @@ export default function ReceiptSettingsPage() {
 								checked={showLogo() ?? true}
 								onChange={(e) => handleSave("receipt_show_logo", e.currentTarget.checked ? "true" : "false")}
 							/>
-							<div class="w-14 h-8 bg-muted/50 border-2 border-border/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[5px] after:bg-white after:border-border/40 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary peer-checked:border-primary shadow-inner"></div>
+							<div class="w-14 h-8 bg-muted/50 border-2 border-border/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[5px] after:bg-white after:border-border/40 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary peer-checked:border-primary shadow-inner" />
 						</label>
 					</div>
 

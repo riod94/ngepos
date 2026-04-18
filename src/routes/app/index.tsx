@@ -15,10 +15,10 @@ const ProductSkeleton = () => (
 	<div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2 w-full animate-pulse">
 		{Array.from({ length: 8 }).map(() => (
 			<div class="overflow-hidden border border-border/30 rounded-2xl bg-card/60 flex flex-col h-full shadow-sm">
-				<div class="aspect-square w-full bg-muted/40 rounded-t-[18px]"></div>
+				<div class="aspect-square w-full bg-muted/40 rounded-t-[18px]" />
 				<div class="p-3 flex flex-col justify-between flex-1 gap-3">
-					<div class="h-3.5 bg-muted/50 rounded-full w-3/4"></div>
-					<div class="h-3 bg-muted/30 rounded-full w-1/2 mt-1"></div>
+					<div class="h-3.5 bg-muted/50 rounded-full w-3/4" />
+					<div class="h-3 bg-muted/30 rounded-full w-1/2 mt-1" />
 				</div>
 			</div>
 		))}
@@ -153,9 +153,8 @@ export default function Home() {
 				>
 					<span class="text-lg">🏪</span> Semua
 				</Button>
-				{categories()
-					?.filter((c) => c.name.toLowerCase() !== "semua")
-					.map((category) => (
+				{<For each={categories()
+					?.filter((c) => c.name.toLowerCase() !== "semua")}>{(category) => (
 						<Button
 							variant={
 								activeCategory() === category.name
@@ -172,13 +171,13 @@ export default function Home() {
 							<span class="text-lg">{category.icon ?? "📦"}</span>
 							{category.name}
 						</Button>
-					))}
+					)}</For>}
 			</div>
 
 			{/* Dense Product Grid (3 or 4 cols) */}
 			<Suspense fallback={<ProductSkeleton />}>
 				<div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-2">
-					{filteredProducts().map((product) => {
+					<For each={filteredProducts()}>{(product) => {
 						const availability = getProductAvailability(
 							product,
 							materials() || [],
@@ -265,7 +264,7 @@ export default function Home() {
 								</CardContent>
 							</Card>
 						);
-					})}
+					}}</For>
 				</div>
 			</Suspense>
 			<VariantSelector

@@ -1,4 +1,4 @@
-import { onMount, createSignal } from "solid-js";
+import { onMount, createSignal, For } from "solid-js";
 import { Package } from "lucide-solid";
 
 interface QrCodeGeneratorProps {
@@ -141,7 +141,7 @@ export function QrCodePrintGrid(props: QrCodePrintGridProps) {
       `}</style>
       
       <div class={`qr-grid ${isHorizontal() ? 'horizontal' : 'portrait'}`}>
-        {props.items.map((item) => (
+        <For each={props.items}>{(item) => (
           <div 
             class={`qr-item ${getThemeClasses(theme())} ${isHorizontal() ? 'horizontal' : 'portrait'} ${theme() === 'lines' ? 'bg-lines' : ''} ${theme() === 'gradient' ? 'bg-gradient' : ''}`}
             style={theme() === 'custom' ? { background: props.customColor || "#4f46e5" } : undefined}
@@ -214,7 +214,7 @@ export function QrCodePrintGrid(props: QrCodePrintGridProps) {
               )}
             </div>
           </div>
-        ))}
+        )}</For>
       </div>
     </div>
   );

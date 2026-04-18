@@ -205,7 +205,7 @@ export default function PaymentSettingsPage() {
 									checked={gfEnabled() || false} 
 									onInput={() => togglePlatform("enable_gofood", gfEnabled() === true, refetchGF)} 
 								/>
-								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary" />
 							</label>
 						</div>
 
@@ -228,7 +228,7 @@ export default function PaymentSettingsPage() {
 									checked={grEnabled() || false} 
 									onInput={() => togglePlatform("enable_grabfood", grEnabled() === true, refetchGR)} 
 								/>
-								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary" />
 							</label>
 						</div>
 
@@ -251,7 +251,7 @@ export default function PaymentSettingsPage() {
 									checked={shEnabled() || false} 
 									onInput={() => togglePlatform("enable_shopeefood", shEnabled() === true, refetchSH)} 
 								/>
-								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+								<div class="w-11 h-6 bg-muted border-2 border-border/60 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-border/60 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:border-primary" />
 							</label>
 						</div>
 					</div>
