@@ -10,8 +10,6 @@ export default defineConfig({
     nitro()
   ],
   optimizeDeps: {
-    // Pre-bundle dependency utama agar tidak diproses ulang setiap cold start
-    // Menambahkan library besar ke sini mencegah reload saat navigasi di dev mode
     include: [
       "dexie",
       "solid-js",
@@ -21,18 +19,38 @@ export default defineConfig({
       "jspdf",
       "jspdf-autotable",
       "chart.js"
+    ],
+    exclude: [
+      "@solidjs/router"
     ]
   },
   build: {
-    // Target modern browser untuk bundle lebih kecil
     target: "es2020",
-    // Minifikasi lebih agresif
     minify: "esbuild",
-    // Nonaktifkan sourcemap untuk menghilangkan peringatan jspdf/html5-qrcode yang rusak
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-solid": ["solid-js", "solid-js/web", "solid-js/store"],
+          "vendor-charts": ["chart.js"],
+          "vendor-pdf": ["jspdf", "jspdf-autotable"],
+          "vendor-xlsx": ["xlsx"],
+          "vendor-dexie": ["dexie"]
+        },
+        chunkFileNames: "assets/js/[name]-[hash].js",
+        entryFileNames: "assets/js/[name]-[hash].js",
+        assetFileNames: "assets/[ext]/[name]-[hash].[ext]"
+      }
+    },
+    chunkSizeWarningLimit: 500,
+    reportCompressedSize: true,
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false
+    }
   },
   server: {
-    host: true, // Listen on all interfaces for nginx proxy
+    host: true,
     port: 5173,
     fs: {
       allow: [".."]
@@ -42,4 +60,3 @@ export default defineConfig({
     port: 3000,
   }
 });
-
