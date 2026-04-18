@@ -83,6 +83,11 @@ class CacheInvalidationService {
     keys.forEach((key) => this.invalidate(key));
   }
 
+  invalidateSync(): void {
+    this.invalidatePattern("^sync:");
+    this.invalidatePattern("^pending:");
+  }
+
   onInvalidate(entityType: string, callback: (key: string) => void): () => void {
     if (!this.listeners.has(entityType)) {
       this.listeners.set(entityType, new Set());

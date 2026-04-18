@@ -30,12 +30,13 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-solid": ["solid-js", "solid-js/web", "solid-js/store"],
-          "vendor-charts": ["chart.js"],
-          "vendor-pdf": ["jspdf", "jspdf-autotable"],
-          "vendor-xlsx": ["xlsx"],
-          "vendor-dexie": ["dexie"]
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("chart.js")) return "vendor-charts";
+            if (id.includes("jspdf") || id.includes("jspdf-autotable")) return "vendor-pdf";
+            if (id.includes("xlsx")) return "vendor-xlsx";
+            if (id.includes("dexie")) return "vendor-dexie";
+          }
         },
         chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
@@ -43,11 +44,7 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 500,
-    reportCompressedSize: true,
-    treeshake: {
-      moduleSideEffects: false,
-      propertyReadSideEffects: false
-    }
+    reportCompressedSize: true
   },
   server: {
     host: true,
