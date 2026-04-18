@@ -92,7 +92,7 @@ export default function Login() {
 								<label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
 									Password
 								</label>
-								<A href="#" class="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
+								<A href="/forgot-password" class="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
 									Lupa Password?
 								</A>
 							</div>

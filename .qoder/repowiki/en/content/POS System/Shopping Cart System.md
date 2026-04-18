@@ -62,19 +62,19 @@ DB --> MP
 ```
 
 **Diagram sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 
 **Section sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 
 ## Core Components
@@ -90,11 +90,11 @@ Key exports and responsibilities:
 - Database types define product variants, campaign rules, and transaction items.
 
 **Section sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Architecture Overview
 The cart system follows a unidirectional data flow:
@@ -125,9 +125,9 @@ Store-->>UI : cart cleared
 
 **Diagram sources**
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Detailed Component Analysis
 
@@ -158,7 +158,7 @@ Real-time updates:
 - Uses Solid’s createStore and createResource to keep UI reactive to cart changes and campaign updates.
 
 **Section sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 
 #### Class Diagram: CartItem and Related Types
 ```mermaid
@@ -256,7 +256,7 @@ The checkout hook:
 - Triggers background sync service.
 
 **Section sources**
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [cart.ts:238-246](file://src/stores/cart.ts#L238-L246)
 
 #### Sequence Diagram: Checkout Flow
@@ -341,17 +341,17 @@ DB --> MP["mockProducts.ts"]
 **Diagram sources**
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 
 **Section sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [CartFloatingButton.tsx:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Performance Considerations
 - Campaign data preloading: activeCampaigns eager loads campaignItems and campaignRewards to minimize repeated queries during discount calculation.

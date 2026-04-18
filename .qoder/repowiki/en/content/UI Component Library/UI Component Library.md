@@ -95,7 +95,7 @@ uicfg --> tw
 - [tailwind.config.cjs:1-88](file://tailwind.config.cjs#L1-L88)
 - [ui.config.json:1-13](file://ui.config.json#L1-L13)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 **Section sources**
 - [button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
@@ -112,7 +112,7 @@ uicfg --> tw
 - [tailwind.config.cjs:1-88](file://tailwind.config.cjs#L1-L88)
 - [ui.config.json:1-13](file://ui.config.json#L1-L13)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Core Components
 This section documents the foundational UI components and their capabilities.

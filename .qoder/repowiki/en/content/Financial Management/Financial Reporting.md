@@ -76,7 +76,7 @@ ES --> DB
 - [src/components/FinancialCharts.tsx:1-333](file://src/components/FinancialCharts.tsx#L1-L333)
 - [src/components/DateFilter.tsx:1-237](file://src/components/DateFilter.tsx#L1-L237)
 - [src/lib/exportService.ts:1-293](file://src/lib/exportService.ts#L1-L293)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 **Section sources**
 - [src/routes/app/reports/index.tsx:1-715](file://src/routes/app/reports/index.tsx#L1-L715)
@@ -86,7 +86,7 @@ ES --> DB
 - [src/components/FinancialCharts.tsx:1-333](file://src/components/FinancialCharts.tsx#L1-L333)
 - [src/components/DateFilter.tsx:1-237](file://src/components/DateFilter.tsx#L1-L237)
 - [src/lib/exportService.ts:1-293](file://src/lib/exportService.ts#L1-L293)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Core Components
 - Reports dashboard: Computes revenue, platform adjustment, COGS, gross profit, operating expenses, net profit, modal return, and “true profit.” Aggregates hourly/daily trends and payment distribution. Provides export to Excel and PDF.

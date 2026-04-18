@@ -4,6 +4,7 @@
 **Referenced Files in This Document**
 - [package.json](file://package.json)
 - [README.md](file://README.md)
+- [bun.lock](file://bun.lock)
 - [vite.config.ts](file://vite.config.ts)
 - [tsconfig.json](file://tsconfig.json)
 - [drizzle.config.ts](file://drizzle.config.ts)
@@ -17,6 +18,13 @@
 - [src/app.tsx](file://src/app.tsx)
 - [src/routes/api/auth/register.ts](file://src/routes/api/auth/register.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated package manager from npm to Bun as the primary package manager
+- Revised installation and development commands to use Bun
+- Updated dependency management and lock file references
+- Modified development workflow examples to reflect Bun usage
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -32,10 +40,12 @@
 ## Introduction
 NgePos is a Point of Sale (POS) system built with modern web technologies. It combines a SolidJS frontend with a Node.js backend, PostgreSQL for persistent data, and Drizzle ORM for database operations. The system supports offline-first capabilities using IndexedDB via Dexie, while synchronizing with the central PostgreSQL database for reporting and administration.
 
+**Updated** The project now uses Bun as the primary package manager, offering faster installation and development workflows compared to traditional npm.
+
 ## Prerequisites and System Requirements
 - Operating System: macOS, Linux, or Windows
 - Node.js: Version 22 or higher (enforced by engines)
-- Package Manager: npm, pnpm, or yarn (any of these is supported)
+- Package Manager: Bun (primary), npm, pnpm, or yarn (any of these is supported)
 - Database: PostgreSQL 12 or later
 - Optional: A working email service for OTP verification during registration
 
@@ -45,9 +55,10 @@ Key indicators from the repository:
 - PostgreSQL is configured as the primary database with Drizzle ORM.
 - TypeScript is enabled with strict compiler options.
 - Tailwind CSS is configured for styling.
+- Bun is declared as the primary package manager in package.json.
 
 **Section sources**
-- [package.json:41-43](file://package.json#L41-L43)
+- [package.json:41-44](file://package.json#L41-L44)
 - [README.md:15-24](file://README.md#L15-L24)
 - [tsconfig.json:2-18](file://tsconfig.json#L2-L18)
 
@@ -58,7 +69,9 @@ Follow these steps to install and set up the NgePos system locally:
    - Clone the project to your local machine and navigate into the project directory.
 
 2. **Install dependencies**
-   - Use your preferred package manager to install dependencies:
+   - Use Bun as the primary package manager to install dependencies:
+     - Bun: `bun install`
+   - Alternative package managers are also supported:
      - npm: `npm install`
      - pnpm: `pnpm install`
      - yarn: `yarn install`
@@ -70,22 +83,23 @@ Follow these steps to install and set up the NgePos system locally:
 
 4. **Run database migrations**
    - Apply schema changes using Drizzle Kit:
-     - `npx drizzle-kit push`
+     - `bunx drizzle-kit push`
    - Alternatively, generate and run SQL migration files:
-     - `npx drizzle-kit generate`
+     - `bunx drizzle-kit generate`
      - Review and apply generated SQL scripts to your database.
 
 5. **Build the frontend**
    - Build the SolidJS application for production:
-     - `npm run build`
+     - `bun run build`
 
 6. **Start the development server**
    - Launch the development server:
-     - `npm run dev`
+     - `bun run dev`
 
 Notes:
-- The project supports multiple package managers interchangeably.
+- The project supports multiple package managers interchangeably, with Bun as the primary recommendation.
 - The build process targets modern browsers and disables sourcemaps for certain dependencies to avoid warnings.
+- Bun provides faster installation and development cycles compared to traditional npm.
 
 **Section sources**
 - [README.md:15-33](file://README.md#L15-L33)
@@ -97,7 +111,7 @@ Notes:
 Configure your development environment using the following files and settings:
 
 - **Node.js and Package Manager**
-  - Use Node.js 22+ and choose one of npm, pnpm, or yarn.
+  - Use Node.js 22+ and choose Bun as the primary package manager, with npm, pnpm, or yarn as alternatives.
   - Scripts for development, building, and previewing are defined in the package manifest.
 
 - **TypeScript Configuration**
@@ -138,11 +152,11 @@ Complete the initial setup to launch the application and seed essential data:
 
 1. **Seed default roles**
    - Roles are seeded automatically during registration or can be seeded manually:
-     - `npx drizzle-kit seed`
+     - `bunx drizzle-kit seed`
 
 2. **Start the development server**
    - Run the development server:
-     - `npm run dev`
+     - `bun run dev`
    - Open the application in your browser at the configured port.
 
 3. **Register the first administrator**
@@ -186,21 +200,21 @@ Note over Client,DB : "Local Dexie database seeded on app mount"
 ## Basic Usage Examples
 - **Development Workflow**
   - Start the development server with hot reloading:
-    - `npm run dev`
+    - `bun run dev`
   - Preview the production build:
-    - `npm run preview`
+    - `bun run preview`
 
 - **Building for Production**
   - Generate optimized assets:
-    - `npm run build`
+    - `bun run build`
   - Serve the built application:
-    - `npm start`
+    - `bun start`
 
 - **Database Operations**
   - Push schema changes:
-    - `npx drizzle-kit push`
+    - `bunx drizzle-kit push`
   - Generate migration files:
-    - `npx drizzle-kit generate`
+    - `bunx drizzle-kit generate`
 
 - **Frontend Interactions**
   - The application initializes local IndexedDB on mount and seeds categories and products.
@@ -221,7 +235,7 @@ Ensure the installation and configuration are correct:
 
 - **Dependencies Installation**
   - Confirm dependencies are installed without errors:
-    - `npm install` (or equivalent)
+    - `bun install` (or equivalent)
 
 - **Database Connectivity**
   - Test the database connection:
@@ -230,26 +244,26 @@ Ensure the installation and configuration are correct:
 
 - **Schema Synchronization**
   - Apply schema changes:
-    - `npx drizzle-kit push`
+    - `bunx drizzle-kit push`
   - Verify tables exist in the database:
     - Check for tables defined in the schema file.
 
 - **Frontend Build**
   - Build the application:
-    - `npm run build`
+    - `bun run build`
   - Confirm build artifacts are generated.
 
 - **Application Startup**
   - Start the development server:
-    - `npm run dev`
+    - `bun run dev`
   - Access the application in the browser and verify:
     - Local database seeding occurs on first load.
     - Registration and login flows work as expected.
 
 **Section sources**
-- [package.json:41-43](file://package.json#L41-L43)
+- [package.json:41-44](file://package.json#L41-L44)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
 - [vite.config.ts:26-44](file://vite.config.ts#L26-L44)
 
@@ -284,11 +298,15 @@ Common issues and resolutions:
   - Symptom: Compilation errors due to strict compiler options.
   - Resolution: Adjust code to meet strict type checking requirements.
 
+- **Bun Installation Issues**
+  - Symptom: Bun package manager not found or failing to execute commands.
+  - Resolution: Install Bun globally using the official installer, then retry commands.
+
 **Section sources**
-- [package.json:41-43](file://package.json#L41-L43)
+- [package.json:41-44](file://package.json#L41-L44)
 - [src/server/db/index.ts:12-19](file://src/server/db/index.ts#L12-L19)
 - [vite.config.ts:34-44](file://vite.config.ts#L34-L44)
 - [tsconfig.json:12-14](file://tsconfig.json#L12-L14)
 
 ## Conclusion
-You have successfully installed and configured the NgePos POS system. You can now develop, build, and run the application locally, manage the database with Drizzle ORM, and use the frontend with SolidJS and Vite. For further customization, explore the schema definitions, UI components, and routing structure.
+You have successfully installed and configured the NgePos POS system using Bun as the primary package manager. You can now develop, build, and run the application locally, manage the database with Drizzle ORM, and use the frontend with SolidJS and Vite. The migration to Bun provides improved performance and developer experience. For further customization, explore the schema definitions, UI components, and routing structure.

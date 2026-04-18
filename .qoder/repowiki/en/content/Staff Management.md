@@ -76,7 +76,7 @@ G --> H
 - [index.tsx:49-715](file://src/routes/app/reports/index.tsx#L49-L715)
 - [expenses.tsx:33-478](file://src/routes/app/reports/expenses.tsx#L33-L478)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 - [login.ts:11-55](file://src/routes/api/auth/login.ts#L11-L55)
 - [me.ts:10-60](file://src/routes/api/auth/me.ts#L10-L60)
 
@@ -85,7 +85,7 @@ G --> H
 - [roles.tsx:21-366](file://src/routes/app/settings/roles.tsx#L21-L366)
 - [auth.ts:11-205](file://src/stores/auth.ts#L11-L205)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 - [login.ts:11-55](file://src/routes/api/auth/login.ts#L11-L55)
 - [me.ts:10-60](file://src/routes/api/auth/me.ts#L10-L60)
 - [profile.tsx:8-280](file://src/routes/app/profile.tsx#L8-L280)
@@ -106,7 +106,7 @@ G --> H
 - [permissions.ts:1-45](file://src/data/permissions.ts#L1-L45)
 - [auth.ts:11-205](file://src/stores/auth.ts#L11-L205)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 - [login.ts:11-55](file://src/routes/api/auth/login.ts#L11-L55)
 - [me.ts:10-60](file://src/routes/api/auth/me.ts#L10-L60)
 - [index.tsx:49-715](file://src/routes/app/reports/index.tsx#L49-L715)
@@ -399,7 +399,7 @@ DB --> SCH["Schema<br/>schema.ts"]
 - [index.tsx:18-23](file://src/routes/app/reports/index.tsx#L18-L23)
 - [expenses.tsx:5-21](file://src/routes/app/reports/expenses.tsx#L5-L21)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 **Section sources**
 - [staff.tsx:18-37](file://src/routes/app/settings/staff.tsx#L18-L37)
@@ -411,7 +411,7 @@ DB --> SCH["Schema<br/>schema.ts"]
 - [index.tsx:18-23](file://src/routes/app/reports/index.tsx#L18-L23)
 - [expenses.tsx:5-21](file://src/routes/app/reports/expenses.tsx#L5-L21)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 ## Performance Considerations
 - Local IndexedDB storage ensures fast UI interactions without network latency.

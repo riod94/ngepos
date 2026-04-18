@@ -17,7 +17,20 @@
 - [src/hooks/useCheckout.ts](file://src/hooks/useCheckout.ts)
 - [src/data/mockProducts.ts](file://src/data/mockProducts.ts)
 - [src/data/permissions.ts](file://src/data/permissions.ts)
+- [src/lib/syncService.ts](file://src/lib/syncService.ts)
+- [plans/development-roadmap.md](file://plans/development-roadmap.md)
+- [ROADMAP.md](file://ROADMAP.md)
+- [bun.lock](file://bun.lock)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive development roadmap documentation covering both Indonesian and English versions
+- Updated development workflow to reflect Bun package manager usage
+- Enhanced sync service documentation with retry logic and exponential backoff
+- Updated checkout flow documentation with improved error handling
+- Added database schema updates for cashierName and isAdjustment columns
+- Expanded testing strategy to include unit testing for stores and integration testing for checkout flows
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -34,10 +47,13 @@
 12. [Code Quality Standards](#code-quality-standards)
 13. [Maintenance Procedures](#maintenance-procedures)
 14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
+15. [Development Roadmap](#development-roadmap)
+16. [Conclusion](#conclusion)
 
 ## Introduction
 This document provides comprehensive development guidelines for the NgePos POS system. It covers code organization principles, component structure, state management patterns, error handling strategies, testing approaches, deployment configuration, development workflow, security practices, code quality standards, and maintenance procedures. The goal is to enable contributors to develop efficiently and consistently while maintaining high reliability and performance.
+
+**Updated** Added comprehensive development roadmap documentation and updated development workflow to reflect Bun package manager usage.
 
 ## Project Structure
 NgePos is a SolidStart application using Vite and Nitro for SSR/SSG-like behavior. The project follows a feature-based structure with clear separation of concerns:
@@ -50,6 +66,7 @@ NgePos is a SolidStart application using Vite and Nitro for SSR/SSG-like behavio
 - src/data: Static data and permission definitions
 - drizzle: Migration artifacts and schema definition
 - public: Static assets
+- plans: Development roadmap and planning documents
 
 ```mermaid
 graph TB
@@ -61,46 +78,61 @@ D["src/stores/auth.ts"]
 E["src/stores/cart.ts"]
 F["src/stores/loyalty.ts"]
 G["src/hooks/useCheckout.ts"]
+H["src/lib/syncService.ts"]
 end
 subgraph "Server"
-H["src/server/db/schema.ts"]
+I["src/server/db/schema.ts"]
 end
 subgraph "Build & Config"
-I["vite.config.ts"]
-J["drizzle.config.ts"]
-K["package.json"]
+J["vite.config.ts"]
+K["drizzle.config.ts"]
+L["package.json"]
+M["bun.lock"]
+end
+subgraph "Planning"
+N["plans/development-roadmap.md"]
+O["ROADMAP.md"]
 end
 A --> B
 B --> C
 B --> D
 B --> E
 B --> F
+B --> G
+G --> H
 G --> E
 G --> F
-D --> H
-E --> H
-F --> H
-I --> A
-J --> H
+D --> I
+E --> I
+F --> I
+H --> I
+J --> A
 K --> I
+L --> J
+M --> L
+N --> O
 ```
 
 **Diagram sources**
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
 - [src/routes/app.tsx:1-51](file://src/routes/app.tsx#L1-L51)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-267](file://src/hooks/useCheckout.ts#L1-L267)
+- [src/lib/syncService.ts:1-111](file://src/lib/syncService.ts#L1-L111)
+- [src/server/db/schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [package.json:1-56](file://package.json#L1-L56)
+- [package.json:1-57](file://package.json#L1-L57)
+- [bun.lock:1-800](file://bun.lock#L1-L800)
+- [plans/development-roadmap.md:1-129](file://plans/development-roadmap.md#L1-L129)
+- [ROADMAP.md:1-77](file://ROADMAP.md#L1-L77)
 
 **Section sources**
 - [README.md:1-33](file://README.md#L1-L33)
-- [package.json:1-56](file://package.json#L1-L56)
+- [package.json:1-57](file://package.json#L1-L57)
 - [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
@@ -133,18 +165,26 @@ This section outlines the foundational building blocks of the system and their r
 - Checkout Hook (hooks/useCheckout)
   - Orchestrates transaction submission, inventory adjustments, COGS calculations, and loyalty updates.
   - Performs IndexedDB transaction to ensure atomicity and triggers background sync.
+  - Enhanced with comprehensive error handling and user feedback.
+
+- Sync Service (lib/syncService)
+  - Implements retry logic with exponential backoff for failed synchronization attempts.
+  - Debounces sync requests to avoid server overload.
+  - Handles authentication errors and provides user notifications.
 
 - Schema (server/db/schema)
   - Defines PostgreSQL tables for roles, staff, settings, transactions, inventory, and related entities.
+  - Updated with cashierName and isAdjustment columns for enhanced transaction tracking.
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/hooks/useCheckout.ts:1-267](file://src/hooks/useCheckout.ts#L1-L267)
+- [src/lib/syncService.ts:1-111](file://src/lib/syncService.ts#L1-L111)
+- [src/server/db/schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 
 ## Architecture Overview
 The system follows a layered architecture:
@@ -152,6 +192,7 @@ The system follows a layered architecture:
 - Domain Layer: Stores and hooks encapsulate business logic
 - Persistence Layer: Drizzle ORM with PostgreSQL for server-side data and Dexie for client-side caching
 - Infrastructure Layer: Vite/Nitro build pipeline and Drizzle migrations
+- Synchronization Layer: Background sync service with retry logic and exponential backoff
 
 ```mermaid
 graph TB
@@ -161,23 +202,30 @@ Layout --> CartStore["Cart Store<br/>src/stores/cart.ts"]
 Layout --> LoyaltyStore["Loyalty Store<br/>src/stores/loyalty.ts"]
 CartStore --> CheckoutHook["Checkout Hook<br/>src/hooks/useCheckout.ts"]
 LoyaltyStore --> CheckoutHook
-AuthStore --> ServerSchema["Server Schema<br/>src/server/db/schema.ts"]
+CheckoutHook --> SyncService["Sync Service<br/>src/lib/syncService.ts"]
+SyncService --> ServerSchema["Server Schema<br/>src/server/db/schema.ts"]
+AuthStore --> ServerSchema
 CartStore --> ServerSchema
 CheckoutHook --> ServerSchema
 Build["Build & Dev Server<br/>vite.config.ts"] --> UI
 Build --> Layout
 Migrations["Drizzle Config<br/>drizzle.config.ts"] --> ServerSchema
+PackageMgr["Package Manager<br/>Bun"] --> Build
+PackageMgr --> Dependencies["Dependencies<br/>package.json"]
 ```
 
 **Diagram sources**
 - [src/routes/app.tsx:1-51](file://src/routes/app.tsx#L1-L51)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-267](file://src/hooks/useCheckout.ts#L1-L267)
+- [src/lib/syncService.ts:1-111](file://src/lib/syncService.ts#L1-L111)
+- [src/server/db/schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
+- [package.json:1-57](file://package.json#L1-L57)
+- [bun.lock:1-800](file://bun.lock#L1-L800)
 
 ## Detailed Component Analysis
 
@@ -226,7 +274,7 @@ S-->>R : "setIsAuthChecking=false"
 - [src/routes/app.tsx:12-21](file://src/routes/app.tsx#L12-L21)
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
 - [src/routes/app.tsx:1-51](file://src/routes/app.tsx#L1-L51)
 
 ### Cart Store and Discount Engine
@@ -266,7 +314,7 @@ end
 - [src/stores/cart.ts:132-236](file://src/stores/cart.ts#L132-L236)
 
 **Section sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 
 ### Loyalty Management
 Loyalty store handles:
@@ -300,7 +348,7 @@ Policy --> |Other| End(["Done"])
 - [src/stores/loyalty.ts:143-160](file://src/stores/loyalty.ts#L143-L160)
 
 **Section sources**
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ### Checkout Flow
 The checkout hook coordinates transaction creation, inventory updates, COGS calculations, and loyalty side-effects within a single IndexedDB transaction.
@@ -333,7 +381,37 @@ C-->>C : "Return transactionId"
 - [src/hooks/useCheckout.ts:38-213](file://src/hooks/useCheckout.ts#L38-L213)
 
 **Section sources**
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/hooks/useCheckout.ts:1-267](file://src/hooks/useCheckout.ts#L1-L267)
+
+### Sync Service with Retry Logic
+The sync service implements robust retry mechanisms with exponential backoff and debouncing.
+
+```mermaid
+flowchart TD
+Start(["pushLocalChanges"]) --> CheckToken["Check auth_token"]
+CheckToken --> IsSyncing{"Already syncing?"}
+IsSyncing --> |Yes| ReturnFalse["Return false"]
+IsSyncing --> |No| SetFlag["Set _isSyncing=true"]
+SetFlag --> FetchPending["Fetch PENDING data from Dexie"]
+FetchPending --> HasData{"Any pending data?"}
+HasData --> |No| ResetRetry["Reset retry count"] --> Success["Return true"]
+HasData --> |Yes| FetchItems["Fetch transaction items"]
+FetchItems --> CallAPI["POST /api/sync with Authorization"]
+CallAPI --> Response{"HTTP Response"}
+Response --> |200 OK| MarkSynced["Mark as SYNCED in Dexie"] --> ResetRetry2["Reset retry count"] --> Success
+Response --> |401/403| AuthError["Handle auth errors - don't retry"] --> ReturnFalse
+Response --> |Server Error| HandleRetry["_handleRetry()"]
+HandleRetry --> RetryCount{"Retry count <= MAX?"}
+RetryCount --> |No| MaxExceeded["Max retry attempts exceeded"] --> ReturnFalse
+RetryCount --> |Yes| ExpBackoff["Exponential backoff with jitter"] --> ScheduleRetry["Schedule retry after delay"]
+ScheduleRetry --> ReturnTrue["Return true"]
+```
+
+**Diagram sources**
+- [src/lib/syncService.ts:12-111](file://src/lib/syncService.ts#L12-L111)
+
+**Section sources**
+- [src/lib/syncService.ts:1-111](file://src/lib/syncService.ts#L1-L111)
 
 ### UI Primitive: Button
 The Button component demonstrates consistent styling composition using class variance authority and Tailwind merging utility.
@@ -367,6 +445,9 @@ Key dependencies and their roles:
 - Data persistence: drizzle-orm, postgres, dexie
 - Build: vite, @solidjs/vite-plugin-nitro-2
 - Utilities: jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs
+- Package manager: bun (modern package manager with fast installation)
+
+**Updated** Added Bun as the package manager for faster dependency installation and management.
 
 ```mermaid
 graph LR
@@ -376,13 +457,17 @@ P --> State["solid-js/store, signals"]
 P --> DB["drizzle-orm, postgres, dexie"]
 P --> Build["vite, @solidjs/vite-plugin-nitro-2"]
 P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
+PM["Bun Package Manager"] --> P
+PM --> Lock["bun.lock"]
 ```
 
 **Diagram sources**
-- [package.json:1-56](file://package.json#L1-L56)
+- [package.json:1-57](file://package.json#L1-L57)
+- [bun.lock:1-800](file://bun.lock#L1-L800)
 
 **Section sources**
-- [package.json:1-56](file://package.json#L1-L56)
+- [package.json:1-57](file://package.json#L1-L57)
+- [bun.lock:1-800](file://bun.lock#L1-L800)
 
 ## Performance Considerations
 - Build optimization
@@ -395,46 +480,62 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
   - Dexie-backed campaign data reduces network requests.
   - Efficient variant hashing prevents redundant cart entries.
   - IndexedDB transaction ensures atomicity and avoids partial writes.
+  - Sync service debouncing prevents server overload.
+  - Exponential backoff reduces retry pressure on failing servers.
+
+- Package manager performance
+  - Bun provides significantly faster dependency installation compared to npm/yarn.
+  - Lock file ensures consistent dependency versions across environments.
+
+**Updated** Added performance considerations for the new sync service retry logic and Bun package manager usage.
 
 - Recommendations
   - Lazy-load heavy components and charts.
   - Debounce frequent UI updates (e.g., cart recalculations).
   - Use virtualized lists for large datasets.
   - Monitor long tasks and offload work to Web Workers when appropriate.
+  - Leverage Bun's faster installation for CI/CD pipelines.
 
 **Section sources**
 - [vite.config.ts:12-33](file://vite.config.ts#L12-L33)
 - [src/stores/auth.ts:15-27](file://src/stores/auth.ts#L15-L27)
 - [src/stores/cart.ts:16-48](file://src/stores/cart.ts#L16-L48)
 - [src/hooks/useCheckout.ts:57-172](file://src/hooks/useCheckout.ts#L57-L172)
+- [src/lib/syncService.ts:4-111](file://src/lib/syncService.ts#L4-L111)
 
 ## Testing Strategy
 - Unit testing
   - Test individual store functions (authentication, cart, loyalty) in isolation.
   - Mock external dependencies (localStorage, fetch, IndexedDB) to validate logic deterministically.
   - Verify discount calculation edge cases (zero quantities, overlapping requirements, priority ordering).
+  - Test sync service retry logic and exponential backoff behavior.
 
 - Component testing
   - Render UI components with Solid testing utilities and simulate user interactions.
   - Test variant selection, quantity changes, and discount previews.
+  - Validate error handling and user feedback for various failure scenarios.
 
 - Integration testing
   - Validate checkout flow end-to-end with mocked backend responses.
   - Ensure IndexedDB transaction commits and rollback scenarios are handled.
   - Test loyalty stamp progression and reward creation.
+  - Verify sync service retry logic and error recovery mechanisms.
 
 - Performance testing
   - Measure checkout latency under varying cart sizes and campaign complexity.
   - Benchmark discount engine performance with large campaign sets.
   - Profile memory usage during extended sessions.
+  - Test sync service under various network conditions and retry scenarios.
+
+**Updated** Enhanced testing strategy to include sync service testing and expanded integration testing coverage.
 
 [No sources needed since this section provides general guidance]
 
 ## Deployment Configuration
 - Build and start scripts
-  - Development: vite dev
-  - Preview: vite preview
-  - Production build: vite build
+  - Development: bun run dev (using Bun package manager)
+  - Preview: bun run preview
+  - Production build: bun run build
   - Start server: node .output/server/index.mjs
 
 - Environment variables
@@ -448,6 +549,8 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
 - Build optimization
   - es2020 target and esbuild minify reduce bundle size.
   - Disable sourcemaps in production to avoid warnings and reduce artifact size.
+
+**Updated** Updated deployment configuration to reflect Bun package manager usage.
 
 **Section sources**
 - [package.json:5-9](file://package.json#L5-L9)
@@ -471,6 +574,13 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
   - Add or update tests alongside new features.
   - Document breaking changes and migration steps.
 
+- Package management
+  - Use Bun for dependency installation and management.
+  - Update bun.lock when changing dependencies.
+  - Leverage Bun's faster installation in development and CI/CD.
+
+**Updated** Added guidelines for Bun package manager usage and lock file management.
+
 [No sources needed since this section provides general guidance]
 
 ## Security Best Practices
@@ -491,6 +601,13 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
   - Enforce role-based access controls server-side.
   - Validate permissions before executing privileged actions.
 
+- Sync security
+  - Implement proper authorization headers for sync requests.
+  - Handle authentication errors gracefully without exposing sensitive information.
+  - Validate data integrity during sync operations.
+
+**Updated** Added security considerations for the sync service and enhanced authentication handling.
+
 [No sources needed since this section provides general guidance]
 
 ## Code Quality Standards
@@ -510,6 +627,14 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
 - Error handling
   - Centralize error reporting and user feedback.
   - Provide graceful degradation for offline scenarios.
+  - Implement comprehensive error categorization in checkout flow.
+
+- Sync service design
+  - Implement retry logic with exponential backoff.
+  - Use debouncing to prevent server overload.
+  - Handle different error types appropriately.
+
+**Updated** Enhanced error handling standards and added sync service design guidelines.
 
 [No sources needed since this section provides general guidance]
 
@@ -521,10 +646,19 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
 - Application maintenance
   - Keep dependencies updated; test thoroughly after upgrades.
   - Monitor logs and alert on critical errors.
+  - Update Bun dependencies regularly.
 
 - Operational checks
   - Validate checkout transactions and reconcile discrepancies.
   - Audit permissions and roles periodically.
+  - Monitor sync service health and retry counts.
+
+- Package management
+  - Regularly update Bun dependencies.
+  - Monitor lock file for dependency conflicts.
+  - Optimize dependency tree for faster installation.
+
+**Updated** Added maintenance procedures for Bun package manager and sync service monitoring.
 
 [No sources needed since this section provides general guidance]
 
@@ -540,16 +674,91 @@ P --> Utils["jspdf, xlsx, qrcode, html5-qrcode, nodemailer, bcryptjs"]
 - Checkout failures
   - Review IndexedDB transaction logs and error messages.
   - Validate product stock and recipe availability.
+  - Check sync service retry logs for failed synchronization attempts.
+
+- Sync service issues
+  - Monitor retry count and exponential backoff behavior.
+  - Verify authentication headers and token validity.
+  - Check network connectivity and server availability.
 
 - Build and preview problems
   - Ensure Node.js version meets engine requirements.
-  - Reinstall dependencies and rebuild.
+  - Reinstall dependencies using Bun and rebuild.
+  - Clear Bun cache if experiencing installation issues.
+
+**Updated** Added troubleshooting guidance for sync service and Bun package manager issues.
 
 **Section sources**
 - [src/stores/auth.ts:51-56](file://src/stores/auth.ts#L51-L56)
 - [src/stores/cart.ts:132-236](file://src/stores/cart.ts#L132-L236)
-- [src/hooks/useCheckout.ts:206-213](file://src/hooks/useCheckout.ts#L206-L213)
+- [src/hooks/useCheckout.ts:206-267](file://src/hooks/useCheckout.ts#L206-L267)
+- [src/lib/syncService.ts:81-111](file://src/lib/syncService.ts#L81-L111)
 - [package.json:41-43](file://package.json#L41-L43)
+
+## Development Roadmap
+The NgePos development roadmap encompasses both immediate improvements and long-term strategic goals, organized into priority tiers and implementation phases.
+
+### Priority Levels
+- **High Priority (Immediate)**: Critical bug fixes, data consistency, and core feature improvements
+- **Medium Priority (Next)**: Supporting features, optimizations, and documentation
+- **Low Priority (Optional)**: Additional features, UI polish, and enhancements
+
+### Current Implementation Status
+- **Phase 1 Complete**: Basic package renaming, database schema updates, and documentation fixes
+- **Phase 2 In Progress**: Stability improvements, enhanced security, and comprehensive testing
+- **Phase 3 Planned**: Documentation completion, unit testing, and performance optimization
+- **Phase 4 Future**: Advanced features, PWA support, and automated backup systems
+
+### Key Implementation Features
+- **Database Enhancements**: Added cashierName and isAdjustment columns for better transaction tracking
+- **Sync Service Improvements**: Implemented retry logic with exponential backoff and debouncing
+- **Error Handling**: Comprehensive error categorization and user feedback mechanisms
+- **Security Measures**: Input validation, rate limiting, and structured logging
+- **Performance Optimization**: Bundle splitting, PWA support planning, and cache invalidation
+
+### Strategic Roadmap Elements
+- **Quick Wins**: Document export (Excel/PDF), financial charts, and basic security
+- **Operational Strength**: Smart inventory automation, barcode scanning, split payments, and audit trails
+- **Future Goals**: Multi-outlet support, advanced analytics, and enhanced reporting capabilities
+
+**Updated** Added comprehensive development roadmap documentation covering both Indonesian and English versions, detailing implementation phases and strategic goals.
+
+```mermaid
+graph TD
+A["Development Roadmap"] --> B["Priority 1: Immediate"]
+B --> C["Basic Package Renaming"]
+B --> D["Database Schema Updates"]
+B --> E["Documentation Fixes"]
+A --> F["Priority 2: Next Phase"]
+F --> G["Enhanced Sync Logic"]
+F --> H["Security Hardening"]
+F --> I["Comprehensive Testing"]
+A --> J["Priority 3: Future Enhancements"]
+J --> K["Advanced Features"]
+J --> L["PWA Implementation"]
+J --> M["Multi-Outlets Support"]
+C --> N["Implementation Complete"]
+D --> N
+E --> N
+G --> O["Implementation In Progress"]
+H --> O
+I --> O
+K --> P["Future Planning"]
+L --> P
+M --> P
+```
+
+**Diagram sources**
+- [plans/development-roadmap.md:65-94](file://plans/development-roadmap.md#L65-L94)
+- [ROADMAP.md:8-71](file://ROADMAP.md#L8-L71)
+
+**Section sources**
+- [plans/development-roadmap.md:1-129](file://plans/development-roadmap.md#L1-L129)
+- [ROADMAP.md:1-77](file://ROADMAP.md#L1-L77)
 
 ## Conclusion
 These guidelines establish a consistent foundation for developing and maintaining the NgePos POS system. By adhering to the outlined conventions, leveraging the provided patterns, and following the recommended practices, contributors can deliver reliable, performant, and secure features while ensuring smooth operations across development, testing, and production environments.
+
+**Updated** The guidelines now include comprehensive development roadmap documentation and updated workflow procedures reflecting Bun package manager usage, enhanced sync service capabilities, and expanded testing strategies.
+
+The addition of the development roadmap ensures long-term strategic direction, while the Bun package manager integration provides improved development experience and faster dependency management. The enhanced sync service and comprehensive error handling mechanisms demonstrate the system's commitment to reliability and user experience.

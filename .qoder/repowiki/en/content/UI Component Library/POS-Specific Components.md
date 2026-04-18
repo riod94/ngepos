@@ -97,7 +97,7 @@ MOCK --> INV
 - [dialog.tsx:1-142](file://src/components/ui/dialog.tsx#L1-L142)
 - [sheet.tsx:1-175](file://src/components/ui/sheet.tsx#L1-L175)
 - [db.ts:36-110](file://src/db/db.ts#L36-L110)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 - [products.tsx:1-800](file://src/routes/app/inventory/products.tsx#L1-L800)
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
@@ -114,7 +114,7 @@ MOCK --> INV
 - [dialog.tsx:1-142](file://src/components/ui/dialog.tsx#L1-L142)
 - [sheet.tsx:1-175](file://src/components/ui/sheet.tsx#L1-L175)
 - [db.ts:36-110](file://src/db/db.ts#L36-L110)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 - [products.tsx:1-800](file://src/routes/app/inventory/products.tsx#L1-L800)
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
@@ -325,7 +325,7 @@ end
 
 **Section sources**
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ### Counter
 - Purpose: Increment a numeric counter.
@@ -413,7 +413,7 @@ CD["ConfirmDialog.tsx"] --> DLG
 - [db.ts:62-73](file://src/db/db.ts#L62-L73)
 - [ProductImage.tsx:1-60](file://src/components/ProductImage.tsx#L1-L60)
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [QrCodeGenerator.tsx:1-222](file://src/components/QrCodeGenerator.tsx#L1-L222)
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
 - [ConfirmDialog.tsx:1-155](file://src/components/ConfirmDialog.tsx#L1-L155)
@@ -425,7 +425,7 @@ CD["ConfirmDialog.tsx"] --> DLG
 - [QrCodeGenerator.tsx:1-222](file://src/components/QrCodeGenerator.tsx#L1-L222)
 - [ConfirmDialog.tsx:1-155](file://src/components/ConfirmDialog.tsx#L1-L155)
 - [db.ts:62-73](file://src/db/db.ts#L62-L73)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
 
 ## Performance Considerations

@@ -65,13 +65,13 @@ DBConnection --> DrizzleSchema
 
 **Diagram sources**
 - [materials.tsx:1-337](file://src/routes/app/inventory/materials.tsx#L1-L337)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [schema.ts:94-141](file://src/server/db/schema.ts#L94-L141)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 
 **Section sources**
 - [materials.tsx:1-337](file://src/routes/app/inventory/materials.tsx#L1-L337)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 
@@ -358,12 +358,12 @@ Backend --> InventoryLogsTable
 
 **Diagram sources**
 - [materials.tsx:1-337](file://src/routes/app/inventory/materials.tsx#L1-L337)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [schema.ts:94-141](file://src/server/db/schema.ts#L94-L141)
 
 **Section sources**
 - [materials.tsx:1-337](file://src/routes/app/inventory/materials.tsx#L1-L337)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [schema.ts:94-141](file://src/server/db/schema.ts#L94-L141)
 
 ## Performance Considerations

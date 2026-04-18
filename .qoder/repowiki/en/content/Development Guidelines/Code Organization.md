@@ -79,11 +79,11 @@ DATA --> DEXIE_DB
 **Diagram sources**
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
 - [src/routes/api/auth/login.ts:1-58](file://src/routes/api/auth/login.ts#L1-L58)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
@@ -124,12 +124,12 @@ Key patterns:
 
 **Section sources**
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/lib/availability.ts:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
@@ -179,13 +179,13 @@ API_SYNC --> DB_SCHEMA
 **Diagram sources**
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [src/routes/api/auth/login.ts:1-58](file://src/routes/api/auth/login.ts#L1-L58)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
 - [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
@@ -219,14 +219,14 @@ UI-->>UI : Render product grid and variants
 
 **Diagram sources**
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
 
 ### Component Organization and Folder Conventions
@@ -280,7 +280,7 @@ HomeRoute --> BottomNav : "uses"
 **Section sources**
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 - [src/lib/availability.ts:1-40](file://src/lib/availability.ts#L1-L40)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 
 ### Error Handling, Logging, and Debugging
 - Frontend:
@@ -312,13 +312,13 @@ LogErr --> Done
 ```
 
 **Diagram sources**
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 
 **Section sources**
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
 
 ### Data Model and Synchronization
 - Client-side schema (Dexie):
@@ -408,11 +408,11 @@ RAW_MATERIALS ||--o{ INVENTORY_LOGS : "logged in"
 ```
 
 **Diagram sources**
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
 
 **Section sources**
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
 
@@ -440,10 +440,10 @@ API["src/routes/api/*"] --> SCHEMA["src/server/db/schema.ts"]
 
 **Diagram sources**
 - [package.json:1-56](file://package.json#L1-L56)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
 - [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
 
@@ -481,9 +481,9 @@ Actions:
 - Review seedDatabase logs for initial setup issues.
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/db/db.ts:513-570](file://src/db/db.ts#L513-L570)
 
 ## Conclusion

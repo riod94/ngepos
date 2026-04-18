@@ -86,8 +86,8 @@ ClientDB --> Schema
 - [loyalty.tsx:1-464](file://src/routes/app/marketing/loyalty.tsx#L1-L464)
 - [campaigns.tsx:1-800](file://src/routes/app/marketing/campaigns.tsx#L1-L800)
 - [public member profile:1-175](file://src/routes/m/[id].tsx#L1-L175)
-- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L173)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [client database:270-498](file://src/db/db.ts#L270-L498)
 - [database schema:1-142](file://src/server/db/schema.ts#L1-L142)
 
@@ -99,8 +99,8 @@ ClientDB --> Schema
 - [loyalty.tsx:1-464](file://src/routes/app/marketing/loyalty.tsx#L1-L464)
 - [campaigns.tsx:1-800](file://src/routes/app/marketing/campaigns.tsx#L1-L800)
 - [public member profile:1-175](file://src/routes/m/[id].tsx#L1-L175)
-- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L173)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [client database:270-498](file://src/db/db.ts#L270-L498)
 - [database schema:1-142](file://src/server/db/schema.ts#L1-L142)
 
@@ -119,7 +119,7 @@ ClientDB --> Schema
 - [members.tsx:1-791](file://src/routes/app/marketing/members.tsx#L1-L791)
 - [loyalty.tsx:1-464](file://src/routes/app/marketing/loyalty.tsx#L1-L464)
 - [campaigns.tsx:1-800](file://src/routes/app/marketing/campaigns.tsx#L1-L800)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [public member profile:1-175](file://src/routes/m/[id].tsx#L1-L175)
 
 ## Architecture Overview
@@ -148,8 +148,8 @@ POS-->>Cashier : success toast + sync trigger
 
 **Diagram sources**
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L173)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [client database:270-498](file://src/db/db.ts#L270-L498)
 
 ## Detailed Component Analysis
@@ -271,8 +271,8 @@ CreateReward --> Done
 
 **Section sources**
 - [loyalty.tsx:1-464](file://src/routes/app/marketing/loyalty.tsx#L1-L464)
-- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L173)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [loyalty store:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 
 ### Promotions and Campaigns
 - Supports bulk discount, bundle, and buy-X-get-Y campaigns.
@@ -337,12 +337,12 @@ POS-->>POS : trigger sync
 **Diagram sources**
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
 - [LoyaltyBanner.tsx:1-167](file://src/components/LoyaltyBanner.tsx#L1-L167)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [client database:270-498](file://src/db/db.ts#L270-L498)
 
 **Section sources**
 - [LoyaltyBanner.tsx:1-167](file://src/components/LoyaltyBanner.tsx#L1-L167)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [POS home:1-282](file://src/routes/app/index.tsx#L1-L282)
 
 ## Dependency Analysis
@@ -373,7 +373,7 @@ Store --> DB
 - [loyalty.tsx:1-464](file://src/routes/app/marketing/loyalty.tsx#L1-L464)
 - [campaigns.tsx:1-800](file://src/routes/app/marketing/campaigns.tsx#L1-L800)
 - [public member profile:1-175](file://src/routes/m/[id].tsx#L1-L175)
-- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [checkout hook:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [client database:270-498](file://src/db/db.ts#L270-L498)
 
 **Section sources**

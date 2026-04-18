@@ -77,8 +77,8 @@ D1 --> D2
 - [FinancialCharts.tsx:1-333](file://src/components/FinancialCharts.tsx#L1-L333)
 - [DateFilter.tsx:1-237](file://src/components/DateFilter.tsx#L1-L237)
 - [exportService.ts:1-293](file://src/lib/exportService.ts#L1-L293)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 **Section sources**
 - [reports/index.tsx:1-715](file://src/routes/app/reports/index.tsx#L1-L715)
@@ -88,8 +88,8 @@ D1 --> D2
 - [FinancialCharts.tsx:1-333](file://src/components/FinancialCharts.tsx#L1-L333)
 - [DateFilter.tsx:1-237](file://src/components/DateFilter.tsx#L1-L237)
 - [exportService.ts:1-293](file://src/lib/exportService.ts#L1-L293)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 ## Core Components
 - Expense tracking module: record, categorize, and manage operational expenses with backdated detection.
@@ -379,7 +379,7 @@ RAW_MATERIALS ||--o{ INVENTORY_LOGS : "logs"
 - [db.ts:130-137](file://src/db/db.ts#L130-L137)
 
 **Section sources**
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 - [db.ts:270-495](file://src/db/db.ts#L270-L495)
 
 ## Dependency Analysis

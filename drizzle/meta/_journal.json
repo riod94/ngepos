@@ -15,6 +15,13 @@
       "when": 1776314658436,
       "tag": "0001_eminent_weapon_omega",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776359535762,
+      "tag": "0002_cuddly_prowler",
+      "breakpoints": true
     }
   ]
 }

@@ -69,16 +69,16 @@ SERVER_DB --> SCHEMA
 
 **Diagram sources**
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/routes/api/sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
+- [src/lib/syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [src/routes/api/sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [src/routes/api/auth/login.ts:1-55](file://src/routes/api/auth/login.ts#L1-L55)
 - [src/routes/api/auth/me.ts:1-60](file://src/routes/api/auth/me.ts#L1-L60)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 **Section sources**
 - [README.md:1-33](file://README.md#L1-L33)
@@ -96,13 +96,13 @@ SERVER_DB --> SCHEMA
 - Backend API: Auth endpoints (login, profile, verification) and a sync endpoint that upserts transactions and items into PostgreSQL via Drizzle ORM.
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/routes/api/sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
+- [src/lib/syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/routes/api/sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [src/routes/api/auth/login.ts:1-55](file://src/routes/api/auth/login.ts#L1-L55)
 - [src/routes/api/auth/me.ts:1-60](file://src/routes/api/auth/me.ts#L1-L60)
 
@@ -140,15 +140,15 @@ DRIZZLE --> PG
 
 **Diagram sources**
 - [src/routes/app/index.tsx:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
-- [src/routes/api/sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/lib/syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
+- [src/routes/api/sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 ## Detailed Component Analysis
 
@@ -187,7 +187,7 @@ end
 - [src/routes/api/auth/me.ts:10-59](file://src/routes/api/auth/me.ts#L10-L59)
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
 - [src/routes/api/auth/login.ts:1-55](file://src/routes/api/auth/login.ts#L1-L55)
 - [src/routes/api/auth/me.ts:1-60](file://src/routes/api/auth/me.ts#L1-L60)
 - [src/data/permissions.ts:1-45](file://src/data/permissions.ts#L1-L45)
@@ -216,7 +216,7 @@ Sum --> End(["Return Total Discount"])
 - [src/stores/cart.ts:115-236](file://src/stores/cart.ts#L115-L236)
 
 **Section sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [src/db/db.ts:189-217](file://src/db/db.ts#L189-L217)
 
 ### Checkout and Inventory Flow
@@ -247,14 +247,14 @@ Sync->>DB : mark transactions.status=SYNCED
 
 **Diagram sources**
 - [src/hooks/useCheckout.ts:30-217](file://src/hooks/useCheckout.ts#L30-L217)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [src/lib/syncService.ts:4-59](file://src/lib/syncService.ts#L4-L59)
 - [src/routes/api/sync/index.ts:10-98](file://src/routes/api/sync/index.ts#L10-L98)
 
 **Section sources**
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [src/routes/api/sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [src/routes/api/sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 
 ### Product Selector Component
 - Feature-rich selector with search, multi-select, and variant-aware selection.
@@ -278,7 +278,7 @@ Add --> Close
 
 **Section sources**
 - [src/components/ui/product-selector.tsx:1-236](file://src/components/ui/product-selector.tsx#L1-L236)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 
 ### Backend Data Persistence and Schema
 - Server DB initialization loads environment variables and connects to PostgreSQL using Drizzle ORM.
@@ -403,11 +403,11 @@ MODIFIER_GROUPS ||--o{ MODIFIER_OPTIONS : "group_id"
 ```
 
 **Diagram sources**
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 **Section sources**
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 ## Dependency Analysis
 - Frontend dependencies include Solid.js, @solidjs/router, @solidjs/start, dexie, drizzle-orm, postgres, lucide-solid, and others.
@@ -430,7 +430,7 @@ Backend --> Schema["PostgreSQL Schema"]
 **Diagram sources**
 - [package.json:11-40](file://package.json#L11-L40)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/db/schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [src/server/db/schema.ts:1-134](file://src/server/db/schema.ts#L1-L134)
 
 **Section sources**
 - [package.json:1-56](file://package.json#L1-L56)

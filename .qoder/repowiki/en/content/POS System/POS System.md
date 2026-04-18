@@ -87,11 +87,11 @@ PRODUCTS --> MOCK
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [src/components/VariantSelector.tsx: 1-205:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [src/components/ProductImage.tsx: 1-60:1-60](file://src/components/ProductImage.tsx#L1-L60)
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/lib/availability.ts: 1-40:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/data/mockProducts.ts: 1-85:1-85](file://src/data/mockProducts.ts#L1-L85)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 **Section sources**
 - [src/app.tsx: 1-42:1-42](file://src/app.tsx#L1-L42)
@@ -101,11 +101,11 @@ PRODUCTS --> MOCK
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [src/components/VariantSelector.tsx: 1-205:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [src/components/ProductImage.tsx: 1-60:1-60](file://src/components/ProductImage.tsx#L1-L60)
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/lib/availability.ts: 1-40:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/data/mockProducts.ts: 1-85:1-85](file://src/data/mockProducts.ts#L1-L85)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ## Core Components
 - Instant Checkout Interface (Home Grid)
@@ -137,12 +137,12 @@ PRODUCTS --> MOCK
 
 **Section sources**
 - [src/routes/app/index.tsx: 1-282:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
 - [src/routes/app/inventory/products.tsx: 1-800:1-800](file://src/routes/app/inventory/products.tsx#L1-L800)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/routes/app/receipt/[id].tsx: 1-190](file://src/routes/app/receipt/[id].tsx#L1-L190)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ## Architecture Overview
 The POS system uses a reactive store-based architecture with fine-grained signals and resources for state and data fetching. The checkout flow is encapsulated in a hook that performs IndexedDB transactions to ensure atomicity of inventory, COGS, and transaction logs. Payment methods are integrated via UI handlers that delegate to the checkout hook, which writes transaction items and updates inventory logs.
@@ -249,7 +249,7 @@ Merge --> DoneC["Done"]
 - [src/stores/cart.ts: 16-106:16-106](file://src/stores/cart.ts#L16-L106)
 
 **Section sources**
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
 
 ### Variant Selector
 - Features
@@ -308,8 +308,8 @@ Cart-->>Cart : Navigate to receipt/[id]
 
 **Section sources**
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ### Receipt Generation
 - Features
@@ -363,26 +363,26 @@ Products --> Mock["mockProducts.ts"]
 
 **Diagram sources**
 - [src/routes/app/index.tsx: 1-282:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
 - [src/lib/availability.ts: 1-40:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/components/VariantSelector.tsx: 1-205:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [src/routes/app/receipt/[id].tsx: 1-190](file://src/routes/app/receipt/[id].tsx#L1-L190)
 - [src/routes/app/inventory/products.tsx: 1-800:1-800](file://src/routes/app/inventory/products.tsx#L1-L800)
 - [src/data/mockProducts.ts: 1-85:1-85](file://src/data/mockProducts.ts#L1-L85)
 
 **Section sources**
 - [src/routes/app/index.tsx: 1-282:1-282](file://src/routes/app/index.tsx#L1-L282)
-- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts: 1-257:1-257](file://src/stores/cart.ts#L1-L257)
 - [src/components/CartFloatingButton.tsx: 1-955:1-955](file://src/components/CartFloatingButton.tsx#L1-L955)
-- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/hooks/useCheckout.ts: 1-217:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [src/routes/app/receipt/[id].tsx: 1-190](file://src/routes/app/receipt/[id].tsx#L1-L190)
 - [src/routes/app/inventory/products.tsx: 1-800:1-800](file://src/routes/app/inventory/products.tsx#L1-L800)
 - [src/lib/availability.ts: 1-40:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/data/mockProducts.ts: 1-85:1-85](file://src/data/mockProducts.ts#L1-L85)
-- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts: 1-174:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ## Performance Considerations
 - Mobile-First UI

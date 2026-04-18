@@ -70,9 +70,9 @@ DB --> MP
 - [CartFloatingButton.tsx:1-200](file://src/components/CartFloatingButton.tsx#L1-L200)
 - [variations.tsx:1-307](file://src/routes/app/inventory/variations.tsx#L1-L307)
 - [products.tsx:1-200](file://src/routes/app/inventory/products.tsx#L1-L200)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 - [index.tsx:1-200](file://src/routes/app/reports/history/index.tsx#L1-L200)
 - [receipt/[id].tsx](file://src/routes/app/receipt/[id].tsx#L85-L112)
@@ -81,8 +81,8 @@ DB --> MP
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [variations.tsx:1-307](file://src/routes/app/inventory/variations.tsx#L1-L307)
 - [products.tsx:1-200](file://src/routes/app/inventory/products.tsx#L1-L200)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Core Components
 - VariantSelector: Interactive variant picker that validates required groups, computes price modifiers, and emits selections to the cart.
@@ -96,8 +96,8 @@ DB --> MP
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [variations.tsx:1-307](file://src/routes/app/inventory/variations.tsx#L1-L307)
 - [products.tsx:533-571](file://src/routes/app/inventory/products.tsx#L533-L571)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [db.ts:36-73](file://src/db/db.ts#L36-L73)
 
 ## Architecture Overview
@@ -226,7 +226,7 @@ end
 - [cart.ts:16-94](file://src/stores/cart.ts#L16-L94)
 
 **Section sources**
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 
 ### Checkout Pipeline (Inventory & COGS)
 Responsibilities:
@@ -264,8 +264,8 @@ DB-->>CHK : Commit OK
 - [db.ts:62-109](file://src/db/db.ts#L62-L109)
 
 **Section sources**
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 - [db.ts:62-109](file://src/db/db.ts#L62-L109)
 
 ### Variant Integration in Receipts and Reports
@@ -301,16 +301,16 @@ RECEIPT["routes/app/receipt/[id].tsx"] --> DB
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
 - [products.tsx:1-200](file://src/routes/app/inventory/products.tsx#L1-L200)
 - [variations.tsx:1-307](file://src/routes/app/inventory/variations.tsx#L1-L307)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 - [index.tsx:1-200](file://src/routes/app/reports/history/index.tsx#L1-L200)
 - [receipt/[id].tsx](file://src/routes/app/receipt/[id].tsx#L85-L112)
 
 **Section sources**
-- [db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [VariantSelector.tsx:1-205](file://src/components/VariantSelector.tsx#L1-L205)
-- [cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 
 ## Performance Considerations
 - Variant hashing: Sorting option names before joining ensures deterministic merging and avoids duplicate items.

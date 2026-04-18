@@ -82,16 +82,16 @@ API_Sync_Index --> Postgres
 
 **Diagram sources**
 - [src/app.tsx:1-42](file://src/app.tsx#L1-L42)
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
 - [src/routes/api/auth/login.ts:1-58](file://src/routes/api/auth/login.ts#L1-L58)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
 - [src/components/Counter.tsx:1-14](file://src/components/Counter.tsx#L1-L14)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 - [src/lib/availability.ts:1-40](file://src/lib/availability.ts#L1-L40)
 
@@ -117,11 +117,11 @@ Key testing targets:
 - Performance tests for offline-first flows and sync throttling.
 
 **Section sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/lib/availability.ts:1-40](file://src/lib/availability.ts#L1-L40)
 - [src/components/ui/button.tsx:1-54](file://src/components/ui/button.tsx#L1-L54)
 - [src/components/Counter.tsx:1-14](file://src/components/Counter.tsx#L1-L14)
@@ -152,11 +152,11 @@ Sync->>DB : "Mark transactions SYNCED"
 ```
 
 **Diagram sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Detailed Component Analysis
 
@@ -189,7 +189,7 @@ NewItem --> End
 - [src/stores/cart.ts:16-48](file://src/stores/cart.ts#L16-L48)
 
 **Section sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
 
 ### Auth Store Testing
 Approach:
@@ -236,7 +236,7 @@ Auth-->>UI : "{success : true}"
 - [src/routes/api/auth/login.ts:1-58](file://src/routes/api/auth/login.ts#L1-L58)
 
 **Section sources**
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
 - [src/routes/api/auth/login.ts:1-58](file://src/routes/api/auth/login.ts#L1-L58)
 
 ### Loyalty Store Testing
@@ -264,7 +264,7 @@ Eligible -- No --> ReturnFalse["Return false"]
 - [src/stores/loyalty.ts:36-53](file://src/stores/loyalty.ts#L36-L53)
 
 **Section sources**
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ### useCheckout Hook Testing
 Approach:
@@ -301,7 +301,7 @@ Hook->>Sync : "triggerSync()"
 - [src/lib/syncService.ts:49-57](file://src/lib/syncService.ts#L49-L57)
 
 **Section sources**
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
 
 ### Sync Service Testing
 Approach:
@@ -333,7 +333,7 @@ Log --> End
 - [src/routes/api/sync/index.ts:6-95](file://src/routes/api/sync/index.ts#L6-L95)
 
 **Section sources**
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/routes/api/sync/index.ts:1-96](file://src/routes/api/sync/index.ts#L1-L96)
 
 ### Availability Utilities Testing
@@ -385,16 +385,16 @@ Button["Button"] --> Utils["Shared Utils"]
 ```
 
 **Diagram sources**
-- [src/stores/cart.ts:1-256](file://src/stores/cart.ts#L1-L256)
-- [src/stores/auth.ts:1-205](file://src/stores/auth.ts#L1-L205)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
-- [src/hooks/useCheckout.ts:1-234](file://src/hooks/useCheckout.ts#L1-L234)
-- [src/lib/syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [src/stores/cart.ts:1-257](file://src/stores/cart.ts#L1-L257)
+- [src/stores/auth.ts:1-206](file://src/stores/auth.ts#L1-L206)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
+- [src/hooks/useCheckout.ts:1-217](file://src/hooks/useCheckout.ts#L1-L217)
+- [src/lib/syncService.ts:1-58](file://src/lib/syncService.ts#L1-L58)
 - [src/lib/utils.ts:1-7](file://src/lib/utils.ts#L1-L7)
 - [src/lib/availability.ts:1-40](file://src/lib/availability.ts#L1-L40)
 
 **Section sources**
-- [src/db/db.ts:1-569](file://src/db/db.ts#L1-L569)
+- [src/db/db.ts:1-570](file://src/db/db.ts#L1-L570)
 
 ## Performance Considerations
 Offline-first and synchronization performance:

@@ -3,7 +3,8 @@
 <cite>
 **Referenced Files in This Document**
 - [drizzle.config.ts](file://drizzle.config.ts)
-- [0000_stiff_cassandra_nova.sql](file://drizzle/0000_stiff_cassandra_nova.sql)
+- [0000_little_strong_guy.sql](file://drizzle/0000_little_strong_guy.sql)
+- [0001_eminent_weapon_omega.sql](file://drizzle/0001_eminent_weapon_omega.sql)
 - [schema.ts](file://src/server/db/schema.ts)
 - [seed.ts](file://src/server/db/seed.ts)
 - [db.ts](file://src/db/db.ts)
@@ -13,6 +14,13 @@
 - [mockProducts.ts](file://src/data/mockProducts.ts)
 - [_journal.json](file://drizzle/meta/_journal.json)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added documentation for new `cashierName` and `isAdjustment` columns in transactions table
+- Updated inventory logging documentation to include `ADJUSTMENT` type support
+- Enhanced modifier system documentation with expanded variant support
+- Updated migration management to reflect new schema versions
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -66,24 +74,26 @@ Seed --> DBConn
 
 **Diagram sources**
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
+- [0000_little_strong_guy.sql:1-64](file://drizzle/0000_little_strong_guy.sql#L1-L64)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
 - [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 
 **Section sources**
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 
 ## Core Components
@@ -96,11 +106,12 @@ Seed --> DBConn
 
 **Section sources**
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 - [seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 
@@ -132,8 +143,8 @@ SyncSvc-->>Client : "Sync complete"
 ```
 
 **Diagram sources**
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
 
 ## Detailed Component Analysis
@@ -191,6 +202,8 @@ class Transaction {
 +number timestamp
 +string status
 +boolean isBackdated
++boolean isAdjustment
++string cashierName
 }
 class TransactionItem {
 +string id
@@ -273,6 +286,8 @@ Constraints and types:
 - Foreign keys enforce referential integrity (e.g., transaction items to transactions).
 - Upserts are performed on the server to handle deduplication and idempotency.
 
+**Updated** Added new columns `cashierName` and `isAdjustment` to transactions table, and enhanced inventory logging with `ADJUSTMENT` type support.
+
 ```mermaid
 erDiagram
 ROLES {
@@ -313,6 +328,8 @@ boolean is_backdated
 text backdated_note
 numeric discount_total
 text customer_id
+text cashier_name
+boolean is_adjustment
 timestamp updated_at
 }
 TRANSACTION_ITEMS {
@@ -393,30 +410,33 @@ PRODUCT_INGREDIENTS }o--|| RAW_MATERIALS : "material_id"
 ```
 
 **Diagram sources**
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
 
 **Section sources**
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
 
 ### Data Models Overview
 - Products: Local product catalog with variants and stock; server-side mirrors product metadata for reporting and inventory.
-- Transactions and Transaction Items: Local PENDING status; server stores normalized transaction data with numeric precision and timestamps.
+- Transactions and Transaction Items: Local PENDING status; server stores normalized transaction data with numeric precision and timestamps. **Updated** with new `cashierName` and `isAdjustment` fields for enhanced transaction tracking.
 - Staff and Roles: Server-side authentication and permission model; client-side staff records mirror roles for UI.
 - Expenses: Local and server both track amounts, categories, descriptions, timestamps, and backdated flags.
-- Inventory: Raw materials and product ingredients define consumption; inventory logs track movements.
+- Inventory: Raw materials and product ingredients define consumption; inventory logs track movements including adjustments.
 - Campaigns, Bundles, Discounts: Local promotional constructs; server does not persist these directly but can be extended.
 
 **Section sources**
 - [db.ts:62-137](file://src/db/db.ts#L62-L137)
 - [db.ts:145-154](file://src/db/db.ts#L145-L154)
-- [schema.ts:74-134](file://src/server/db/schema.ts#L74-L134)
+- [schema.ts:74-144](file://src/server/db/schema.ts#L74-L144)
 - [mockProducts.ts:1-85](file://src/data/mockProducts.ts#L1-L85)
 
 ### Migration Management
 - Drizzle configuration points to the schema file and PostgreSQL credentials.
 - Initial migration script creates core tables and adds foreign keys.
+- **Updated** Second migration adds `cashierName` and `isAdjustment` columns to transactions table.
 - Migration journal tracks applied migrations to prevent re-running.
 
 ```mermaid
@@ -430,13 +450,15 @@ UpdateJournal --> Done(["Done"])
 
 **Diagram sources**
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 
 **Section sources**
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 
 ### Seed Data Implementation
 - Client seed: Inserts mock categories and products, clears and bulk-adds, and ensures default roles exist with appropriate permissions.
@@ -470,12 +492,12 @@ SyncSvc->>Dexie : "status=SYNCED"
 ```
 
 **Diagram sources**
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 
 **Section sources**
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 
 ## Dependency Analysis
 - Client depends on Dexie for local storage and on the sync service for server communication.
@@ -494,23 +516,25 @@ Migrations --> Journal["_journal.json"]
 
 **Diagram sources**
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 
 **Section sources**
 - [db.ts:270-496](file://src/db/db.ts#L270-L496)
-- [syncService.ts:1-110](file://src/lib/syncService.ts#L1-L110)
-- [sync/index.ts:1-97](file://src/routes/api/sync/index.ts#L1-L97)
+- [syncService.ts:1-59](file://src/lib/syncService.ts#L1-L59)
+- [sync/index.ts:1-98](file://src/routes/api/sync/index.ts#L1-L98)
 - [index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [schema.ts:1-143](file://src/server/db/schema.ts#L1-L143)
+- [schema.ts:1-144](file://src/server/db/schema.ts#L1-L144)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [0000_stiff_cassandra_nova.sql:1-64](file://drizzle/0000_stiff_cassandra_nova.sql#L1-L64)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [0000_little_strong_guy.sql:1-134](file://drizzle/0000_little_strong_guy.sql#L1-L134)
+- [0001_eminent_weapon_omega.sql:1-2](file://drizzle/0001_eminent_weapon_omega.sql#L1-L2)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 
 ## Performance Considerations
 - IndexedDB:
@@ -524,8 +548,6 @@ Migrations --> Journal["_journal.json"]
 - Network:
   - Compress payloads and limit included fields to essential ones.
   - Implement exponential backoff on retry failures.
-
-[No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
 - Sync fails with unauthorized:
@@ -542,7 +564,7 @@ Migrations --> Journal["_journal.json"]
 **Section sources**
 - [sync/index.ts:10-18](file://src/routes/api/sync/index.ts#L10-L18)
 - [syncService.ts:39-44](file://src/lib/syncService.ts#L39-L44)
-- [_journal.json:1-13](file://drizzle/meta/_journal.json#L1-L13)
+- [_journal.json:1-20](file://drizzle/meta/_journal.json#L1-L20)
 - [seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
 
 ## Conclusion
@@ -551,3 +573,4 @@ NgePos employs a robust dual-database architecture:
 - PostgreSQL with Drizzle ORM provides reliable server-side persistence, enforced constraints, and scalable reporting.
 - The sync service and API route implement a safe, idempotent, and debounced synchronization strategy.
 - Seed scripts and migration management ensure consistent initialization and evolution of both local and server schemas.
+- **Updated** Enhanced transaction tracking with cashier identification and adjustment capabilities, plus improved inventory logging with adjustment support, providing better audit trails and operational flexibility.

@@ -96,7 +96,7 @@ API --> Postgres
 - [src/routes/app/reports/index.tsx:49-715](file://src/routes/app/reports/index.tsx#L49-L715)
 - [src/routes/app/inventory/products.tsx:92-800](file://src/routes/app/inventory/products.tsx#L92-L800)
 - [src/routes/app/settings/staff.tsx:22-462](file://src/routes/app/settings/staff.tsx#L22-L462)
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ## Architecture Overview
 NgePos employs an offline-first architecture:
@@ -394,7 +394,7 @@ Printer-->>Cashier : Print Preview
 - [src/routes/app/marketing/members.tsx:56-236](file://src/routes/app/marketing/members.tsx#L56-L236)
 
 **Section sources**
-- [src/stores/loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [src/stores/loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [src/routes/app/marketing/members.tsx:34-791](file://src/routes/app/marketing/members.tsx#L34-L791)
 
 ### Mobile-Optimized UI and Offline Awareness

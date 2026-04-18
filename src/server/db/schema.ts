@@ -141,3 +141,16 @@ export const inventoryLogs = pgTable("inventory_logs", {
 	notes: text("notes"),
 	timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
+
+// ─── PASSWORD RESET TOKENS ──────────────────────────────────────────────────
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	email: text("email").notNull(),
+	token: text("token").notNull().unique(),
+	expiresAt: timestamp("expires_at").notNull(),
+	usedAt: timestamp("used_at"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+	index("idx_password_reset_tokens_email").on(table.email),
+	index("idx_password_reset_tokens_token").on(table.token),
+]);

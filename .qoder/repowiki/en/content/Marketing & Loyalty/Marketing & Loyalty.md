@@ -80,7 +80,7 @@ StoreLoyalty --> DBTypes
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
 - [QrCodeGenerator.tsx:1-222](file://src/components/QrCodeGenerator.tsx#L1-L222)
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [db.ts:218-267](file://src/db/db.ts#L218-L267)
 - [schema.ts:28-32](file://src/server/db/schema.ts#L28-L32)
 
@@ -105,7 +105,7 @@ StoreLoyalty --> DBTypes
 - [campaigns.tsx:43-1126](file://src/routes/app/marketing/campaigns.tsx#L43-L1126)
 - [QrCodeGenerator.tsx:1-222](file://src/components/QrCodeGenerator.tsx#L1-L222)
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [db.ts:218-267](file://src/db/db.ts#L218-L267)
 
 ## Architecture Overview
@@ -201,12 +201,12 @@ C-->>U : Toast + refresh list
 - [campaigns.tsx:107-158](file://src/routes/app/marketing/campaigns.tsx#L107-L158)
 - [campaigns.tsx:214-304](file://src/routes/app/marketing/campaigns.tsx#L214-L304)
 - [db.ts:191-216](file://src/db/db.ts#L191-L216)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 **Section sources**
 - [campaigns.tsx:43-320](file://src/routes/app/marketing/campaigns.tsx#L43-L320)
 - [db.ts:191-216](file://src/db/db.ts#L191-L216)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 
 ### QR Code Generation and Scanning
 - QR Generator: renders QR canvas with configurable size and labels; supports print grid layouts
@@ -304,7 +304,7 @@ MemberCard["member-card.tsx"] --> DB
 - [member-card.tsx:1-283](file://src/routes/app/marketing/member-card.tsx#L1-L283)
 - [QrCodeGenerator.tsx:1-222](file://src/components/QrCodeGenerator.tsx#L1-L222)
 - [QrCodeScanner.tsx:1-157](file://src/components/QrCodeScanner.tsx#L1-L157)
-- [loyalty.ts:1-173](file://src/stores/loyalty.ts#L1-L173)
+- [loyalty.ts:1-174](file://src/stores/loyalty.ts#L1-L174)
 - [db.ts:268-496](file://src/db/db.ts#L268-L496)
 
 **Section sources**
