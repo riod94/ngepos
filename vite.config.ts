@@ -11,11 +11,25 @@ export default defineConfig(({ mode }) => {
       port,
       strictPort: true,
       host: true,
+      allowedHosts: [
+        'ngepos.onrender.com',
+        'ngepos-*.onrender.com',
+        '*.vercel.app',
+        'localhost',
+        '127.0.0.1'
+      ],
     },
     preview: {
       port,
       strictPort: true,
       host: true,
+      allowedHosts: [
+        'ngepos.onrender.com',
+        'ngepos-*.onrender.com',
+        '*.vercel.app',
+        'localhost',
+        '127.0.0.1'
+      ],
     },
     plugins: [
       solidStart({
@@ -23,6 +37,7 @@ export default defineConfig(({ mode }) => {
       }),
       nitroV2Plugin({
         preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : process.env.CF_PAGES ? "cloudflare-pages" : "node-server"),
+        baseURL: '/',
       }),
     ],
   };

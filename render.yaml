@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: ngepos
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: bun install && bun run build
+    startCommand: bun start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NITRO_PRESET
+        value: node-server
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: APP_URL
+        value: https://ngepos.onrender.com
+    healthCheckPath: /api/auth/me
+    autoDeploy: true
