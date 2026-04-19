@@ -4,8 +4,8 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: bun install && bun run build
-    startCommand: bun start
+    buildCommand: bun install && NODE_ENV=production bun run build && bun run predeploy
+    startCommand: bun run render:start
     envVars:
       - key: NODE_ENV
         value: production

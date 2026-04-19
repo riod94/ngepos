@@ -11,13 +11,17 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "validate-env": "node scripts/validate-env.js",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check-build": "node scripts/check-build.js",
+    "render:start": "bun run validate-env && NODE_ENV=production node .output/server/index.mjs",
+    "predeploy": "bun run check-build"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.8",
