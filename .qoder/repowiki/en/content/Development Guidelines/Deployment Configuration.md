@@ -11,8 +11,19 @@
 - [src/server/db/index.ts](file://src/server/db/index.ts)
 - [src/server/db/seed.ts](file://src/server/db/seed.ts)
 - [src/server/utils/mail.ts](file://src/server/utils/mail.ts)
-- [dist/server/entry-server.js](file://dist/server/entry-server.js)
+- [src/entry-server.tsx](file://src/entry-server.tsx)
+- [src/global.d.ts](file://src/global.d.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated Vite configuration section to reflect modernized dynamic environment-aware configuration using loadEnv()
+- Enhanced environment variable management documentation with loadEnv() integration details
+- Streamlined build process optimizations section to align with current Vite configuration
+- Added new section covering environment variable loading precedence and best practices
+- Updated troubleshooting guide with environment variable loading diagnostics
+- Modified deployment procedures to reflect Node.js server approach instead of Vite preview
+- Enhanced security documentation to address sensitive environment variable exposure prevention
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -36,7 +47,7 @@ NgePos is a SolidStart-based Single Page Application with a server runtime built
 graph TB
 subgraph "Build and Runtime"
 Vite["Vite Build<br/>vite.config.ts"]
-Nitro["Nitro Server Runtime<br/>entry-server.js"]
+Nitro["Nitro Server Runtime<br/>entry-server.tsx"]
 SolidStart["SolidStart Plugin<br/>solid-start.config"]
 end
 subgraph "Frontend"
@@ -58,21 +69,21 @@ Assets --> Vite
 ```
 
 **Diagram sources**
-- [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
-- [dist/server/entry-server.js:1-200](file://dist/server/entry-server.js#L1-L200)
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
+- [src/entry-server.tsx:1-36](file://src/entry-server.tsx#L1-L36)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
 - [tailwind.config.cjs:1-88](file://tailwind.config.cjs#L1-L88)
 - [postcss.config.cjs:1-7](file://postcss.config.cjs#L1-L7)
-- [src/server/utils/mail.ts:1-70](file://src/server/utils/mail.ts#L1-L70)
+- [src/server/utils/mail.ts:1-147](file://src/server/utils/mail.ts#L1-L147)
 
 **Section sources**
-- [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
-- [package.json:1-56](file://package.json#L1-L56)
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
+- [package.json:1-83](file://package.json#L1-L83)
 - [tailwind.config.cjs:1-88](file://tailwind.config.cjs#L1-L88)
 - [postcss.config.cjs:1-7](file://postcss.config.cjs#L1-L7)
 
 ## Core Components
-- Build and bundling: Vite with optimized dependencies and modern target for smaller bundles and faster cold starts.
+- Build and bundling: Vite with dynamic environment-aware configuration and optimized dependencies for smaller bundles and faster cold starts.
 - Server runtime: Nitro-based entry renders SolidJS pages and serves API routes.
 - Database: PostgreSQL with Drizzle ORM; schema defined in TypeScript and migrated via Drizzle Kit.
 - Local storage: Dexie for offline-first client-side data.
@@ -80,13 +91,13 @@ Assets --> Vite
 - Email: SMTP transport configured via environment variables.
 
 **Section sources**
-- [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
-- [package.json:1-56](file://package.json#L1-L56)
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
+- [package.json:1-83](file://package.json#L1-L83)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
+- [src/server/db/schema.ts:1-157](file://src/server/db/schema.ts#L1-L157)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 - [src/server/db/seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
-- [src/server/utils/mail.ts:1-70](file://src/server/utils/mail.ts#L1-L70)
+- [src/server/utils/mail.ts:1-147](file://src/server/utils/mail.ts#L1-L147)
 
 ## Architecture Overview
 The application runs as a server-rendered SPA. Vite builds assets and the Nitro entry handles SSR and API routing. Drizzle connects to PostgreSQL for persistent data, while Dexie manages offline client data. Tailwind and PostCSS produce optimized styles.
@@ -95,7 +106,7 @@ The application runs as a server-rendered SPA. Vite builds assets and the Nitro 
 sequenceDiagram
 participant Browser as "Browser"
 participant Vite as "Vite Dev/Preview"
-participant Nitro as "Nitro Server<br/>entry-server.js"
+participant Nitro as "Nitro Server<br/>entry-server.tsx"
 participant Drizzle as "Drizzle ORM"
 participant PG as "PostgreSQL"
 Browser->>Vite : Request app route
@@ -109,14 +120,15 @@ Nitro-->>Browser : HTML/CSS/JS (SSR)
 ```
 
 **Diagram sources**
-- [dist/server/entry-server.js:1-200](file://dist/server/entry-server.js#L1-L200)
-- [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
+- [src/entry-server.tsx:1-36](file://src/entry-server.tsx#L1-L36)
+- [src/server/db/schema.ts:1-157](file://src/server/db/schema.ts#L1-L157)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
 
 ## Detailed Component Analysis
 
 ### Build Optimization and Asset Bundling (Vite)
-- Pre-bundled dependencies: Libraries like Dexie, Chart.js, xlsx, jspdf are pre-bundled to reduce cold start overhead and navigation reloads in development.
+- Dynamic environment configuration: Vite now uses loadEnv() for environment-aware configuration, enabling proper environment variable injection during build time.
+- Environment variable injection: Critical environment variables (DATABASE_URL, JWT_SECRET, SITE_URL, SMTP credentials) are injected into the build using define configuration.
 - Modern target: ES2020 target reduces bundle size and improves compatibility.
 - Aggressive minification: ESBuild minifier reduces JS size.
 - Sourcemaps disabled: Removes broken sourcemap warnings for specific libraries.
@@ -124,7 +136,9 @@ Nitro-->>Browser : HTML/CSS/JS (SSR)
 
 ```mermaid
 flowchart TD
-Start(["Vite Build"]) --> OptDeps["Optimize Dependencies<br/>Pre-bundle heavy libs"]
+Start(["Vite Build"]) --> LoadEnv["loadEnv() - Load Environment Variables"]
+LoadEnv --> InjectVars["Inject Environment Variables via define"]
+InjectVars --> OptDeps["Optimize Dependencies<br/>Pre-bundle heavy libs"]
 OptDeps --> Target["Set ES2020 Target"]
 Target --> Minify["Minify with ESBuild"]
 Minify --> Sourcemap{"Sourcemaps Enabled?"}
@@ -135,21 +149,30 @@ Bundle --> Preview["Preview Server Hosted on All Interfaces"]
 Preview --> End(["Ready"])
 ```
 
+**Updated** Modernized Vite configuration now uses dynamic environment loading with loadEnv() for improved environment variable management and build-time injection.
+
 **Diagram sources**
-- [vite.config.ts:12-33](file://vite.config.ts#L12-L33)
-- [vite.config.ts:34-44](file://vite.config.ts#L34-L44)
+- [vite.config.ts:5-29](file://vite.config.ts#L5-L29)
+- [vite.config.ts:15-24](file://vite.config.ts#L15-L24)
 
 **Section sources**
-- [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
 
 ### Environment Variable Management
+- Dynamic loading: Vite uses loadEnv() to load environment variables based on the current mode, ensuring proper variable resolution during build time.
+- Critical variables injection: DATABASE_URL, JWT_SECRET, SITE_URL, and SMTP credentials are injected into the build using define configuration for runtime access.
 - Database connection: DATABASE_URL is required; fallback to localhost connection is logged for development.
-- JWT secret: Required for auth; missing causes fatal error at runtime.
 - SMTP: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM are used for OTP emails.
+- Environment precedence: Process environment variables take precedence over .env files, with .env fallback support.
 
 ```mermaid
 flowchart TD
-EnvStart["Load .env"] --> DBCheck{"DATABASE_URL present?"}
+EnvStart["loadEnv() - Load by Mode"] --> CheckProc{"Process Env Available?"}
+CheckProc --> |Yes| UseProc["Use Process Environment"]
+CheckProc --> |No| LoadDotenv["Load .env File"]
+UseProc --> Inject["Inject via define{}"]
+LoadDotenv --> Inject
+Inject --> DBCheck{"DATABASE_URL present?"}
 DBCheck --> |No| LogFallback["Log fallback to default local DB"]
 DBCheck --> |Yes| Mask["Mask credentials in logs"]
 Mask --> Ready["Export DB client"]
@@ -159,13 +182,18 @@ AuthCheck --> |No| Fatal["Throw fatal error"]
 AuthCheck --> |Yes| SMTP["Initialize SMTP transport"]
 ```
 
+**Updated** Enhanced environment variable management now uses loadEnv() for dynamic environment-aware configuration and proper variable injection during build time.
+
 **Diagram sources**
-- [src/server/db/index.ts:6-26](file://src/server/db/index.ts#L6-L26)
-- [src/server/utils/mail.ts:3-22](file://src/server/utils/mail.ts#L3-L22)
+- [vite.config.ts:5-6](file://vite.config.ts#L5-L6)
+- [vite.config.ts:15-24](file://vite.config.ts#L15-L24)
+- [src/server/db/index.ts:6-7](file://src/server/db/index.ts#L6-L7)
 
 **Section sources**
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
 - [src/server/db/index.ts:1-27](file://src/server/db/index.ts#L1-L27)
-- [src/server/utils/mail.ts:1-70](file://src/server/utils/mail.ts#L1-L70)
+- [src/server/utils/mail.ts:1-147](file://src/server/utils/mail.ts#L1-L147)
+- [src/global.d.ts:1-1](file://src/global.d.ts#L1-L1)
 
 ### Database Migration and Seeding
 - Schema definition: Typed tables with indexes and enums.
@@ -182,13 +210,13 @@ Seed --> Roles["Insert default roles if missing"]
 ```
 
 **Diagram sources**
-- [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
+- [src/server/db/schema.ts:1-157](file://src/server/db/schema.ts#L1-L157)
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
 - [src/server/db/seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
 
 **Section sources**
 - [drizzle.config.ts:1-11](file://drizzle.config.ts#L1-L11)
-- [src/server/db/schema.ts:1-142](file://src/server/db/schema.ts#L1-L142)
+- [src/server/db/schema.ts:1-157](file://src/server/db/schema.ts#L1-L157)
 - [src/server/db/seed.ts:1-41](file://src/server/db/seed.ts#L1-L41)
 
 ### Server Runtime and API Routing
@@ -213,10 +241,10 @@ Nitro-->>Client : JSON
 ```
 
 **Diagram sources**
-- [dist/server/entry-server.js:1-200](file://dist/server/entry-server.js#L1-L200)
+- [src/entry-server.tsx:1-36](file://src/entry-server.tsx#L1-L36)
 
 **Section sources**
-- [dist/server/entry-server.js:1-200](file://dist/server/entry-server.js#L1-L200)
+- [src/entry-server.tsx:1-36](file://src/entry-server.tsx#L1-L36)
 
 ### Styling Pipeline (Tailwind + PostCSS)
 - Tailwind scans components for class usage and supports dark mode.
@@ -243,12 +271,12 @@ Nitro --> Libs["Chart.js / xlsx / jspdf / Dexie"]
 ```
 
 **Diagram sources**
-- [package.json:11-54](file://package.json#L11-L54)
-- [vite.config.ts:1-11](file://vite.config.ts#L1-L11)
+- [package.json:22-51](file://package.json#L22-L51)
+- [vite.config.ts:1-4](file://vite.config.ts#L1-L4)
 
 **Section sources**
-- [package.json:1-56](file://package.json#L1-L56)
-- [vite.config.ts:1-46](file://vite.config.ts#L1-L46)
+- [package.json:1-83](file://package.json#L1-L83)
+- [vite.config.ts:1-29](file://vite.config.ts#L1-L29)
 
 ## Performance Considerations
 - Keep pre-bundled dependencies minimal to avoid bloating the initial bundle.
@@ -257,26 +285,30 @@ Nitro --> Libs["Chart.js / xlsx / jspdf / Dexie"]
 - Use CDN-hosted fonts and defer non-critical resources.
 - Enable gzip/br compression at the reverse proxy level.
 - Cache static assets aggressively with long-lived cache headers.
+- Leverage dynamic environment loading for optimal build-time variable resolution.
 
 ## Troubleshooting Guide
 - Database URL missing: The server logs a warning and falls back to a default local connection. Ensure DATABASE_URL is set in production.
 - JWT_SECRET missing: Fatal error prevents startup; set JWT_SECRET.
 - SMTP failures: Check SMTP_HOST, SMTP_PORT, credentials, and timeouts; verify network connectivity.
 - Reverse proxy issues: Ensure host binding listens on all interfaces and ports are open.
+- Environment variable loading: Verify .env files exist and loadEnv() can resolve variables for the current mode.
+- Build-time injection: Check that critical environment variables are properly injected via Vite's define configuration.
 
 **Section sources**
 - [src/server/db/index.ts:12-19](file://src/server/db/index.ts#L12-L19)
 - [src/server/utils/mail.ts:3-22](file://src/server/utils/mail.ts#L3-L22)
-- [vite.config.ts:34-36](file://vite.config.ts#L34-L36)
+- [vite.config.ts:15-24](file://vite.config.ts#L15-L24)
 
 ## Conclusion
-NgePos is structured for efficient production deployments with optimized builds, robust server rendering, and clear separation of concerns for database, styling, and email services. Following the deployment and operational guidance herein will ensure reliable, secure, and scalable production operation.
+NgePos is structured for efficient production deployments with optimized builds, robust server rendering, and clear separation of concerns for database, styling, and email services. The modernized Vite configuration with dynamic environment loading ensures reliable, secure, and scalable production operation with improved environment variable management and build-time optimizations.
 
 ## Appendices
 
 ### A. Environment Variables Reference
 - DATABASE_URL: PostgreSQL connection string.
 - JWT_SECRET: Secret key for JWT verification.
+- SITE_URL: Application base URL for email links.
 - SMTP_HOST: SMTP server hostname.
 - SMTP_PORT: SMTP server port (e.g., 465 for SSL).
 - SMTP_USER: SMTP username.
@@ -285,7 +317,7 @@ NgePos is structured for efficient production deployments with optimized builds,
 
 **Section sources**
 - [src/server/db/index.ts:9-26](file://src/server/db/index.ts#L9-L26)
-- [src/server/utils/mail.ts:3-8](file://src/server/utils/mail.ts#L3-L8)
+- [src/server/utils/mail.ts:3-11](file://src/server/utils/mail.ts#L3-L11)
 
 ### B. Database Migration and Seeding Procedures
 - Generate migrations: Use Drizzle Kit CLI with drizzle.config.ts.
@@ -305,7 +337,7 @@ NgePos is structured for efficient production deployments with optimized builds,
 
 **Section sources**
 - [package.json:5-9](file://package.json#L5-L9)
-- [vite.config.ts:34-44](file://vite.config.ts#L34-L44)
+- [vite.config.ts:15-24](file://vite.config.ts#L15-L24)
 
 ### D. CI/CD Pipeline Setup
 - Build stage: Install dependencies, run Vite build, and package server output.
@@ -322,6 +354,7 @@ NgePos is structured for efficient production deployments with optimized builds,
 - Input validation: Validate and sanitize all API inputs.
 - CORS: Configure appropriate CORS headers at the reverse proxy.
 - Rate limiting: Apply rate limits for authentication endpoints.
+- Environment variable exposure: Implement proper masking and logging controls to prevent sensitive data leakage.
 
 ### F. Backup Strategies
 - Database: Schedule regular logical backups of PostgreSQL; retain rotation policy.
@@ -365,3 +398,16 @@ NgePos is structured for efficient production deployments with optimized builds,
 - Define services for app and PostgreSQL.
 - Mount volumes for logs and persistent data.
 - Expose port and configure reverse proxy externally.
+
+### I. Environment Variable Loading Best Practices
+- File placement: Create .env files in project root for development and staging environments.
+- Mode-specific loading: Use Vite's loadEnv() to load variables based on NODE_ENV mode.
+- Process precedence: Process environment variables override .env file values.
+- Build-time injection: Critical variables are injected at build time via Vite's define configuration.
+- Runtime access: Access variables through import.meta.env in client code and process.env in server code.
+- Security: Never commit .env files to version control; use CI/CD secrets for production deployments.
+
+**Section sources**
+- [vite.config.ts:5-6](file://vite.config.ts#L5-L6)
+- [vite.config.ts:15-24](file://vite.config.ts#L15-L24)
+- [src/global.d.ts:1-1](file://src/global.d.ts#L1-L1)
