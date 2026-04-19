@@ -21,7 +21,9 @@ export default defineConfig(({ mode }) => {
       solidStart({
         ssr: false
       }),
-      nitroV2Plugin(),
+      nitroV2Plugin({
+        preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : process.env.CF_PAGES ? "cloudflare-pages" : "node-server"),
+      }),
     ],
   };
 });
