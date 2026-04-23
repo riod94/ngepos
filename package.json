@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node -e \"const fs=require('fs');const c='.vercel/output/config.json';if(fs.existsSync(c)){const j=JSON.parse(fs.readFileSync(c));j.routes.unshift({src:'^/(?!api).*$',dest:'/index.html'});fs.writeFileSync(c,JSON.stringify(j));}\"",
+    "build": "vite build",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
