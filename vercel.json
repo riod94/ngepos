@@ -1,19 +1,7 @@
 {
   "buildCommand": "bun run build",
-  "outputDirectory": ".output",
+  "outputDirectory": ".vercel/output",
   "framework": null,
-  "functions": {
-    "api/**/*.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ],
   "env": {
     "NITRO_PRESET": "vercel",
     "VERCEL": "1"
