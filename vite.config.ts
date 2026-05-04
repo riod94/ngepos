@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
       port,
       strictPort: true,
       host: true,
+      origin: env.SITE_URL || `http://localhost:${port}`,
       allowedHosts: [
         'ngepos.onrender.com',
         'ngepos-*.onrender.com',
